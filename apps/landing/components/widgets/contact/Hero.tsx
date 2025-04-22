@@ -1,19 +1,19 @@
 
 
 function Hero() {
-  const getGradient = () => {
-    // Basic responsive check
-    if (window.innerWidth < 640) {
-      // Mobile
-      return "linear-gradient(to right, #add8e6 0%, #add8e6 60%, transparent 90%, transparent 100%)";
-    } else if (window.innerWidth < 1024) {
-      // Tablet
-      return "linear-gradient(to right, #add8e6 0%, #add8e6 40%, transparent 80%, transparent 100%)";
-    } else {
-      // Desktop
-      return "linear-gradient(to right, #add8e6 0%, #add8e6 20%, transparent 50%, transparent 100%)";
-    }
-  };
+  // const getGradient = () => {
+  //   // Basic responsive check
+  //   if (window.innerWidth < 640) {
+  //     // Mobile
+  //     return "linear-gradient(to right, #add8e6 0%, #add8e6 60%, transparent 90%, transparent 100%)";
+  //   } else if (window.innerWidth < 1024) {
+  //     // Tablet
+  //     return "linear-gradient(to right, #add8e6 0%, #add8e6 40%, transparent 80%, transparent 100%)";
+  //   } else {
+  //     // Desktop
+  //     return "linear-gradient(to right, #add8e6 0%, #add8e6 20%, transparent 50%, transparent 100%)";
+  //   }
+  // };
 
   return (
     <section
@@ -25,7 +25,7 @@ function Hero() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: getGradient(),
+          background: "linear-gradient(to right, #add8e6 0%, #add8e6 60%, transparent 90%, transparent 100%)",
         }}
       ></div>
 

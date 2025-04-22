@@ -1,9 +1,3 @@
-import parent1 from "../assets/Home/testimonials-one.png";
-import parent2 from "../assets/Home/testimonials-two.png";
-import parent3 from "../assets/Home/testimonials-three.png";
-import team1 from "../assets/about/team-1.png";
-import team2 from "../assets/about/team-2.png";
-
 const testimonialsData = [
   {
     heading: "The best experience ever",

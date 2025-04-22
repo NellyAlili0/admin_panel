@@ -7,7 +7,7 @@ const ScrollToTop = () => {
   const router = useRouter();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // window.scrollTo(0, 0);
   }, [router]);
 
   return null;

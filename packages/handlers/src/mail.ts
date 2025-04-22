@@ -5,7 +5,7 @@ export class Mail {
     constructor() {
         this.base_url = 'https://api.brevo.com/v3/smtp/email'
     }
-    async sendSTMP({ subject, html, email, name }) {
+    async sendSTMP({ subject, html, email, name }: { subject: string, html: string, email: string, name: string }) {
         const response = await fetch(this.base_url, {
             method: 'POST',
             headers: {

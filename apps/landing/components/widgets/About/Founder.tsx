@@ -1,4 +1,3 @@
-import FounderImage from "../../assets/about/founder.png";
 
 function Founder() {
   return (
@@ -9,7 +8,7 @@ function Founder() {
           <div
             className="w-full lg:w-1/2 h-[350px] sm:h-[400px] lg:h-auto bg-cover bg-top rounded-tl-[50px] rounded-br-[50px] lg:rounded-tl-[135px] lg:rounded-br-[135px] rounded-lg"
             style={{
-              backgroundImage: `url(${FounderImage})`,
+              backgroundImage: `url("/assets/about/founder.png")`,
             }}
           ></div>
 
