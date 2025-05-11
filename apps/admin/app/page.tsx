@@ -3,9 +3,10 @@ import Form from "./login/form";
 
 export default function Home() {
   return (
-    <div>
-      <h1>Admin</h1>
-      <Form />
+    <div className="flex items-center justify-center h-screen">
+      <div className="max-w-[300px]">
+        <Form />
+      </div>
     </div>
   );
 }
