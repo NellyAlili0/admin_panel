@@ -4,7 +4,7 @@ export class Notify {
     constructor() {
         this.base_url = 'https://api.onesignal.com/notifications?c=push'
     }
-    async sendSingle({ title, message, email }) {
+    async sendSingle({ title, message, email }: { title: string, message: string, email: string | null }) {
         const options = {
             method: 'POST',
             headers: {
@@ -24,7 +24,7 @@ export class Notify {
         const response = await fetch(this.base_url, options)
         return true;
     }
-    async sendBulk({ title, message, segment, big_picture }) {
+    async sendBulk({ title, message, segment, big_picture }: { title: string, message: string, segment: string, big_picture: string }) {
         const options = {
             method: 'POST',
             headers: {
