@@ -54,7 +54,7 @@ export default async function Page({ params }: { params: any }) {
       "user.updated_at",
       "user.status",
     ])
-    .where("user.email", "=", driver_id)
+    .where("user.email", "=", driver_id.replace("%40", "@"))
     .where("user.kind", "=", "Driver")
     .executeTakeFirst();
   if (!driverInfo) {
@@ -501,7 +501,7 @@ function KycDocumentCard({
             Verification document submitted by the driver
           </DialogDescription>
         </DialogHeader>
-        <div className="relative aspect-[3/4] w-full">
+        <div className="relative w-full">
           <img
             src={imagePath || "/placeholder.svg"}
             alt={title}
@@ -509,10 +509,12 @@ function KycDocumentCard({
           />
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
+          <Link href={imagePath} target="_blank">
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          </Link>
         </div>
       </DialogContent>
     </Dialog>

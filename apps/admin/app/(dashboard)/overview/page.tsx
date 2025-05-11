@@ -10,6 +10,7 @@ import { db, sql } from "@repo/database";
 import { VehicleCard } from "@/components/vehicle-card";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
+import DriverMap from "./map";
 
 export default async function Page() {
   let metrics: any = await sql`SELECT 
@@ -104,7 +105,7 @@ export default async function Page() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="col-span-2 h-[400px] w-full bg-gradient-to-br from-primary/50 to-secondary/50 flex items-center justify-center">
-          <p className="text-2xl font-bold text-primary"> N/A </p>
+          <DriverMap />
         </div>
         <div className="grid gap-4 grid-cols-2">
           <Card>

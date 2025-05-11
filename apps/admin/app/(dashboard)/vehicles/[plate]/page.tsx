@@ -98,7 +98,7 @@ export default async function Page({ params }: { params: any }) {
               "https://placehold.co/600x400?text=Not+Found"
             }
             alt="Vehicle Image"
-            className="object-cover"
+            className="bg-cover h-fit w-full"
           />
         </div>
 
@@ -259,7 +259,7 @@ export default async function Page({ params }: { params: any }) {
                     "https://placehold.co/600x400?text=Not+Found"
                   }
                   alt="Vehicle Logbook"
-                  className="object-cover"
+                  className="bg-cover h-fit w-full"
                 />
               </div>
             </TabsContent>
@@ -272,7 +272,7 @@ export default async function Page({ params }: { params: any }) {
                     "https://placehold.co/600x400?text=Not+Found"
                   }
                   alt="Insurance Certificate"
-                  className="object-cover"
+                  className="bg-cover h-fit w-full"
                 />
               </div>
             </TabsContent>

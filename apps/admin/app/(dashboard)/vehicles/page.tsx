@@ -10,9 +10,7 @@ export default async function Page() {
         'vehicle.registration_number as Plate',
         'vehicle.vehicle_type as Type',
         'vehicle.vehicle_model as Model',
-        'vehicle.vehicle_year as Year',
         'vehicle.available_seats as Available Seats',
-        'vehicle.is_inspected as Inspected',
         'vehicle.created_at',
         'vehicle.status',
         'user.name as Driver',
@@ -29,7 +27,7 @@ export default async function Page() {
       />
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Vehicles</h1>
-        <p className="text-muted-foreground"> Total of {0} vehicles </p>
+        <p className="text-muted-foreground"> Total of {vehicles.length} vehicles </p>
       </div>
       <GenTable title="All Vehicles" cols={[
         'Driver',
@@ -37,12 +35,10 @@ export default async function Page() {
         'Plate',
         'Type',
         'Model',
-        'Year',
         'Available Seats',
-        'Inspected',
         'created_at',
         'status',
-      ]} data={vehicles} baseLink="/vehicles/" uniqueKey="registration_number" />
+      ]} data={vehicles} baseLink="/vehicles/" uniqueKey="Plate" />
     </div>
   );
 }

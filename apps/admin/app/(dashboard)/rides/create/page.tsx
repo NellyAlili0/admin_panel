@@ -1,5 +1,5 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { AssignRidePage } from "./details";
+import AssignRidePage from "./dets";
 import { db } from "@repo/database";
 
 export default async function Page() {
