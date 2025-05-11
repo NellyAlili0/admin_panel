@@ -20,12 +20,10 @@ export async function POST(req: Request) {
     }
     const { email, password, kind } = check.data
     const auth = new Auth()
-    console.log(auth.hash({ password }))
     const user = await db.selectFrom('user')
         .selectAll()
         .where('email', '=', email)
         .where('kind', '=', kind)
-        .where('status', '=', 'Active')
         .executeTakeFirst()
     if (!user) {
         return Response.json({

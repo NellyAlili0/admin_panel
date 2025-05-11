@@ -3,8 +3,7 @@ import { db } from '@repo/database'
 import { Auth } from '@repo/handlers/auth'
 
 const registerSchema = z.object({
-    first_name: z.string().min(2),
-    last_name: z.string().min(2),
+    names: z.string(),
     email: z.string().email().optional(),
     password: z.string().min(8),
     phone_number: z.string().min(10).optional(),
@@ -22,7 +21,7 @@ export async function POST(req: Request) {
             message: 'Invalid data'
         }, { status: 400 })
     }
-    const { first_name, last_name, email, password, phone_number, kind, county, neighborhood } = check.data
+    const { names, email, password, phone_number, kind, county, neighborhood } = check.data
     // make sure email or phone does not exist
     const checkUser = await db.selectFrom('user')
         .select(['id'])
@@ -41,18 +40,17 @@ export async function POST(req: Request) {
     const hash = auth.hash({ password })
     const user = await db.insertInto('user')
         .values({
-            first_name: first_name,
-            last_name: last_name,
+            name: names,
             email: email || null,
             password: hash,
             phone_number: phone_number,
             kind: kind,
             meta: kind == 'Driver' ? JSON.stringify({
-                locations: {
-                    county: county,
-                    neighborhood: neighborhood
-                }
+                county: county,
+                neighborhood: neighborhood
             }) : null,
+            wallet_balance: 0,
+            is_kyc_verified: false,
             status: 'Active'
         })
         .returning('id')

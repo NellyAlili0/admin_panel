@@ -51,7 +51,17 @@ export async function POST(req: Request) {
         })
         .where('id', '=', payload.id)
         .executeTakeFirst()
-    // TODO: Send email
+    // TODO:  Add notification
+    await db.insertInto('notification')
+        .values({
+            user_id: payload.id,
+            title: 'Password Changed',
+            message: 'Your password has been changed successfully',
+            kind: 'System',
+            section: 'Profile',
+            is_read: false,
+        })
+        .executeTakeFirst()
     return Response.json({
         status: 'success',
         message: 'Password changed successfully'

@@ -12,7 +12,14 @@ export async function GET(req: Request) {
         }, { status: 401 })
     }
     const notifications = await db.selectFrom('notification')
-        .select(['title', 'message', 'meta', 'is_read', 'kind', 'section', 'created_at', 'updated_at', 'status'])
+        .select([
+            'title',
+            'message',
+            'is_read',
+            'kind',
+            'section',
+            'created_at',
+        ])
         .where('user_id', '=', payload.id)
         .orderBy('created_at', 'desc')
         .limit(50)

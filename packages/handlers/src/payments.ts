@@ -137,11 +137,11 @@ export class Payments {
         // refnumber = req['BillRefNumber']
         // check if ref number is in database and pending and amount is correct
         // if not return null
-        const check = await db.selectFrom('payment')
-            .where('paybill_number', '=', refnumber)
-            .where('payment_status', '=', 'Pending')
-            .where('amount', '=', amount)
-            .executeTakeFirst()
+        // const check = await db.selectFrom('payment')
+        //     .where('paybill_number', '=', refnumber)
+        //     .where('payment_status', '=', 'Pending')
+        //     .where('amount', '=', amount)
+        //     .executeTakeFirst()
             // return jsonify({
             //     "ResultCode":0,
             //     "ResultDesc":"Confirmation received successfully"
@@ -163,11 +163,11 @@ export class Payments {
         //     })
         // else:
         //     return jsonify({"ResultCode": 1, "ResultDesc": "Rejected"})
-        const check = await db.selectFrom('payment')
-            .where('paybill_number', '=', refnumber)
-            .where('payment_status', '=', 'Pending')
-            .where('amount', '=', amount)
-            .executeTakeFirst()
+        // const check = await db.selectFrom('payment')
+        //     .where('paybill_number', '=', refnumber)
+        //     .where('payment_status', '=', 'Pending')
+        //     .where('amount', '=', amount)
+        //     .executeTakeFirst()
             // return jsonify({
             //     "ResultCode":0,
             //     "ResultDesc":"Confirmation received successfully"

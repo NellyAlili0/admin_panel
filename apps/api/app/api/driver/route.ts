@@ -11,7 +11,16 @@ export async function POST(req: Request) {
         }, { status: 401 })
     }
     const user = await db.selectFrom('user')
-        .select(['first_name', 'last_name', 'email', 'phone_number', 'meta', 'kind', 'created_at', 'updated_at', 'status'])
+        .select([
+            'name',
+            'email',
+            'phone_number',
+            'meta',
+            'kind',
+            'created_at',
+            'updated_at',
+            'status'
+        ])
         .where('id', '=', payload.id)
         .where('kind', '=', payload.kind)
         .executeTakeFirst()

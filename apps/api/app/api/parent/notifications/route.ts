@@ -12,11 +12,19 @@ export async function GET(req: Request) {
         }, { status: 401 })
     }
     const notifications = await db.selectFrom('notification')
-        .select(['title', 'message', 'kind', 'section', 'is_read', 'created_at', 'updated_at', 'status'])
+        .select(['title', 'message', 'kind', 'section', 'is_read', 'created_at'])
         .where('user_id', '=', payload.id)
         .orderBy('created_at', 'desc')
         .limit(50)
         .execute()
+
+    // count unread
+    const unread = await db.selectFrom('notification')
+        .select(['id'])
+        .where('user_id', '=', payload.id)
+        .where('is_read', '=', false)
+        .execute()
+    const unreadCount = unread.length
 
     const defaultSettings = {
         when_bus_leaves: true,
@@ -42,6 +50,7 @@ export async function GET(req: Request) {
     return Response.json({
         status: 'success',
         notifications,
+        unreadCount,
         settings
     }, { status: 200 })
 }
@@ -73,7 +82,7 @@ export async function POST(req: Request) {
     }
     const { when_bus_leaves, when_bus_makes_home_drop_off, when_bus_make_home_pickup, when_bus_arrives, when_bus_is_1km_away, when_bus_is_0_5km_away } = check.data
     const user = await db.selectFrom('user')
-        .select(['id', 'first_name', 'meta', 'last_name', 'email', 'phone_number', 'created_at', 'updated_at', 'status'])
+        .select(['id', 'meta'])
         .where('id', '=', payload.id)
         .limit(1)
         .executeTakeFirst()

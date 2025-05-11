@@ -12,8 +12,16 @@ export async function GET(req: Request) {
         }, { status: 401 })
     }
     const transactions = await db.selectFrom('payment')
-        .select(['amount', 'paybill_number', 'payment_method', 'payment_status', 'comments', 'meta', 'created_at', 'updated_at'])
-        .where('driver_id', '=', payload.id)
+        .select([
+            'amount',
+            'kind',
+            'transaction_type',
+            'comments',
+            'transaction_id',
+            'created_at',
+            'updated_at'
+        ])
+        .where('user_id', '=', payload.id)
         .execute()
     return Response.json({
         status: 'success',
@@ -22,10 +30,10 @@ export async function GET(req: Request) {
 }
 
 const payoutSchema = z.object({
-    method: z.enum(['Bank Transfer', 'Mpesa']),
-    gateway: z.string(),
-    account_name: z.string(),
-    account_number: z.string(),
+    kind: z.enum(['Bank', 'M-Pesa']),
+    bank: z.string().optional(),
+    account_name: z.string().optional(),
+    account_number: z.string().optional(),
 })
 
 export async function POST(req: Request) {
@@ -45,16 +53,16 @@ export async function POST(req: Request) {
             message: 'Invalid data'
         }, { status: 400 })
     }
-    const { method, gateway, account_name, account_number } = check.data
+    const { kind, bank, account_name, account_number } = check.data
     const userMeta = await db.selectFrom('user')
         .select(['meta'])
         .where('id', '=', payload.id)
         .executeTakeFirst()
     let meta = {
         ...userMeta?.meta,
-        payout: {
-            method: method,
-            gateway: gateway,
+        payments: {
+            kind: kind,
+            bank: bank,
             account_name: account_name,
             account_number: account_number
         }

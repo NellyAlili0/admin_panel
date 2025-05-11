@@ -26,6 +26,7 @@ const studentSettings = z.object({
     names: z.string(),
     gender: z.enum(['Male', 'Female']),
     address: z.string().optional(),
+    profile_picture: z.string().optional()
 })
 
 export async function POST(req: Request) {
@@ -45,14 +46,14 @@ export async function POST(req: Request) {
             message: 'Invalid data'
         }, { status: 400 })
     }
-    const { names, gender, address } = check.data
+    const { names, gender, address, profile_picture } = check.data
     const student = await db.insertInto('student')
         .values({
             name: names,
             gender,
             address,
             parent_id: payload.id,
-            status: 'Active'
+            profile_picture
         })
         .returning(['id','name', 'gender'])
         .executeTakeFirst()

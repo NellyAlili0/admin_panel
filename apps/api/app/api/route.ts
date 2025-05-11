@@ -2,6 +2,7 @@ export async function GET(req: Request) {
     return Response.json({
         status: 'success',
         message: 'Zidallie Handler',
-        version: '2.0.1'
+        parentsAppVersion: '1.0.0',
+        driversAppVersion: '1.0.0',
     });
 }
