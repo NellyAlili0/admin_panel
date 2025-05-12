@@ -1,6 +1,7 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { db } from "@repo/database";
 import GenTable from "@/components/tables";
+import { AddDriverForm } from "./forms";
 
 export default async function Page() {
   // available drivers
@@ -39,6 +40,7 @@ export default async function Page() {
           <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
           <p className="text-muted-foreground">Manage your drivers</p>
         </div>
+        <AddDriverForm />
       </div>
       <GenTable
         title="All Drivers"
