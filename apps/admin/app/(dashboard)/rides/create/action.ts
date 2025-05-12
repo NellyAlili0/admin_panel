@@ -30,7 +30,6 @@ export async function assignRide(formData: FormData) {
             message: "Invalid data"
         }
     }
-    console.log(data.data)
     const { driver_id, student_id, pickup_location, pickup_time, pickup_lat, pickup_lng, dropoff_location, dropoff_time, dropoff_lat, dropoff_lng, start_date, end_date, type, cost, comments } = data.data;
     // get student info
     const student = await db.selectFrom('student')
@@ -78,7 +77,7 @@ export async function assignRide(formData: FormData) {
         .where('vehicle.user_id', '=', Number(driver_id))
         .executeTakeFirst();
     // assign ride
-    await db.insertInto('ride')
+    let ride = await db.insertInto('ride')
         .values({
             vehicle_id: Number(vehicle?.id),
             driver_id: Number(driver_id),
@@ -104,7 +103,25 @@ export async function assignRide(formData: FormData) {
             comments,
             status: 'Ongoing',
         })
+        .returning('id')
         .executeTakeFirst();
+    // get all weekdays between start_date and end_date
+    const weekdays = getWeekdaysBetweenDates(start_date, end_date);
+    // create daily ride for each weekday
+    weekdays.forEach(async (weekday) => {
+        await db.insertInto('daily_ride')
+            .values({
+                ride_id: Number(ride?.id),
+                vehicle_id: Number(vehicle?.id),
+                driver_id: Number(driver_id),
+                kind: 'Pickup',
+                status: 'Inactive',
+                date: weekday,
+                start_time: pickup_time,
+                end_time: dropoff_time,
+            })
+            .executeTakeFirst();
+    })
     // send notification to driver and parent
     const notify = new Notify();
     await notify.sendSingle({
@@ -138,5 +155,18 @@ export async function assignRide(formData: FormData) {
         })
         .executeTakeFirst();
     return redirect("/rides");
-    
+
 }
+function getWeekdaysBetweenDates(start_date: string, end_date: string) {
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+    let weekdays: string[] = [];
+    while (startDate <= endDate) {
+        if (startDate.getDay() !== 0 && startDate.getDay() !== 6) {
+            weekdays.push(startDate.toDateString());
+        }
+        startDate.setDate(startDate.getDate() + 1);
+    }
+    return weekdays;
+}
+

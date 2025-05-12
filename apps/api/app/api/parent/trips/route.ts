@@ -1,6 +1,6 @@
 // actions are create, view, history
 
-import { db } from '@repo/database'
+import { db, sql } from '@repo/database'
 import { Auth } from '@repo/handlers/auth'
 import { Notify } from '@repo/handlers/notify'
 import { z } from 'zod'
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
         }, { status: 400 })
     }
     const { action, student_id, ride_id, trip_id, date, schedule } = check.data
+    console.log(check.data)
     if (action === 'create') {
         // request new ride
         if (!schedule || !student_id) {
@@ -112,6 +113,7 @@ export async function POST(req: Request) {
                 'student.name',
                 'user.name',
                 'vehicle.vehicle_name',
+                'vehicle.registration_number',
                 'school.name',
                 'ride.schedule',
                 'ride.comments',
@@ -140,6 +142,7 @@ export async function POST(req: Request) {
                 'student.name',
                 'user.name as driver_name',
                 'vehicle.vehicle_name',
+                'vehicle.registration_number',
                 'school.name',
                 'daily_ride.start_time',
                 'daily_ride.end_time',
@@ -154,7 +157,11 @@ export async function POST(req: Request) {
         }, { status: 200 })
     }
     else if (action == 'today') {
-        // get today's rides
+        // get today's rides. Use format to get today's date
+        let today: any = formatDate(new Date())
+        if (date) {
+            today = formatDate(new Date(date))
+        }
         const rides = await db.selectFrom('daily_ride')
             .leftJoin('ride', 'daily_ride.ride_id', 'ride.id')
             .leftJoin('student', 'ride.student_id', 'student.id')
@@ -163,9 +170,10 @@ export async function POST(req: Request) {
             .leftJoin('school', 'ride.school_id', 'school.id')
             .select([
                 'daily_ride.id',
-                'student.name',
+                'student.name as passenger',
                 'user.name as driver_name',
                 'vehicle.vehicle_name',
+                'vehicle.registration_number',
                 'school.name',
                 'daily_ride.start_time',
                 'daily_ride.end_time',
@@ -173,7 +181,8 @@ export async function POST(req: Request) {
                 'daily_ride.status'
             ])
             .where('ride.parent_id', '=', payload.id)
-            .where('daily_ride.date', '=', new Date())
+            .where('daily_ride.date', '=', today)
+            .orderBy('daily_ride.start_time', 'asc')
             .execute()
         return Response.json({
             status: 'success',
@@ -243,4 +252,8 @@ export async function POST(req: Request) {
             location
         }, { status: 200 })
     }
+}
+
+function formatDate(date: Date) {
+    return new Date(date).toISOString().split('T')[0]
 }

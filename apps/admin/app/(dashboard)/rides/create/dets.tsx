@@ -158,14 +158,14 @@ export default function AssignRidePage({
             <CardContent className="space-y-4">
               {drivers.map((driver) => (
                 <div
-                  key={driver.id}
+                  key={driver.driver_id}
                   className={cn(
                     "border rounded-lg p-4 cursor-pointer transition-all",
-                    selectedDriver === driver.id
+                    selectedDriver === driver.driver_id
                       ? "border-primary bg-primary/5"
                       : "hover:border-primary/50"
                   )}
-                  onClick={() => handleDriverSelect(driver.id)}
+                  onClick={() => handleDriverSelect(driver.driver_id)}
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12">

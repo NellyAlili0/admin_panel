@@ -289,7 +289,7 @@ function InfoWindow({ driver, position, onClose }: InfoWindowProps) {
         </p>
         <button
           className="viewButton"
-          onClick={() => (window.location.href = `/driver/${driver.id}`)}
+          onClick={() => (window.location.href = `/drivers/${driver.email}`)}
         >
           View Details
         </button>

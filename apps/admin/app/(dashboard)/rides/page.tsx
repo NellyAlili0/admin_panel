@@ -78,7 +78,6 @@ export default async function Page() {
         cols={[
           "id",
           "status",
-          "created_at",
           "parent",
           "student",
           "admin_comments",

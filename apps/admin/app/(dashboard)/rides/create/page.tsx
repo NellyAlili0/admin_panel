@@ -7,6 +7,7 @@ export default async function Page() {
     let allDrivers = await db.selectFrom('user')
         .leftJoin('vehicle', 'user.id', 'vehicle.user_id')
         .select([
+            'user.id as driver_id',
             'user.name',
             'user.email',
             'user.phone_number',
