@@ -37,19 +37,8 @@ export class Notify {
         contents: { en: message },
         headings: { en: title },
         include_aliases: {
-          external_id: ["hi2@gmail.com"]
+          external_id: [email]
         },
-        // filters: [
-        //   {
-        //     field: "tag",
-        //     key: "email",
-        //     relation: "=",
-        //     value: "hi2@gmail.com"
-        //   }
-        // ]
-        // included_segments: [
-        //   "Subscribed Users"
-        // ],
       })
     };
     console.log(options)
