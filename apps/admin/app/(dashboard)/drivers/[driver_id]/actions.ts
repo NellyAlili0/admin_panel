@@ -59,6 +59,19 @@ export async function addVehicle(prevState: any, formData: FormData) {
         return { message: "Invalid data" }
     }
     const { driver_id, vehicle_name, registration_number, vehicle_type, vehicle_model, vehicle_year, seat_count, is_inspected, comments } = data.data
+    // make sure the registration number does not exist
+    // get email of driver
+    let driver = await db.selectFrom("user")
+        .select(["user.email"])
+        .where("user.id", "=", Number(driver_id))
+        .executeTakeFirst();
+    let vehicle = await db.selectFrom("vehicle")
+        .select(["id"])
+        .where("registration_number", "=", registration_number)
+        .executeTakeFirst();
+    if (vehicle) {
+        return { message: "Vehicle with this registration number already exists" }
+    }
     await db
         .insertInto("vehicle")
         .values({
@@ -75,5 +88,6 @@ export async function addVehicle(prevState: any, formData: FormData) {
             status: "Active",
         })
         .executeTakeFirst();
-    return redirect('vehicles/' + registration_number)
+    revalidatePath("/drivers/" + driver?.email)
+    return redirect('/vehicles/' + registration_number)
 }

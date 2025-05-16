@@ -77,6 +77,7 @@ export async function assignRide(formData: FormData) {
         .where('vehicle.user_id', '=', Number(driver_id))
         .executeTakeFirst();
     // assign ride
+    const weekdays = getWeekdaysBetweenDates(start_date, end_date);
     let ride = await db.insertInto('ride')
         .values({
             vehicle_id: Number(vehicle?.id),
@@ -97,7 +98,7 @@ export async function assignRide(formData: FormData) {
                     latitude: Number(dropoff_lat),
                     longitude: Number(dropoff_lng),
                 },
-                dates: [start_date, end_date],
+                dates: weekdays,
                 kind: type,
             }),
             comments,
@@ -105,35 +106,61 @@ export async function assignRide(formData: FormData) {
         })
         .returning('id')
         .executeTakeFirst();
-    // get all weekdays between start_date and end_date
-    const weekdays = getWeekdaysBetweenDates(start_date, end_date);
     // create daily ride for each weekday
     weekdays.forEach(async (weekday) => {
-        await db.insertInto('daily_ride')
-            .values({
+        // timestamps are in 12:13 format.
+        // create a new date and add that time to it
+        let pickupDate = new Date(weekday);
+        pickupDate.setHours(Number(pickup_time.split(':')[0]));
+        pickupDate.setMinutes(Number(pickup_time.split(':')[1]));
+        let dropoffDate = new Date(weekday);
+        dropoffDate.setHours(Number(dropoff_time.split(':')[0]));
+        dropoffDate.setMinutes(Number(dropoff_time.split(':')[1]));
+        let pick = await db.insertInto('daily_ride')
+            .values([{
                 ride_id: Number(ride?.id),
                 vehicle_id: Number(vehicle?.id),
                 driver_id: Number(driver_id),
                 kind: 'Pickup',
                 status: 'Inactive',
-                date: weekday,
-                start_time: pickup_time,
-                end_time: dropoff_time,
-            })
+                date: new Date(weekday).toISOString().slice(0, 10),
+                start_time: pickupDate.toISOString().slice(0, 19),
+                end_time: dropoffDate.toISOString().slice(0, 19),
+            }])
+            .returningAll()
+            .executeTakeFirst();
+        let drop = await db.insertInto('daily_ride')
+            .values([{
+                ride_id: Number(ride?.id),
+                vehicle_id: Number(vehicle?.id),
+                driver_id: Number(driver_id),
+                kind: 'Dropoff',
+                status: 'Inactive',
+                date: new Date(weekday).toISOString().slice(0, 10),
+                start_time: dropoffDate.toISOString().slice(0, 19),
+                end_time: dropoffDate.toISOString().slice(0, 19),
+            }])
+            .returningAll()
             .executeTakeFirst();
     })
     // send notification to driver and parent
-    const notify = new Notify();
-    await notify.sendSingle({
-        title: "New Ride Assigned",
-        message: `You have been assigned a new ride`,
-        email: driver?.email!
-    });
-    await notify.sendSingle({
-        title: "New Ride Assigned",
-        message: `Your child has been assigned a new ride`,
-        email: parent?.email!
-    });
+    // const notify = new Notify();
+    // await notify.sendSingle({
+    //     title: "New Ride Assigned",
+    //     message: `You have been assigned a new ride`,
+    //     email: driver?.email!
+    // });
+    // await notify.sendSingle({
+    //     title: "New Ride Assigned",
+    //     message: `Your child has been assigned a new ride`,
+    //     email: parent?.email!
+    // });
+    await db.updateTable('vehicle')
+        .set({
+            available_seats: vehicle?.available_seats! - 1
+        })
+        .where('id', '=', Number(vehicle?.id))
+        .executeTakeFirst();
     await db.insertInto('notification')
         .values({
             user_id: Number(student?.parent_id),
@@ -154,16 +181,18 @@ export async function assignRide(formData: FormData) {
             section: "Rides",
         })
         .executeTakeFirst();
+    // return { message: "Ride assigned successfully" }
     return redirect("/rides");
 
 }
 function getWeekdaysBetweenDates(start_date: string, end_date: string) {
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
+    // use format of YYYY-MM-DD
     let weekdays: string[] = [];
     while (startDate <= endDate) {
         if (startDate.getDay() !== 0 && startDate.getDay() !== 6) {
-            weekdays.push(startDate.toDateString());
+            weekdays.push(startDate.toISOString().slice(0, 10));
         }
         startDate.setDate(startDate.getDate() + 1);
     }

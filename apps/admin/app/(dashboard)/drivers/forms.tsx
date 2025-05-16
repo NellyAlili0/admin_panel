@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,15 @@ import { initialState } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const AddDriverForm = () => {
   const [state, action] = useActionState(addDriver, initialState);
+  useEffect(() => {
+    if (state.message) {
+      toast.error(state.message)
+    }
+  }, [state])
   return (
     <Dialog>
       <DialogTrigger asChild>

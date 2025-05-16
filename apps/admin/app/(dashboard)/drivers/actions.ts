@@ -4,6 +4,7 @@ import { zfd } from "zod-form-data";
 import { Auth } from "@repo/handlers/auth";
 import { db } from "@repo/database";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 // add driver
 
@@ -23,6 +24,15 @@ export async function addDriver(prevState: any, formData: FormData) {
     const { name, email, phone_number, password, neighborhood, county } = data.data
     let auth = new Auth()
     const hash = await auth.hash({ password: password })
+    // make sure email does not exist
+    let user = await db
+        .selectFrom("user")
+        .select(["id"])
+        .where("email", "=", email)
+        .executeTakeFirst();
+    if (user) {
+        return { message: "Email already exists" }
+    }
     await db
         .insertInto("user")
         .values({
@@ -33,7 +43,7 @@ export async function addDriver(prevState: any, formData: FormData) {
             kind: "Driver",
             status: "Active",
             wallet_balance: 0,
-            is_kyc_verified: true,
+            is_kyc_verified: false,
             meta: JSON.stringify({
                 neighborhood: neighborhood || "",
                 county: county || ""
@@ -41,5 +51,5 @@ export async function addDriver(prevState: any, formData: FormData) {
         })
         .executeTakeFirst();
     revalidatePath("/drivers");
-    return { message: "Driver added successfully" }
+    return redirect("/drivers");
 }

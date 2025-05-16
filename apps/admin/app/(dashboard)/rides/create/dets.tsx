@@ -39,6 +39,8 @@ import {
   CheckCheckIcon,
 } from "lucide-react";
 import { assignRide } from "./action";
+import MapPreview from "./mapPreview";
+import { toast } from "sonner";
 
 export default function AssignRidePage({
   drivers,
@@ -73,6 +75,7 @@ export default function AssignRidePage({
   const [type, setType] = useState("private");
   const [cost, setCost] = useState("1000");
   const [comments, setComments] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Calculate weekdays between two dates
   const getWeekdayCount = (from: Date | undefined, to: Date | undefined) => {
@@ -94,6 +97,7 @@ export default function AssignRidePage({
   };
 
   const handleAssignRide = async () => {
+    setLoading(true);
     let formData = new FormData();
     formData.append("driver_id", selectedDriver!);
     formData.append("student_id", selectedPassenger!);
@@ -112,9 +116,10 @@ export default function AssignRidePage({
     formData.append("comments", comments);
     const result = await assignRide(formData);
     if (result.message) {
-      alert(result.message)
+      toast(result.message);
     }
-  }
+    setLoading(false);
+  };
 
   // Function to handle driver selection
   const handleDriverSelect = (driverId: string) => {
@@ -186,7 +191,8 @@ export default function AssignRidePage({
                           <h3 className="font-medium">{driver.name}</h3>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <span className="flex items-center">
-                              {driver.vehicle_name} ({driver.registration_number})
+                              {driver.vehicle_name} (
+                              {driver.registration_number})
                             </span>
                           </div>
                         </div>
@@ -320,22 +326,33 @@ export default function AssignRidePage({
                         <Input
                           id="pickup-location"
                           placeholder="Enter address"
-                          onChange={(e) => setPickupDetails({ ...pickupDetails, location: e.target.value })}
+                          onChange={(e) =>
+                            setPickupDetails({
+                              ...pickupDetails,
+                              location: e.target.value,
+                            })
+                          }
                           defaultValue={pickupDetails.location}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="pickup-time">Pickup Time</Label>
-                        <div className="relative">
+                        <div className="">
                           <Input
                             id="pickup-time"
                             placeholder="Select time"
                             // type="datetime-local"
-                            type="time" required step="3600"
-                            onChange={(e) => setPickupDetails({ ...pickupDetails, time: e.target.value })}
+                            type="time"
+                            required
+                            step="3600"
+                            onChange={(e) =>
+                              setPickupDetails({
+                                ...pickupDetails,
+                                time: e.target.value,
+                              })
+                            }
                             defaultValue={pickupDetails.time}
                           />
-                          <Clock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -344,7 +361,12 @@ export default function AssignRidePage({
                           <Input
                             id="pickup-lat"
                             placeholder="e.g. -1.2921"
-                            onChange={(e) => setPickupDetails({ ...pickupDetails, lat: e.target.value })}
+                            onChange={(e) =>
+                              setPickupDetails({
+                                ...pickupDetails,
+                                lat: e.target.value,
+                              })
+                            }
                             defaultValue={pickupDetails.lat}
                           />
                         </div>
@@ -353,7 +375,12 @@ export default function AssignRidePage({
                           <Input
                             id="pickup-lng"
                             placeholder="e.g. 36.8219"
-                            onChange={(e) => setPickupDetails({ ...pickupDetails, lng: e.target.value })}
+                            onChange={(e) =>
+                              setPickupDetails({
+                                ...pickupDetails,
+                                lng: e.target.value,
+                              })
+                            }
                             defaultValue={pickupDetails.lng}
                           />
                         </div>
@@ -431,21 +458,32 @@ export default function AssignRidePage({
                         <Input
                           id="dropoff-location"
                           placeholder="Enter address"
-                          onChange={(e) => setDropoffDetails({ ...dropoffDetails, location: e.target.value })}
+                          onChange={(e) =>
+                            setDropoffDetails({
+                              ...dropoffDetails,
+                              location: e.target.value,
+                            })
+                          }
                           defaultValue={dropoffDetails.location}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="dropoff-time">Dropoff Time</Label>
-                        <div className="relative">
+                        <div className="">
                           <Input
                             id="dropoff-time"
                             placeholder="Select time"
-                            type="time" required step="3600"
-                            onChange={(e) => setDropoffDetails({ ...dropoffDetails, time: e.target.value })}
+                            type="time"
+                            required
+                            step="3600"
+                            onChange={(e) =>
+                              setDropoffDetails({
+                                ...dropoffDetails,
+                                time: e.target.value,
+                              })
+                            }
                             defaultValue={dropoffDetails.time}
                           />
-                          <Clock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -454,7 +492,12 @@ export default function AssignRidePage({
                           <Input
                             id="dropoff-lat"
                             placeholder="e.g. -1.2921"
-                            onChange={(e) => setDropoffDetails({ ...dropoffDetails, lat: e.target.value })}
+                            onChange={(e) =>
+                              setDropoffDetails({
+                                ...dropoffDetails,
+                                lat: e.target.value,
+                              })
+                            }
                             defaultValue={dropoffDetails.lat}
                           />
                         </div>
@@ -463,7 +506,12 @@ export default function AssignRidePage({
                           <Input
                             id="dropoff-lng"
                             placeholder="e.g. 36.8219"
-                            onChange={(e) => setDropoffDetails({ ...dropoffDetails, lng: e.target.value })}
+                            onChange={(e) =>
+                              setDropoffDetails({
+                                ...dropoffDetails,
+                                lng: e.target.value,
+                              })
+                            }
                             defaultValue={dropoffDetails.lng}
                           />
                         </div>
@@ -504,50 +552,44 @@ export default function AssignRidePage({
               </div>
 
               {/* Route Map */}
-              {pickupDetails.location && dropoffDetails.location && (
-                <div className="space-y-3 border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Route Map</h3>
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                        <span>Pickup</span>
-                      </div>
-                      <ArrowRight className="h-4 w-4" />
-                      <div className="flex items-center gap-1">
-                        <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                        <span>Dropoff</span>
+              {pickupDetails.lat &&
+                pickupDetails.lng &&
+                dropoffDetails.lat &&
+                dropoffDetails.lng && (
+                  <div className="space-y-3 border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">Route Map</h3>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                          <span>{pickupDetails.location}</span>
+                        </div>
+                        <ArrowRight className="h-4 w-4" />
+                        <div className="flex items-center gap-1">
+                          <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                          <span>{dropoffDetails.location}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="relative aspect-[16/9] w-full rounded-lg overflow-hidden border">
-                    {/* This would be replaced with an actual map component in a real application */}
-                    <div className="absolute inset-0 bg-slate-100 flex items-center justify-center">
-                      <div className="text-center">
-                        <MapIcon className="h-12 w-12 mx-auto text-slate-400" />
-                        <p className="mt-2 text-slate-500">
-                          Map showing route from pickup to dropoff
-                        </p>
-                        <p className="text-sm text-slate-400">
-                          Distance: {distance} km • Est. travel time: 15 min
-                        </p>
+                    <MapPreview
+                      pickup_lat={pickupDetails.lat}
+                      pickup_lng={pickupDetails.lng}
+                      dropoff_lat={dropoffDetails.lat}
+                      dropoff_lng={dropoffDetails.lng}
+                    />
+                    <div className="flex justify-between text-sm">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-green-500" />
+                        <span>{pickupDetails.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-red-500" />
+                        <span>{dropoffDetails.location}</span>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex justify-between text-sm">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4 text-green-500" />
-                      <span>{pickupDetails.location}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4 text-red-500" />
-                      <span>{dropoffDetails.location}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
 
               {/* Administrator Comment */}
               <div className="space-y-2">
@@ -695,7 +737,7 @@ export default function AssignRidePage({
 
       <div className="mt-6 flex justify-end gap-3">
         <Button variant="outline">Cancel</Button>
-        <Button onClick={handleAssignRide}>Assign Ride</Button>
+        <Button onClick={handleAssignRide} disabled={loading}>Assign Ride</Button>
       </div>
     </div>
   );

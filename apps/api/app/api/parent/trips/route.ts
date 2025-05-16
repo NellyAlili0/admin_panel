@@ -48,7 +48,6 @@ export async function POST(req: Request) {
         }, { status: 400 })
     }
     const { action, student_id, ride_id, trip_id, date, schedule } = check.data
-    console.log(check.data)
     if (action === 'create') {
         // request new ride
         if (!schedule || !student_id) {
@@ -172,6 +171,8 @@ export async function POST(req: Request) {
                 'daily_ride.id',
                 'student.name as passenger',
                 'user.name as driver_name',
+                'user.phone_number as driver_phone',
+                'daily_ride.kind',
                 'vehicle.vehicle_name',
                 'vehicle.registration_number',
                 'school.name',
@@ -202,6 +203,7 @@ export async function POST(req: Request) {
                 'ride.status as ride_status',
                 'student.name',
                 'user.name as driver_name',
+                'user.phone_number as driver_phone',
                 'vehicle.vehicle_name',
                 'school.name',
                 'daily_ride.start_time',

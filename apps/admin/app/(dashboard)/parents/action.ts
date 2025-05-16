@@ -33,7 +33,7 @@ export async function createParent(prevState: any, formData: FormData) {
             is_kyc_verified: true,
         })
         .executeTakeFirst();
-    revalidatePath("/parents");
+    revalidatePath("/parents/" + email);
     return { message: "Parent created successfully" }
 }
 
@@ -70,7 +70,7 @@ export async function sendNotification(prevState: any, formData: FormData) {
             section: "Other",
         })
         .executeTakeFirst();
-    revalidatePath("/parents");
+    revalidatePath("/parents/" + parent.email);
     return { message: "Notification sent successfully" }
 }
 

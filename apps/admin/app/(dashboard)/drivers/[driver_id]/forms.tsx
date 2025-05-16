@@ -9,12 +9,13 @@ import { useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 export function MarkVerifiedForm({ driver_id }: { driver_id: string }) {
     const [state, formAction] = useActionState(markVerified, initialState)
     useEffect(() => {
         if (state.message) {
-            console.log(state.message)
+            toast.error(state.message)
         }
     }, [state])
     return (
@@ -37,7 +38,7 @@ export function AddVehicleForm({ driver_id }: { driver_id: string }) {
     const [state, formAction] = useActionState(addVehicle, initialState)
     useEffect(() => {
         if (state.message) {
-            console.log(state.message)
+            toast.error(state.message)
         }
     }, [state])
     return (

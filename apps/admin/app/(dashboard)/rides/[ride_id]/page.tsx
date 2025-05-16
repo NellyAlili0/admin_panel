@@ -48,17 +48,17 @@ export default async function Page({ params }: { params: any }) {
     .where("daily_ride.status", "!=", "Inactive")
     .orderBy("daily_ride.date", "desc")
     .execute();
-  let mapping = new Mapping();
-  let route = await mapping.getRoute({
-    origin: {
-      latitude: ride.schedule?.pickup.latitude!,
-      longitude: ride.schedule?.pickup.longitude!,
-    },
-    destination: {
-      latitude: ride.schedule?.dropoff.latitude!,
-      longitude: ride.schedule?.dropoff.longitude!,
-    },
-  });
+  // let mapping = new Mapping();
+  // let route = await mapping.getRoute({
+  //   origin: {
+  //     latitude: ride.schedule?.pickup.latitude!,
+  //     longitude: ride.schedule?.pickup.longitude!,
+  //   },
+  //   destination: {
+  //     latitude: ride.schedule?.dropoff.latitude!,
+  //     longitude: ride.schedule?.dropoff.longitude!,
+  //   },
+  // });
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -85,7 +85,7 @@ export default async function Page({ params }: { params: any }) {
         driver={driver}
         guardian={guardian}
         tripHistory={tripHistory}
-        route={route}
+        // route={route}
       />
     </div>
   );

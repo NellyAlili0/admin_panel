@@ -31,12 +31,11 @@ import {
   User,
   CreditCard,
   FileText,
-  MapIcon,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import GenTable from "@/components/tables";
-import { GoogleMap, Polyline } from "@react-google-maps/api";
+import MapPreview from "../create/mapPreview";
 
 export function RideDetailsPage({
   details,
@@ -368,7 +367,7 @@ export function RideDetailsPage({
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{details.schedule.pickup.time}</span>
+                    <span>{details.schedule.pickup.start_time}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>
@@ -394,7 +393,7 @@ export function RideDetailsPage({
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{details.schedule.dropoff.time}</span>
+                    <span>{details.schedule.dropoff.start_time}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>
@@ -405,7 +404,7 @@ export function RideDetailsPage({
                 </div>
               </div>
 
-              {/* Route Summary */}
+              {/* Route Summary
               <div className="space-y-3 pt-4 border-t">
                 <h3 className="font-medium">Route Summary</h3>
                 <div className="space-y-2">
@@ -424,7 +423,7 @@ export function RideDetailsPage({
                     </span>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Map */}
@@ -445,8 +444,12 @@ export function RideDetailsPage({
               </div>
 
               <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden border">
-                {/* This would be replaced with an actual map component in a real application */}
-                
+                <MapPreview
+                  pickup_lat={details.schedule.pickup.latitude}
+                  pickup_lng={details.schedule.pickup.longitude}
+                  dropoff_lat={details.schedule.dropoff.latitude}
+                  dropoff_lng={details.schedule.dropoff.longitude}
+                />
               </div>
             </div>
           </div>

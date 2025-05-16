@@ -105,7 +105,7 @@ export default async function Page() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="col-span-2 h-[400px] w-full bg-gradient-to-br from-primary/50 to-secondary/50 flex items-center justify-center">
-          <DriverMap />
+          {/* <DriverMap /> */}
         </div>
         <div className="grid gap-4 grid-cols-2">
           <Card>
