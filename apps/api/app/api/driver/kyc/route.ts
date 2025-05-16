@@ -13,7 +13,7 @@ const kycSchema = z.object({
 
 export async function GET(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',

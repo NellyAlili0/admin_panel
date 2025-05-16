@@ -36,6 +36,7 @@ import { db } from "@repo/database";
 import Link from "next/link";
 import GenTable from "@/components/tables";
 import { AddVehicleForm, MarkVerifiedForm } from "./forms";
+import { SendNotificationForm } from "../../parents/forms";
 
 export default async function Page({ params }: { params: any }) {
   const { driver_id } = await params;
@@ -141,6 +142,7 @@ export default async function Page({ params }: { params: any }) {
         </div>
         {(vehicleInfo == null || vehicleInfo == undefined) && <AddVehicleForm driver_id={driverInfo.id!.toString()} />}
         {driverInfo.is_kyc_verified == false && <MarkVerifiedForm driver_id={driverInfo.id!.toString()} />}
+        <SendNotificationForm parent_id={driverInfo.id!.toString()} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Card className="lg:col-span-2">

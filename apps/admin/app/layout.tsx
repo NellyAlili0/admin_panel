@@ -14,7 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="antialiased relative">
+        <div className="absolute top-0 right-0 p-2 text-white bg-red-500">
+          Debug Environment
+        </div>
         <NextTopLoader color="yellow" height={3} />
         <Toaster position="top-right" richColors />
         {children}

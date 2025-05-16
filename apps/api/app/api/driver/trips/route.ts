@@ -16,7 +16,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
@@ -33,41 +33,48 @@ export async function POST(req: Request) {
     }
     const { action, trip_id, trips, ride_id, date } = check.data
     if (action === 'today') {
-        // get all trips for today
-        let date = new Date()
-        let today_trips = await db.selectFrom('daily_ride')
+        // get today's rides. Use format to get today's date
+        let today: any = formatDate(new Date())
+        if (date) {
+            today = formatDate(new Date(date))
+        }
+        const rides = await db.selectFrom('daily_ride')
             .leftJoin('ride', 'daily_ride.ride_id', 'ride.id')
-            .leftJoin('vehicle', 'daily_ride.vehicle_id', 'vehicle.id')
-            .leftJoin('user', 'ride.parent_id', 'user.id')
             .leftJoin('student', 'ride.student_id', 'student.id')
+            .leftJoin('user', 'daily_ride.driver_id', 'user.id')
+            .leftJoin('vehicle', 'daily_ride.vehicle_id', 'vehicle.id')
+            .leftJoin('school', 'ride.school_id', 'school.id')
             .select([
                 'daily_ride.id',
+                'student.name as passenger',
+                'user.name as driver_name',
+                'user.phone_number as driver_phone',
                 'daily_ride.kind',
+                'vehicle.vehicle_name',
+                'vehicle.registration_number',
+                'school.name',
                 'daily_ride.start_time',
                 'daily_ride.end_time',
-                'ride.comments',
-                'vehicle.registration_number',
-                'vehicle.vehicle_name',
-                'user.name as parent_name',
-                'user.phone_number as parent_phone_number',
-                'student.name as student_name',
-                'student.gender',
-                'student.profile_picture',
-                'ride.schedule',
+                'daily_ride.kind',
                 'daily_ride.status'
             ])
-            .where('daily_ride.date', '=', date)
             .where('daily_ride.driver_id', '=', payload.id)
+            .where('daily_ride.date', '=', today)
+            .orderBy('daily_ride.start_time', 'asc')
             .execute()
+        let pickup = rides.find((ride) => ride.kind === 'Pickup')
+        let dropoff = rides.find((ride) => ride.kind === 'Dropoff')
         return Response.json({
             status: 'success',
-            trips: today_trips
+            rides,
+            pickup,
+            dropoff
         }, { status: 200 })
     } else if (action === 'history') {
         let history_trips = await db.selectFrom('daily_ride')
             .leftJoin('ride', 'daily_ride.ride_id', 'ride.id')
             .leftJoin('vehicle', 'daily_ride.vehicle_id', 'vehicle.id')
-            .leftJoin('user', 'ride.parent_id', 'user.id')
+            .leftJoin('user', 'daily_ride.driver_id', 'user.id')
             .leftJoin('student', 'ride.student_id', 'student.id')
             .select([
                 'daily_ride.id',
@@ -98,7 +105,7 @@ export async function POST(req: Request) {
         let trip_details = await db.selectFrom('daily_ride')
             .leftJoin('ride', 'daily_ride.ride_id', 'ride.id')
             .leftJoin('vehicle', 'daily_ride.vehicle_id', 'vehicle.id')
-            .leftJoin('user', 'ride.parent_id', 'user.id')
+            .leftJoin('user', 'daily_ride.driver_id', 'user.id')
             .leftJoin('student', 'ride.student_id', 'student.id')
             .select([
                 'daily_ride.id',
@@ -238,4 +245,9 @@ async function getParentEmailByTripId(trip_id: number) {
             }
         }
     }
+}
+
+
+function formatDate(date: Date) {
+    return new Date(date).toISOString().split('T')[0]
 }

@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 export async function GET(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
@@ -38,7 +38,7 @@ const payoutSchema = z.object({
 
 export async function POST(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',

@@ -11,13 +11,13 @@ const vehicleSchema = z.object({
     vehicle_year: z.number(),
     vehicle_image_url: z.string().optional(),
     seat_count: z.number(),
-    vehicle_registration: z.string(),
-    insurance_certificate: z.string(),
+    vehicle_registration: z.string().optional(),
+    insurance_certificate: z.string().optional(),
 })
 
 export async function POST(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
@@ -67,8 +67,8 @@ export async function POST(req: Request) {
             seat_count: seat_count,
             available_seats: seat_count,
             is_inspected: false,
-            vehicle_registration,
-            insurance_certificate,
+            vehicle_registration: vehicle_registration || null,
+            insurance_certificate: insurance_certificate || null,
             comments: null,
             status: 'Inactive'
         })
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
@@ -93,5 +93,6 @@ export async function GET(req: Request) {
         .executeTakeFirst()
     return Response.json({
         status: 'success',
+        vehicle
     }, { status: 200 })
 }

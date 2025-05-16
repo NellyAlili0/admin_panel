@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { School } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function CreateParent() {
   const [state, formAction] = useActionState(createParent, initialState);
@@ -60,6 +62,11 @@ export function CreateParent() {
 
 export function SendNotificationForm({ parent_id }: { parent_id: string }) {
   const [state, formAction] = useActionState(sendNotification, initialState);
+  useEffect(() => {
+    if (state.message) {
+      toast.error(state.message)
+    }
+  }, [state])
   return (
     <Dialog>
       <DialogTrigger asChild>

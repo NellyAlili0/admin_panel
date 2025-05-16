@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 export async function GET(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
@@ -32,12 +32,12 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
             message: 'Unauthorized'
-        }, { status: 401 })
+        }, { status: 401 }) 
     }
     await db.updateTable('notification')
         .set({
@@ -60,7 +60,7 @@ const notificationSettingsSchema = z.object({
 
 export async function POST(req: Request) {
     const auth = new Auth()
-    const { payload } = auth.checkApiToken({ req })
+    const payload = auth.checkApiToken({ req })
     if (!payload) {
         return Response.json({
             status: 'error',
