@@ -467,7 +467,7 @@ export function RideDetailsPage({
         <CardContent>
           <GenTable
             title="Trip History"
-            cols={["id", "passenger", "started", "ended", "status"]}
+            cols={["passenger", "kind", "start_time", "end_time", "status"]}
             data={tripHistory}
             baseLink="/rides/"
             uniqueKey=""

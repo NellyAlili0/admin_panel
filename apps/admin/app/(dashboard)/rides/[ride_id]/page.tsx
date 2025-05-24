@@ -45,7 +45,6 @@ export default async function Page({ params }: { params: any }) {
       "daily_ride.kind",
     ])
     .where("daily_ride.ride_id", "=", ride.id)
-    .where("daily_ride.status", "!=", "Inactive")
     .orderBy("daily_ride.date", "desc")
     .execute();
   // let mapping = new Mapping();

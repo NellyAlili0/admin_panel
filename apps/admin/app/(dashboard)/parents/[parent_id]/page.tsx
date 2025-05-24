@@ -234,7 +234,7 @@ export default async function Page({ params }: { params: any }) {
               <div className="rounded-md border">
                 <GenTable
                   title="Assigned Rides"
-                  cols={["id", "status", "created_at", "passenger"]}
+                  cols={["id", "status", "passenger"]}
                   data={assignedRides}
                   baseLink="/rides/"
                   uniqueKey="id"
@@ -245,7 +245,7 @@ export default async function Page({ params }: { params: any }) {
               <div className="rounded-md border">
                 <GenTable
                   title="Notifications"
-                  cols={["id", "title", "message", "created_at"]}
+                  cols={["id", "title", "message"]}
                   data={notifications}
                   baseLink={`/parents/${parent_id}`}
                   uniqueKey=""

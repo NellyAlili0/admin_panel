@@ -11,7 +11,6 @@ export default async function Page() {
         'vehicle.vehicle_type as Type',
         'vehicle.vehicle_model as Model',
         'vehicle.available_seats as Available Seats',
-        'vehicle.created_at',
         'vehicle.status',
         'user.name as Driver',
     ]).execute();
@@ -36,7 +35,6 @@ export default async function Page() {
         'Type',
         'Model',
         'Available Seats',
-        'created_at',
         'status',
       ]} data={vehicles} baseLink="/vehicles/" uniqueKey="Plate" />
     </div>

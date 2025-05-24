@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { zfd } from "zod-form-data";
 import { Notify } from "@repo/handlers/notify";
 import { redirect } from "next/navigation";
+import { Auth } from "@repo/handlers/auth";
 
 const markVerifiedSchema = zfd.formData({
     driver_id: zfd.text(),
@@ -58,9 +59,11 @@ export async function addVehicle(prevState: any, formData: FormData) {
     if (!data.success) {
         return { message: "Invalid data" }
     }
-    const { driver_id, vehicle_name, registration_number, vehicle_type, vehicle_model, vehicle_year, seat_count, is_inspected, comments } = data.data
+    let { driver_id, vehicle_name, registration_number, vehicle_type, vehicle_model, vehicle_year, seat_count, is_inspected, comments } = data.data
     // make sure the registration number does not exist
     // get email of driver
+    // remove spacing fomr registration number
+    registration_number = registration_number.replace(" ", "");
     let driver = await db.selectFrom("user")
         .select(["user.email"])
         .where("user.id", "=", Number(driver_id))
@@ -90,4 +93,71 @@ export async function addVehicle(prevState: any, formData: FormData) {
         .executeTakeFirst();
     revalidatePath("/drivers/" + driver?.email)
     return redirect('/vehicles/' + registration_number)
+}
+
+
+export async function deleteVehicle(prevState: any, formData: FormData) {
+    const data = zfd.formData({
+        vehicle_id: zfd.text(),
+    }).safeParse(formData)
+    if (!data.success) {
+        return { message: "Invalid vehicle id" }
+    }
+    const { vehicle_id } = data.data
+    await db
+        .deleteFrom("vehicle")
+        .where("id", "=", Number(vehicle_id))
+        .executeTakeFirst();
+    return { message: "Vehicle deleted successfully" }
+}
+
+
+export async function editDriver(prevState: any, formData: FormData) {
+    const data = zfd.formData({
+        driver_id: zfd.text(),
+        name: zfd.text(),
+        email: zfd.text(),
+        phone_number: zfd.text(),
+        neighborhood: zfd.text(),
+        county: zfd.text(),
+    }).safeParse(formData)
+    if (!data.success) {
+        return { message: "Invalid data" }
+    }
+    const { driver_id, name, email, phone_number, neighborhood, county } = data.data
+    await db
+        .updateTable("user")
+        .set({
+            name: name,
+            email: email,
+            phone_number: phone_number,
+            meta: JSON.stringify({
+                neighborhood: neighborhood,
+                county: county
+            })
+        })
+        .where("id", "=", Number(driver_id))
+        .executeTakeFirst();
+    return { message: "Driver updated successfully" }
+}
+
+export async function changePassword(prevState: any, formData: FormData) {
+    const data = zfd.formData({
+        driver_id: zfd.text(),
+        password: zfd.text(),
+    }).safeParse(formData)
+    if (!data.success) {
+        return { message: "Invalid data" }
+    }
+    const { driver_id, password } = data.data
+    let auth = new Auth()
+    const hash = await auth.hash({ password: password })
+    await db
+        .updateTable("user")
+        .set({
+            password: hash,
+        })
+        .where("id", "=", Number(driver_id))
+        .executeTakeFirst();
+    return { message: "Password changed successfully" }
 }

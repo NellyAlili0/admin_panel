@@ -129,7 +129,7 @@ export default function MapPreview({
   }, [map, directionsRenderer, startLocation, endLocation]);
 
   return (
-    <div className="relative aspect-[16/9] w-full h-full rounded-lg overflow-hidden border">
+    <div className="relative h-[400px] w-full rounded-lg overflow-hidden border">
       {error ? (
         <div className="text-red-500">{error}</div>
       ) : (
@@ -140,7 +140,7 @@ export default function MapPreview({
               "w-full rounded-lg border border-gray-300",
               "shadow-lg"
             )}
-            style={{ minHeight: "300px" }} // Ensure map has a minimum height
+            style={{ height: "260px" }} // Ensure map has a minimum height
           >
             {/* Map will be rendered here */}
           </div>

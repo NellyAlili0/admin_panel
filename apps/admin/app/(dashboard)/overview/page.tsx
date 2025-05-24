@@ -10,39 +10,30 @@ import { db, sql } from "@repo/database";
 import { VehicleCard } from "@/components/vehicle-card";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
-import DriverMap from "./map";
 
 export default async function Page() {
   let metrics: any = await sql`SELECT 
     (SELECT COUNT(*) FROM public."vehicle") as total_vehicles,
     (SELECT COUNT(*) FROM public."user" WHERE "kind" = 'Driver') as total_drivers,
     (SELECT COUNT(*) FROM public."user" WHERE "kind" = 'Parent') as total_parents,
-    (SELECT COUNT(*) FROM public."ride" WHERE "status" != 'Cancelled') as total_rides,
-    (SELECT COUNT(*) FROM public."school") as total_schools,
-    (SELECT COUNT(*) FROM public."student") as total_students,
-    (SELECT SUM(wallet_balance) FROM public."user" WHERE "kind" = 'Driver') as total_deposits,
-    (SELECT SUM(amount) FROM public."payment" WHERE "kind" = 'Withdrawal') as total_withdraws
+    (SELECT COUNT(*) FROM public."ride" WHERE "status" != 'Cancelled') as total_rides
     `.execute(db);
   let totalVehicles = metrics.rows[0].total_vehicles;
   let totalDrivers = metrics.rows[0].total_drivers;
   let totalParents = metrics.rows[0].total_parents;
   let totalRides = metrics.rows[0].total_rides;
-  let totalSchools = metrics.rows[0].total_schools;
-  let totalStudents = metrics.rows[0].total_students;
-  let totalDeposits = metrics.rows[0].total_deposits;
-  let totalWithdraws = metrics.rows[0].total_withdraws;
 
   let requested = await db
     .selectFrom("ride")
     .leftJoin("user", "ride.parent_id", "user.id")
-    .select(["ride.id", "user.name", "user.phone_number", "ride.created_at"])
+    .select(["ride.id", "user.name", "user.phone_number"])
     .where("ride.status", "=", "Requested")
     .execute();
 
   let kycRequests = await db
     .selectFrom("kyc")
     .leftJoin("user", "kyc.user_id", "user.id")
-    .select(["kyc.id", "user.name", "kyc.created_at", "user.email"])
+    .select(["kyc.id", "user.name", "user.email", "kyc.is_verified"])
     .where("kyc.is_verified", "=", false)
     .execute();
 
@@ -103,50 +94,6 @@ export default async function Page() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="col-span-2 h-[400px] w-full bg-gradient-to-br from-primary/50 to-secondary/50 flex items-center justify-center">
-          {/* <DriverMap /> */}
-        </div>
-        <div className="grid gap-4 grid-cols-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Schools</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalSchools}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalStudents}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Driver Balance</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalDeposits}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Withdrawals</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalWithdraws}</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader>
@@ -156,7 +103,7 @@ export default async function Page() {
           <CardContent>
             <GenTable
               title="Requested Rides"
-              cols={["id", "name", "phone_number", "created_at"]}
+              cols={["id", "name", "phone_number"]}
               data={requested}
               baseLink="/rides/"
               uniqueKey="id"
@@ -171,7 +118,7 @@ export default async function Page() {
           <CardContent>
             <GenTable
               title="Requests"
-              cols={["id", "name", "email", "created_at"]}
+              cols={["id", "name", "email", "verified"]}
               data={kycRequests}
               baseLink="/drivers/"
               uniqueKey="email"

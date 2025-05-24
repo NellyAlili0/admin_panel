@@ -213,7 +213,7 @@ export default async function Page({ params }: { params: any }) {
               <div className="rounded-md border">
                 <GenTable
                   title="Trip History"
-                  cols={["id", "passenger", "started", "ended", "status"]}
+                  cols={["id", "passenger", "start_time", "end_time", "status"]}
                   data={tripHistory}
                   baseLink="/rides/trip/"
                   uniqueKey="id"

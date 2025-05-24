@@ -14,7 +14,6 @@ export default async function Page() {
       "user.email",
       "user.phone_number as phone",
       "user.wallet_balance as balance",
-      "user.created_at",
       'is_kyc_verified as verified'
     ])
     .where("user.kind", "=", "Driver")
@@ -22,7 +21,7 @@ export default async function Page() {
   let kycRequests = await db
     .selectFrom("kyc")
     .leftJoin("user", "kyc.user_id", "user.id")
-    .select(["kyc.id", "user.name", "user.email", "kyc.created_at"])
+    .select(["kyc.id", "user.name", "user.email", "kyc.is_verified"])
     .where("kyc.is_verified", "=", false)
     .execute();
   return (
@@ -44,14 +43,14 @@ export default async function Page() {
       </div>
       <GenTable
         title="All Drivers"
-        cols={["id", "name", "email", "phone", "balance", "created_at", "verified"]}
+        cols={["id", "name", "email", "phone", "balance", "verified"]}
         data={allDrivers}
         baseLink="/drivers/"
         uniqueKey="email"
       />
       <GenTable
         title="KYC Requests"
-        cols={["id", "name", "email", "created_at"]}
+        cols={["id", "name", "email", "verified"]}
         data={kycRequests}
         baseLink="/drivers/kyc/"
         uniqueKey="id"

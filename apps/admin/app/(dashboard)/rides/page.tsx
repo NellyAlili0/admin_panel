@@ -80,7 +80,6 @@ export default async function Page() {
           "status",
           "parent",
           "student",
-          "admin_comments",
         ]}
         data={all_rides}
         baseLink="/rides/"
@@ -98,7 +97,6 @@ export default async function Page() {
               cols={[
                 "id",
                 "status",
-                "created_at",
                 "parent",
                 "student",
               ]}
@@ -119,7 +117,6 @@ export default async function Page() {
               cols={[
                 "id",
                 "status",
-                "created_at",
                 "parent",
                 "student",
               ]}

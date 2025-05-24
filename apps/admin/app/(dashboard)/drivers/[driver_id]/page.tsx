@@ -35,7 +35,12 @@ import {
 import { db } from "@repo/database";
 import Link from "next/link";
 import GenTable from "@/components/tables";
-import { AddVehicleForm, MarkVerifiedForm } from "./forms";
+import {
+  AddVehicleForm,
+  ChangePasswordForm,
+  EditDriverForm,
+  MarkVerifiedForm,
+} from "./forms";
 import { SendNotificationForm } from "../../parents/forms";
 
 export default async function Page({ params }: { params: any }) {
@@ -140,9 +145,17 @@ export default async function Page({ params }: { params: any }) {
           </h1>
           <p className="text-muted-foreground"> {driverInfo.name} </p>
         </div>
-        {(vehicleInfo == null || vehicleInfo == undefined) && <AddVehicleForm driver_id={driverInfo.id!.toString()} />}
-        {driverInfo.is_kyc_verified == false && <MarkVerifiedForm driver_id={driverInfo.id!.toString()} />}
-        <SendNotificationForm parent_id={driverInfo.id!.toString()} />
+        <div className="flex gap-2">
+          {(vehicleInfo == null || vehicleInfo == undefined) && (
+            <AddVehicleForm driver_id={driverInfo.id!.toString()} />
+          )}
+          {driverInfo.is_kyc_verified == false && (
+            <MarkVerifiedForm driver_id={driverInfo.id!.toString()} />
+          )}
+          <SendNotificationForm parent_id={driverInfo.id!.toString()} />
+          <EditDriverForm driver={driverInfo} />
+          <ChangePasswordForm driver={driverInfo} />
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Card className="lg:col-span-2">

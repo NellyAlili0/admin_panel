@@ -46,18 +46,18 @@ export function Navbar() {
       icon: BusFrontIcon,
       active: pathname === "/rides" || pathname.startsWith("/rides/"),
     },
-    {
-      href: "/schools",
-      label: "Schools",
-      icon: SchoolIcon,
-      active: pathname === "/schools" || pathname.startsWith("/schools/"),
-    },
-    {
-      href: "/finance",
-      label: "Finance",
-      icon: WalletIcon,
-      active: pathname === "/finance" || pathname.startsWith("/finance/"),
-    },
+    // {
+    //   href: "/schools",
+    //   label: "Schools",
+    //   icon: SchoolIcon,
+    //   active: pathname === "/schools" || pathname.startsWith("/schools/"),
+    // },
+    // {
+    //   href: "/finance",
+    //   label: "Finance",
+    //   icon: WalletIcon,
+    //   active: pathname === "/finance" || pathname.startsWith("/finance/"),
+    // },
     {
       href: "/vehicles",
       label: "Vehicles",

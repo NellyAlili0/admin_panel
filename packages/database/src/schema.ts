@@ -171,7 +171,12 @@ export interface DailyRideTable {
     start_time: ColumnType<Date, string | undefined, never>
     end_time: ColumnType<Date, string | undefined, never>
     comments: string | null
-    meta: JSONColumnType<{}> | null
+    meta: JSONColumnType<{
+        notifications: {
+            point_five_km: boolean,
+            one_km: boolean
+        }
+    }> | null
     created_at: ColumnType<Date, string | undefined, never>
     updated_at: ColumnType<Date, string | undefined, never>
     status: 'Active' | 'Inactive' | 'Started' | 'Finished'

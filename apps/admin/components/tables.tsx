@@ -50,62 +50,56 @@ export default function GenTable({ title, cols, data, baseLink, uniqueKey }) {
             temp['sortable'] = false;
             temp['cell'] = row => <span className="text-primary underline"> {row['id']} </span>
         }
-        if (element == 'created_at') {
-            temp['cell'] = row => <span> {(row['created_at'] as Date).toLocaleDateString()} </span>
+        if (element == 'created_at' || element == 'date' || element == 'start_time' || element == 'end_time') {
+            try {
+                temp['cell'] = row => <span> {(row[element] as Date).toLocaleString()} </span>
+            } catch (error) {
+                temp['cell'] = row => <span> {row[element]} </span>
+            }
             temp['hide'] = 'sm'
             temp['sortable'] = true
         }
-        if (element == 'amount') {
-            temp['cell'] = row =>
-                <span className={cn("font-semibold", row['kind'] == 'Withdrawal' ? "text-red-500" : "text-green-500")}>
-                    {row['kind'] == 'Withdrawal' ? "-" : "+"} {commas(Number(row[element]))} {row['currency']}
-                </span>
-        }
-        if (element == 'fees') {
-            temp['cell'] = row => <span className="font-semibold"> {commas(Number(row['total_fees']))} </span>
-            temp['hide'] = 'sm'
-        }
         columns.push(temp)
     }
-    const [filterText, setFilterText] = React.useState('');
+    // const [filterText, setFilterText] = React.useState('');
     const [resetPaginationToggle, setResetPaginationToggle] = React.useState(false);
-    const filteredItems = data.filter(
-        item => item.id && item.id.toString().toLowerCase().includes(filterText.toLowerCase()),
-    );
-    const FilterComponent = ({ filterText, onFilter, onClear, onExport, title }) => (
-        <div className="flex gap-2 w-full items-center justify-between">
-            <h1 className="font-semibold"> {title} </h1>
-            <div className="flex gap-1 items-center">
-                <div className="flex gap-1">
-                    <Input
-                        id="search"
-                        type="text"
-                        placeholder="Search"
-                        aria-label="Search Input"
-                        className="w-full"
-                        defaultValue={filterText}
-                        onChange={onFilter}
-                    />
-                    <Button size="icon" type="button" variant={"ghost"} onClick={onClear}>
-                        <XCircleIcon className="text-red-500 h-4 w-4" />
-                    </Button>
-                </div>
-                {/* <Export onExport={onExport} /> */}
-            </div>
-        </div>
-    );
-    const subHeaderComponentMemo = React.useMemo(() => {
-        const handleClear = () => {
-            if (filterText) {
-                setResetPaginationToggle(!resetPaginationToggle);
-                setFilterText('');
-            }
-        };
+    // const filteredItems = data.filter(
+    //     item => item.id && item.id.toString().toLowerCase().includes(filterText.toLowerCase()),
+    // );
+    // const FilterComponent = ({ filterText, onFilter, onClear, onExport, title }) => (
+    //     <div className="flex gap-2 w-full items-center justify-between">
+    //         <h1 className="font-semibold"> {title} </h1>
+    //         <div className="flex gap-1 items-center">
+    //             <div className="flex gap-1">
+    //                 <Input
+    //                     id="search"
+    //                     type="text"
+    //                     placeholder="Search"
+    //                     aria-label="Search Input"
+    //                     className="w-full"
+    //                     defaultValue={filterText}
+    //                     onChange={onFilter}
+    //                 />
+    //                 <Button size="icon" type="button" variant={"ghost"} onClick={onClear}>
+    //                     <XCircleIcon className="text-red-500 h-4 w-4" />
+    //                 </Button>
+    //             </div>
+    //             {/* <Export onExport={onExport} /> */}
+    //         </div>
+    //     </div>
+    // );
+    // const subHeaderComponentMemo = React.useMemo(() => {
+    //     const handleClear = () => {
+    //         if (filterText) {
+    //             setResetPaginationToggle(!resetPaginationToggle);
+    //             setFilterText('');
+    //         }
+    //     };
 
-        return (
-            <FilterComponent onFilter={e => setFilterText(e.target.value)} onClear={handleClear} title={title} filterText={filterText} onExport={() => downloadCSV(filterText != '' ? filteredItems : data)} />
-        );
-    }, [filterText, resetPaginationToggle]);
+    //     return (
+    //         <FilterComponent onFilter={e => setFilterText(e.target.value)} onClear={handleClear} title={title} filterText={filterText} onExport={() => downloadCSV(filterText != '' ? filteredItems : data)} />
+    //     );
+    // }, [filterText, resetPaginationToggle]);
     const customStyles = {
         rows: {
             style: {
@@ -115,18 +109,20 @@ export default function GenTable({ title, cols, data, baseLink, uniqueKey }) {
     };
     // const actionsMemo = React.useMemo(() => <Export onExport={() => downloadCSV(data)} />, []);
 
-    return (<DataTable columns={columns} data={filterText != '' ? filteredItems : data}
+    return (<DataTable columns={columns} data={data}
         pagination
         highlightOnHover={true}
         pointerOnHover={true}
         onRowClicked={(row: any) => {
-            router.push(baseLink + row[uniqueKey]);
+            if (uniqueKey != "") {
+                router.push(baseLink + row[uniqueKey]);
+            }
         }}
         dense
         customStyles={customStyles}
         paginationResetDefaultPage={resetPaginationToggle}
         subHeader
-        subHeaderComponent={subHeaderComponentMemo}
+        // subHeaderComponent={subHeaderComponentMemo}
         // selectableRows
         persistTableHead
         progressPending={pending}
