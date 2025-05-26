@@ -121,6 +121,7 @@ const RealTimeDriverMap = ({
     pickupLocations,
     finalDestination,
     initialDriverLocation,
+    daily_ride_id,
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -138,7 +139,15 @@ const RealTimeDriverMap = ({
   const [showRecenterButton, setShowRecenterButton] = useState(false);
   // Simulate driver movement
   const fetchCordinates = async () => {
-    const response = await fetch("/api/location");
+    const response = await fetch("/api/location", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        daily_ride_id: daily_ride_id,
+      }),
+    });
     const data = await response.json();
     return data;
   };

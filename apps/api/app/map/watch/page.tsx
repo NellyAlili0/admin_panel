@@ -1,17 +1,44 @@
 import { db } from "@repo/database";
-import MapWatch from "./details";
 import RealTimeDriverMap from "./watch";
 
-export default async function Page({ params }: { params: any }) {
-  const { id } = await params;
+export default async function Page({ searchParams }: { searchParams: any }) {
+  // const { id } = await params;
+  const {kind, email} = await searchParams;
+  console.log(kind, email)
   const apiKey = process.env.GOOGLE_MAPS_KEY;
   // check ride
-
-  let daily_ride = await db
-    .selectFrom("daily_ride")
-    .selectAll()
-    .where("id", "=", id)
-    .executeTakeFirst();
+  let user = await db.selectFrom('user')
+    .select([
+      'user.id',
+      'user.email'
+    ])
+    .where('user.email', '=', email)
+    .executeTakeFirst()
+  let daily_ride;
+  if (kind == 'parent') {
+    daily_ride = await db.selectFrom('daily_ride')
+    .leftJoin('ride', 'daily_ride.ride_id', 'ride.id')
+    .select([
+      'daily_ride.id',
+      'daily_ride.ride_id',
+      'daily_ride.driver_id'
+    ])
+    .where('ride.parent_id', '=', user?.id!)
+    .executeTakeFirst()
+  }
+  else if (kind == 'driver') {
+    daily_ride = await db.selectFrom('daily_ride')
+    .leftJoin('user', 'daily_ride.driver_id', 'user.id')
+    .select([
+      'daily_ride.id',
+      'daily_ride.ride_id',
+      'daily_ride.driver_id'
+    ])
+    .where('daily_ride.driver_id', '=', user?.id!)
+    .executeTakeFirst()
+    console.log(user)
+  }
+  console.log(daily_ride)
   if (!daily_ride) {
     return <div>Ride not found</div>;
   }
@@ -32,7 +59,7 @@ export default async function Page({ params }: { params: any }) {
   let driver = await db
     .selectFrom("location")
     .select(["latitude", "longitude"])
-    .where("daily_ride_id", "=", id)
+    .where("daily_ride_id", "=", daily_ride.id)
     .executeTakeFirst();
 
   if (!driver) {
@@ -49,6 +76,7 @@ export default async function Page({ params }: { params: any }) {
         pickupLocations={[pickup]}
         finalDestination={dropoff}
         initialDriverLocation={initialDriverLocation}
+        daily_ride_id={daily_ride.id}
       />
     </div>
   );
