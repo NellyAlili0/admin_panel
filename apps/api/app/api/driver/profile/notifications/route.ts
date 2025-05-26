@@ -21,7 +21,7 @@ export async function GET(req: Request) {
             'created_at',
         ])
         .where('user_id', '=', payload.id)
-        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
         .limit(50)
         .execute()
     return Response.json({

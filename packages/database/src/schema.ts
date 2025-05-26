@@ -167,9 +167,9 @@ export interface DailyRideTable {
     vehicle_id: number
     driver_id: number | null
     kind: 'Pickup' | 'Dropoff'
-    date: ColumnType<Date, string | undefined, never>
-    start_time: ColumnType<Date, string | undefined, never>
-    end_time: ColumnType<Date, string | undefined, never>
+    date: ColumnType<Date, string | undefined>
+    start_time: ColumnType<Date, string | undefined>
+    end_time: ColumnType<Date, string | undefined>
     comments: string | null
     meta: JSONColumnType<{
         notifications: {

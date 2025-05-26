@@ -62,8 +62,8 @@ export async function POST(req: Request) {
             .where('daily_ride.date', '=', today)
             .orderBy('daily_ride.start_time', 'asc')
             .execute()
-        let pickup = rides.find((ride) => ride.kind === 'Pickup')
-        let dropoff = rides.find((ride) => ride.kind === 'Dropoff')
+        let pickup = rides.filter((ride) => ride.kind === 'Pickup')
+        let dropoff = rides.filter((ride) => ride.kind === 'Dropoff')
         return Response.json({
             status: 'success',
             rides,

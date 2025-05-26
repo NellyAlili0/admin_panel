@@ -37,6 +37,9 @@ export function MarkVerifiedForm({ driver_id }: { driver_id: string }) {
   }, [state]);
   return (
     <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="default">Mark as Verified</Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Mark Driver as Verified</DialogTitle>
