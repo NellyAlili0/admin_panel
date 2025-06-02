@@ -24,6 +24,7 @@ export default async function Page({ searchParams }: { searchParams: any }) {
       'daily_ride.driver_id'
     ])
     .where('ride.parent_id', '=', user?.id!)
+    .where('daily_ride.status', '=', 'Active')
     .executeTakeFirst()
   }
   else if (kind == 'driver') {
@@ -35,6 +36,7 @@ export default async function Page({ searchParams }: { searchParams: any }) {
       'daily_ride.driver_id'
     ])
     .where('daily_ride.driver_id', '=', user?.id!)
+    .where('daily_ride.status', '=', 'Active')
     .executeTakeFirst()
     console.log(user)
   }
