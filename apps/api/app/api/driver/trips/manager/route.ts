@@ -1,5 +1,6 @@
 import { db, sql } from '@repo/database'
 import { Auth } from '@repo/handlers/auth'
+import { Mapping } from '@repo/handlers/mapping'
 import { Notify } from '@repo/handlers/notify'
 import { z } from 'zod'
 
@@ -10,7 +11,8 @@ const schema = z.object({
     trip_id: z.number().optional(),
     trips: z.array(z.number()).optional(),
     ride_id: z.string().optional(),
-    date: z.string().optional()
+    date: z.string().optional(),
+    ride_update: z.enum(['embark', 'complete']).optional()
 })
 
 export async function POST(req: Request) {
@@ -30,7 +32,7 @@ export async function POST(req: Request) {
             message: 'Invalid data'
         }, { status: 400 })
     }
-    const { action, trip_id, trips, ride_id, date, kind, student_id } = check.data
+    const { action, trip_id, trips, ride_id, date, kind, student_id, ride_update } = check.data
     let today: any = formatDate(new Date())
     const rides = await db.selectFrom('daily_ride')
         .leftJoin('ride', 'daily_ride.ride_id', 'ride.id')
@@ -52,7 +54,8 @@ export async function POST(req: Request) {
             'daily_ride.start_time',
             'daily_ride.end_time',
             'daily_ride.kind',
-            'daily_ride.status'
+            'daily_ride.status',
+            'daily_ride.meta as daily_ride_meta'
         ])
         .where('daily_ride.driver_id', '=', payload.id)
         .where('daily_ride.date', '=', today)
@@ -180,8 +183,17 @@ export async function POST(req: Request) {
         // return students info
         let students: any = [];
         for (let trip of kind === 'pickup' ? pickup : dropoff) {
+            let cordinates = await db.selectFrom('location')
+                .select([
+                    'latitude',
+                    'longitude',
+                ])
+                .where('location.daily_ride_id', '=', trip.id)
+                .orderBy('location.id', 'desc')
+                .executeTakeFirst();
             let student: any = await db.selectFrom('student')
                 .leftJoin('user', 'student.parent_id', 'user.id')
+                .leftJoin('ride', 'student.id', 'ride.student_id')
                 .select([
                     'student.id',
                     'student.name',
@@ -189,11 +201,26 @@ export async function POST(req: Request) {
                     'student.profile_picture',
                     'user.name as parent_name',
                     'user.email',
-                    'user.phone_number as parent_phone'
+                    'ride.schedule'
                 ])
                 .where('student.id', '=', trip.passenger_id)
                 .executeTakeFirst()
             student['status'] = trip.status
+            if (trip.status == 'Active' && cordinates) {
+                // try calculating the distance away
+                let meta = student.schedule
+                let pickupMeta = meta.pickup
+                // pickup: {
+                //     start_time: string
+                //     location: string
+                //     latitude: number
+                //     longitude: number
+                // }
+                let mapping = new Mapping()
+                let distance = await mapping.getDistance({ origin: cordinates?.latitude + ',' + cordinates?.longitude, destination: pickupMeta.latitude + ',' + pickupMeta.longitude })
+                student['distance'] = distance.distance
+                student['duration'] = distance.duration
+            }
             if (student) {
                 students.push(student)
             }
@@ -216,7 +243,7 @@ export async function POST(req: Request) {
         await db.updateTable('daily_ride')
             .set({
                 end_time: new Date(),
-                status: 'Finished',
+                status: ride_update === 'embark' ? 'Started' : 'Finished',
             })
             .where('id', '=', student_ride.id)
             .where('driver_id', '=', payload.id)

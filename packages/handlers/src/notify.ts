@@ -22,8 +22,10 @@ export class Notify {
         },
       })
     };
-
-    await fetch(this.base_url, options)
+    let env = process.env.ENVIRON;
+    if (env === 'prod') {
+      await fetch(this.base_url, options)
+    }
     return true;
   }
   async sendBulk({ title, message, segment, big_picture }: { title: string, message: string, segment: string, big_picture: string }) {
@@ -42,7 +44,10 @@ export class Notify {
         included_segments: [segment]
       })
     };
-    await fetch(this.base_url, options)
+    let env = process.env.ENVIRON;
+    if (env === 'prod') {
+      await fetch(this.base_url, options)
+    }
     return true;
   }
 }

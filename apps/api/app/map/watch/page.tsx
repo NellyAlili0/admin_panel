@@ -4,7 +4,6 @@ import RealTimeDriverMap from "./watch";
 export default async function Page({ searchParams }: { searchParams: any }) {
   // const { id } = await params;
   const {kind, email} = await searchParams;
-  console.log(kind, email)
   const apiKey = process.env.GOOGLE_MAPS_KEY;
   // check ride
   let user = await db.selectFrom('user')
@@ -38,9 +37,7 @@ export default async function Page({ searchParams }: { searchParams: any }) {
     .where('daily_ride.driver_id', '=', user?.id!)
     .where('daily_ride.status', '=', 'Active')
     .executeTakeFirst()
-    console.log(user)
   }
-  console.log(daily_ride)
   if (!daily_ride) {
     return <div>Ride not found</div>;
   }

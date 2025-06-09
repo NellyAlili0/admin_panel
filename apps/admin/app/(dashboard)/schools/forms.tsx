@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input"
 import { SubmitButton } from "@/components/submit-button"
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 
 export function CreateSchool() {
     const [state, formAction] = useActionState(create, initialState)
     useEffect(() => {
         if (state.message) {
-            console.log(state.message)
+            toast.error(state.message)
         }
     }, [state])
     return (

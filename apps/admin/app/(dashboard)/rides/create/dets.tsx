@@ -100,7 +100,6 @@ export default function AssignRidePage({
 
   const onPlacesChanged = () => {
     const places = searchBox?.getPlaces();
-    console.log(places);
     const selectedPlace = places[0]; // Get the first selected place
 
     // Update state with the place name and coordinates
@@ -113,7 +112,6 @@ export default function AssignRidePage({
   };
   const onDropoffPlacesChanged = () => {
     const places = searchBoxRef?.getPlaces();
-    console.log(places);
     const selectedPlace = places[0]; // Get the first selected place
     let newDropoffDetails = {
       location: selectedPlace.name,

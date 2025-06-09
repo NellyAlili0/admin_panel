@@ -125,7 +125,7 @@ export async function assignRide(formData: FormData) {
                 status: 'Inactive',
                 date: new Date(weekday).toISOString().slice(0, 10),
                 start_time: pickupDate.toISOString().slice(0, 19),
-                end_time: dropoffDate.toISOString().slice(0, 19),
+                end_time: pickupDate.toISOString().slice(0, 19),
             }])
             .returningAll()
             .executeTakeFirst();

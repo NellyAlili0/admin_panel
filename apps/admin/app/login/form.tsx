@@ -5,12 +5,13 @@ import { login } from "./actions";
 import { useActionState } from "react";
 import { useEffect } from "react";
 import { initialState } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function Form() {
   const [state, formAction] = useActionState(login, initialState);
   useEffect(() => {
     if (state.message) {
-      console.log(state.message);
+      toast.error(state.message);
     }
   }, [state]);
   return (

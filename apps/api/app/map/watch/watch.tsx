@@ -111,7 +111,7 @@ const mapOptions = {
     },
   ],
   disableDefaultUI: true,
-  zoomControl: true,
+  zoomControl: false,
 };
 
 // Replace with your Google Maps API key
@@ -161,7 +161,7 @@ const RealTimeDriverMap = ({
         lat: cordinates.latitude,
         lng: cordinates.longitude,
       });
-    }, 10000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [isLoaded]);
