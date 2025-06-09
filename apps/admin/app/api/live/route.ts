@@ -31,6 +31,12 @@ export async function GET(req: Request) {
             lastLocation.latitude = Number(lastLocation.latitude);
             lastLocation.longitude = Number(lastLocation.longitude);
         }
+        else {
+            lastLocation = {
+                latitude: 0,
+                longitude: 0,
+            };
+        }
         const { count } = await db
             .selectFrom("daily_ride")
             .leftJoin("user", "daily_ride.driver_id", "user.id")
@@ -40,7 +46,7 @@ export async function GET(req: Request) {
 
         allDriverInfo.push({
             ...driver,
-            lastLocation,
+            lastLocation: lastLocation || { latitude: 0, longitude: 0 },
             passengerCount: count,
         });
     }

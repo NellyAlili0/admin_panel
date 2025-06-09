@@ -257,8 +257,8 @@ const DriverTrackingMap = () => {
             <Marker
               key={driver.email}
               position={{
-                lat: driver.lastLocation.latitude,
-                lng: driver.lastLocation.longitude,
+                lat: driver.lastLocation.latitude || 0,
+                lng: driver.lastLocation.longitude || 0,
               }}
               icon={{
                 url: createCustomMarkerIcon(driver.passengerCount),
