@@ -25,7 +25,12 @@ export async function GET(req: Request) {
         .where('is_read', '=', false)
         .execute()
     const unreadCount = unread.length
-
+    await db.updateTable('notification')
+        .set({
+            is_read: true
+        })
+        .where('user_id', '=', payload.id)
+        .execute()
     const defaultSettings = {
         when_bus_leaves: true,
         when_bus_makes_home_drop_off: true,

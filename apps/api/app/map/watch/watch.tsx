@@ -16,112 +16,15 @@ const containerStyle = {
   height: "100vh",
 };
 
-// Sample coordinates (would come from your real-time data source)
-// use details around Nairobi
-
-// Map options for dark mode and minimalist design
-const mapOptions = {
-  styles: [
-    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-    {
-      featureType: "administrative.locality",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#263c3f" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#6b9a76" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#38414e" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#212a37" }],
-    },
-    {
-      featureType: "road",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#9ca5b3" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#746855" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#1f2835" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#f3d19c" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "geometry",
-      stylers: [{ color: "#2f3948" }],
-    },
-    {
-      featureType: "transit.station",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#17263c" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#515c6d" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.stroke",
-      stylers: [{ color: "#17263c" }],
-    },
-    {
-      featureType: "poi",
-      stylers: [{ visibility: "off" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "labels.icon",
-      stylers: [{ visibility: "off" }],
-    },
-  ],
-  disableDefaultUI: true,
-  zoomControl: false,
-};
-
 // Replace with your Google Maps API key
 const API_KEY = "AIzaSyCSmmBwrPkYacuOtfp6Wtlg7QGbnq2aUFE";
 
 const RealTimeDriverMap = ({
-    pickupLocations,
-    finalDestination,
-    initialDriverLocation,
-    daily_ride_id,
+  pickupLocations,
+  finalDestination,
+  initialDriverLocation,
+  daily_ride_id,
+  kind,
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -210,7 +113,7 @@ const RealTimeDriverMap = ({
   }, [fetchDirections, isLoaded, driverLocation]);
   useEffect(() => {
     if (map && isAutoCenter && !userInteractedRef.current) {
-    //   map.panTo(driverLocation);
+      //   map.panTo(driverLocation);
     }
   }, [driverLocation, map, isAutoCenter]);
 
@@ -234,20 +137,222 @@ const RealTimeDriverMap = ({
     setMap(null);
   }, []);
 
-//   const handleRecenter = () => {
-//     if (map) {
-//       map.panTo(driverLocation);
-//       map.setZoom(14); // Reset to default zoom level
-//       setIsAutoCenter(true);
-//       userInteractedRef.current = false;
-//       setShowRecenterButton(false);
-//     }
-//   };
+  //   const handleRecenter = () => {
+  //     if (map) {
+  //       map.panTo(driverLocation);
+  //       map.setZoom(14); // Reset to default zoom level
+  //       setIsAutoCenter(true);
+  //       userInteractedRef.current = false;
+  //       setShowRecenterButton(false);
+  //     }
+  //   };
 
   // Handle marker click
   const handleMarkerClick = (marker) => {
     setSelectedMarker(marker);
   };
+  // Map options for dark mode and minimalist design
+  // check if kind is parent and use a lighter background color
+  const mapOptions =
+    kind == "parent"
+      ? {
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#F5F5F5" }] }, // Light background
+            {
+              elementType: "labels.text.stroke",
+              stylers: [{ color: "#FFFFFF" }],
+            }, // White stroke for text
+            {
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#525252" }],
+            }, // Darker grey for text
+            {
+              featureType: "administrative.locality",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#6A6A6A" }], // Slightly darker grey for locality
+            },
+            {
+              featureType: "poi",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#6A6A6A" }], // Slightly darker grey for POI labels
+            },
+            {
+              featureType: "poi.park",
+              elementType: "geometry",
+              stylers: [{ color: "#D4EDDA" }], // Light green for parks
+            },
+            {
+              featureType: "poi.park",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#3C763D" }], // Dark green for park labels
+            },
+            {
+              featureType: "road",
+              elementType: "geometry",
+              stylers: [{ color: "#E0E0E0" }], // Light grey for roads
+            },
+            {
+              featureType: "road",
+              elementType: "geometry.stroke",
+              stylers: [{ color: "#D0D0D0" }], // Lighter grey stroke for roads
+            },
+            {
+              featureType: "road",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#7A7A7A" }], // Medium grey for road labels
+            },
+            {
+              featureType: "road.highway",
+              elementType: "geometry",
+              stylers: [{ color: "#C0C0C0" }], // Medium light grey for highways
+            },
+            {
+              featureType: "road.highway",
+              elementType: "geometry.stroke",
+              stylers: [{ color: "#B0B0B0" }], // Lighter grey stroke for highways
+            },
+            {
+              featureType: "road.highway",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#4A4A4A" }], // Darker grey for highway labels
+            },
+            {
+              featureType: "transit",
+              elementType: "geometry",
+              stylers: [{ color: "#E8E8E8" }], // Light grey for transit
+            },
+            {
+              featureType: "transit.station",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#6A6A6A" }], // Slightly darker grey for transit station labels
+            },
+            {
+              featureType: "water",
+              elementType: "geometry",
+              stylers: [{ color: "#D0E0F0" }], // Light blue for water
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#5E7C9D" }], // Medium blue for water labels
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.stroke",
+              stylers: [{ color: "#FFFFFF" }], // White stroke for water labels
+            },
+            {
+              featureType: "poi",
+              stylers: [{ visibility: "off" }],
+            },
+            {
+              featureType: "transit",
+              elementType: "labels.icon",
+              stylers: [{ visibility: "off" }],
+            },
+          ],
+          disableDefaultUI: true,
+          zoomControl: false,
+        }
+      : {
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+            {
+              elementType: "labels.text.stroke",
+              stylers: [{ color: "#242f3e" }],
+            },
+            {
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#746855" }],
+            },
+            {
+              featureType: "administrative.locality",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#d59563" }],
+            },
+            {
+              featureType: "poi",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#d59563" }],
+            },
+            {
+              featureType: "poi.park",
+              elementType: "geometry",
+              stylers: [{ color: "#263c3f" }],
+            },
+            {
+              featureType: "poi.park",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#6b9a76" }],
+            },
+            {
+              featureType: "road",
+              elementType: "geometry",
+              stylers: [{ color: "#38414e" }],
+            },
+            {
+              featureType: "road",
+              elementType: "geometry.stroke",
+              stylers: [{ color: "#212a37" }],
+            },
+            {
+              featureType: "road",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#9ca5b3" }],
+            },
+            {
+              featureType: "road.highway",
+              elementType: "geometry",
+              stylers: [{ color: "#746855" }],
+            },
+            {
+              featureType: "road.highway",
+              elementType: "geometry.stroke",
+              stylers: [{ color: "#1f2835" }],
+            },
+            {
+              featureType: "road.highway",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#f3d19c" }],
+            },
+            {
+              featureType: "transit",
+              elementType: "geometry",
+              stylers: [{ color: "#2f3948" }],
+            },
+            {
+              featureType: "transit.station",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#d59563" }],
+            },
+            {
+              featureType: "water",
+              elementType: "geometry",
+              stylers: [{ color: "#17263c" }],
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#515c6d" }],
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.stroke",
+              stylers: [{ color: "#17263c" }],
+            },
+            {
+              featureType: "poi",
+              stylers: [{ visibility: "off" }],
+            },
+            {
+              featureType: "transit",
+              elementType: "labels.icon",
+              stylers: [{ visibility: "off" }],
+            },
+          ],
+          disableDefaultUI: true,
+          zoomControl: false,
+        };
 
   return isLoaded ? (
     <div className="w-full h-screen relative">
@@ -348,21 +453,8 @@ const RealTimeDriverMap = ({
         )}
       </GoogleMap>
 
-      {/* Navigation control */}
-      <div className="absolute bottom-6 right-6 bg-gray-800 bg-opacity-70 p-4 rounded-full shadow-lg">
-        <button
-          className="text-white"
-          onClick={() => map && map.panTo(driverLocation)}
-          aria-label="Center on driver"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-      </div>
-
       {/* Legend */}
-      <div className="absolute top-6 left-6 bg-gray-800 bg-opacity-70 p-4 rounded-lg shadow-lg text-white">
+      {kind == "driver" && <div className="absolute top-6 left-6 bg-gray-800 bg-opacity-70 p-4 rounded-lg shadow-lg text-white">
         <div className="text-lg font-bold mb-2">Route Map</div>
         <div className="flex items-center mb-1">
           <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
@@ -376,7 +468,7 @@ const RealTimeDriverMap = ({
           <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
           <span> Destination</span>
         </div>
-      </div>
+      </div>}
     </div>
   ) : (
     <div className="w-full h-screen flex items-center justify-center bg-gray-900 text-white">
