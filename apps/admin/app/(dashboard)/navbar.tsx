@@ -10,6 +10,7 @@ import {
   Home,
   LogOutIcon,
   SchoolIcon,
+  SignalIcon,
   User2Icon,
   WalletIcon,
 } from "lucide-react";
@@ -27,6 +28,12 @@ export function Navbar() {
       label: "Overview",
       icon: Home,
       active: pathname === "/overview",
+    },
+    {
+      href: "/live",
+      label: "Live",
+      icon: SignalIcon,
+      active: pathname === "/live" || pathname.startsWith("/live/"),
     },
     {
       href: "/drivers",
