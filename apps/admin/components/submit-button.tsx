@@ -7,15 +7,15 @@ import { Button } from "./ui/button";
 // import { Button } from './ui/button'
 
 export function SubmitButton({ title }) {
-    const { pending } = useFormStatus();
+  const { pending } = useFormStatus();
 
-    return (
-        <Button variant={pending ? "ghost" : "default"} type="submit" className="w-full text-white font-bold">
-            {pending ? (
-                <Loader className="animate-spin" />
-            ) : (
-                title
-            )}
-        </Button>
-    );
+  return (
+    <Button
+      variant={pending ? "ghost" : "default"}
+      type="submit"
+      className="w-full text-white font-bold"
+    >
+      {pending ? <Loader className="animate-spin" /> : title}
+    </Button>
+  );
 }

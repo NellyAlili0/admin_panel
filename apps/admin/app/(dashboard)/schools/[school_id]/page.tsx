@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Phone, MapPin, UserIcon, Plus } from "lucide-react";
+import { Phone, MapPin, UserIcon, Plus, Globe } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -18,7 +18,13 @@ export default async function Page({ params }: { params: any }) {
   // school info
   let schoolInfo = await db
     .selectFrom("school")
-    .select(["school.id", "school.name", "school.location", "school.meta"])
+    .select([
+      "school.id",
+      "school.name",
+      "school.location",
+      "school.meta",
+      "school.url",
+    ])
     .where("school.id", "=", school_id)
     .executeTakeFirst();
   if (!schoolInfo) {
@@ -55,10 +61,10 @@ export default async function Page({ params }: { params: any }) {
       />
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">
+          <h2 className="text-2xl font-bold tracking-tight my-3">
             School Information
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-2">
             {schoolInfo.name} ({students.length} students)
           </p>
         </div>
@@ -72,27 +78,23 @@ export default async function Page({ params }: { params: any }) {
           <CardTitle>School Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="flex items-center gap-4">
+          <section className="flex flex-col md:flex-row gap-6 items-center flex-wrap">
+            <div className="flex items-center gap-4 ">
               <div>
                 <h3 className="text-xl font-medium"> {schoolInfo.name} </h3>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 ">
               <div>
-                <p className="text-muted-foreground">
-                  School Location: {schoolInfo.location}
+                <p>
+                  School Location:
+                  <span className="text-muted-foreground ml-1">
+                    {schoolInfo.location}
+                  </span>
                 </p>
               </div>
-              <Link
-                href={`https://www.google.com/maps/search/?api=1&query=${schoolInfo.meta?.latitude},${schoolInfo.meta?.longitude}`}
-                target="_blank"
-                className="flex items-center gap-2"
-              >
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>View on Google Maps</span>
-              </Link>
             </div>
+
             {schoolInfo.meta && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                 <div className="flex items-center gap-2">
@@ -105,7 +107,29 @@ export default async function Page({ params }: { params: any }) {
                 </div>
               </div>
             )}
-          </div>
+
+            <section className="flex gap-6 flex-wrap ">
+              <Link
+                href={`https://www.google.com/maps/search/?api=1&query=${schoolInfo.meta?.latitude},${schoolInfo.meta?.longitude}`}
+                target="_blank"
+                className="flex items-center gap-2"
+              >
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">
+                  View on Google Maps
+                </span>
+              </Link>
+              <a
+                href={`${schoolInfo.url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2"
+              >
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{schoolInfo.url}</span>
+              </a>
+            </section>
+          </section>
         </CardContent>
       </Card>
       <Card className="mb-8">

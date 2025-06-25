@@ -8,6 +8,7 @@ export default async function Page() {
         id,
         name,
         location,
+        url,
         (SELECT COUNT(*) FROM student WHERE student.school_id = school.id) as students
     FROM school`.execute(db);
   let totalSchools = schools.rows.length;
@@ -33,7 +34,7 @@ export default async function Page() {
       </div>
       <GenTable
         title="All Schools"
-        cols={["id", "name", "location", "students"]}
+        cols={["id", "name", "location", "students", "url"]}
         data={schools.rows}
         baseLink="/schools/"
         uniqueKey="id"

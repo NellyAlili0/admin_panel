@@ -13,6 +13,7 @@ import {
   SignalIcon,
   User2Icon,
   WalletIcon,
+  HardDriveDownload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -54,12 +55,6 @@ export function Navbar() {
       active: pathname === "/rides" || pathname.startsWith("/rides/"),
     },
     // {
-    //   href: "/schools",
-    //   label: "Schools",
-    //   icon: SchoolIcon,
-    //   active: pathname === "/schools" || pathname.startsWith("/schools/"),
-    // },
-    // {
     //   href: "/finance",
     //   label: "Finance",
     //   icon: WalletIcon,
@@ -70,6 +65,18 @@ export function Navbar() {
       label: "Vehicles",
       icon: Car,
       active: pathname === "/vehicles" || pathname.startsWith("/vehicles/"),
+    },
+    {
+      href: "/schools",
+      label: "Schools",
+      icon: SchoolIcon,
+      active: pathname === "/schools" || pathname.startsWith("/schools/"),
+    },
+    {
+      href: "/onboarding",
+      label: "Onboarding",
+      icon: HardDriveDownload,
+      active: pathname === "/onboarding" || pathname.startsWith("/onboarding/"),
     },
   ];
 
