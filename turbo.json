@@ -5,7 +5,26 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "DB_PROD_HOST",
+        "DB_PROD_PORT",
+        "DB_PROD_USER",
+        "DB_PROD_PASS",
+        "DB_PROD_NAME",
+        "DB_PROD_SSL",
+        "JWT_SECRET",
+        "MPESA_KEY",
+        "MPESA_SHORTCODE",
+        "MPESA_PASSKEY",
+        "MPESA_SECRET",
+        "GOOGLE_MAPS_KEY",
+        "ONESIGNAL_KEY",
+        "ONESIGNAL_APP_ID",
+        "BREVO_API_KEY",
+        "ENVIRON",
+        "NODE_TLS_REJECT_UNAUTHORIZED"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
