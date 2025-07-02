@@ -1,5 +1,5 @@
 import React from "react";
-import Form from "../(home)/form";
+import Form from "./form";
 import { db } from "@repo/database";
 
 async function Home() {
