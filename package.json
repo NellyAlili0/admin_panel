@@ -1,6 +1,13 @@
 {
   "name": "platform",
   "private": true,
+  "workspaces": [
+    "apps/onboarding",
+    "apps/landing",
+    "apps/admin",
+    "apps/api",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
