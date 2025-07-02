@@ -2,6 +2,7 @@ import React from "react";
 import Form from "../(home)/form";
 import { db } from "@repo/database";
 
+// it returns the name of the school
 function deslugifyFromSubdomain(slug: string): string {
   return slug
     .split("-")
@@ -11,6 +12,7 @@ function deslugifyFromSubdomain(slug: string): string {
 
 async function Home({ params }: { params: Promise<{ school: string }> }) {
   const school_url = (await params).school;
+  console.log(school_url);
   const school = deslugifyFromSubdomain(school_url);
   const schools = await db
     .selectFrom("school")
