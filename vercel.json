@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "onboarding": {
+      "source": "apps/onboarding"
+    },
+    "api": {
+      "source": "apps/api"
+    },
+    "admin": {
+      "source": "apps/admin"
+    },
+    "landing": {
+      "source": "apps/landing"
+    }
+  }
+}
