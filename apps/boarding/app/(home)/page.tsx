@@ -11,7 +11,13 @@ async function Home() {
 
   return (
     <div>
-      <Suspense fallback={<div>Loading form...</div>}>
+      <Suspense
+        fallback={
+          <div className=" min-h-screen w-full flex items-center justify-center ">
+            Loading form...
+          </div>
+        }
+      >
         <Form current_school={school} schools={schools} />
       </Suspense>
     </div>
