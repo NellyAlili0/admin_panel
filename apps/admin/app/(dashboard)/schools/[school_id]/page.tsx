@@ -46,7 +46,7 @@ export default async function Page({ params }: { params: any }) {
     .where("student.school_id", "=", school_id)
     .execute();
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 w-full">
       <Breadcrumbs
         items={[
           {
@@ -78,13 +78,13 @@ export default async function Page({ params }: { params: any }) {
           <CardTitle>School Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <section className="flex flex-col md:flex-row gap-6 items-center flex-wrap">
-            <div className="flex items-center gap-4 ">
+          <section className="flex flex-col md:flex-row gap-6 items-center flex-wrap  w-full">
+            <div className="flex items-center gap-4  ">
               <div>
                 <h3 className="text-xl font-medium"> {schoolInfo.name} </h3>
               </div>
             </div>
-            <div className="flex flex-col gap-2 ">
+            <div className="flex flex-col gap-2">
               <div>
                 <p>
                   School Location:
@@ -96,7 +96,7 @@ export default async function Page({ params }: { params: any }) {
             </div>
 
             {schoolInfo.meta && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+              <div className="flex gap-5">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span> {schoolInfo.meta?.administrator_phone} </span>
@@ -108,7 +108,7 @@ export default async function Page({ params }: { params: any }) {
               </div>
             )}
 
-            <section className="flex gap-6 flex-wrap ">
+            <section className="flex gap-6 flex-wrap">
               <Link
                 href={`https://www.google.com/maps/search/?api=1&query=${schoolInfo.meta?.latitude},${schoolInfo.meta?.longitude}`}
                 target="_blank"
@@ -119,15 +119,19 @@ export default async function Page({ params }: { params: any }) {
                   View on Google Maps
                 </span>
               </Link>
-              <a
-                href={`${schoolInfo.url}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2"
-              >
-                <Globe className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{schoolInfo.url}</span>
-              </a>
+              {schoolInfo.url && (
+                <a
+                  href={`${schoolInfo.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {schoolInfo.url}
+                  </span>
+                </a>
+              )}
             </section>
           </section>
         </CardContent>

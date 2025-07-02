@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect, useActionState } from "react";
+import React, { useState, useEffect, useActionState, useRef } from "react";
 import { onboard } from "./actions";
 import { Loader } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export const initialState = {
   message: "",
@@ -12,25 +13,62 @@ interface School {
   name: string;
 }
 
-interface Schools {
+function Form({
+  current_school,
+  schools,
+}: {
+  current_school: string;
   schools: School[];
-}
-
-function Form({ schools }: Schools) {
+}) {
   const [state, formAction, pending] = useActionState<
     { message: string },
     FormData
   >(onboard, initialState);
 
   const [errMsg, setErrMsg] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [filteredSchools, setFilteredSchools] = useState<School[]>(schools);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const searchParams = useSearchParams();
+  const errorFromQuery = searchParams.get("error");
 
   useEffect(() => {
     if (state.message) {
       setErrMsg(state.message);
+    } else if (errorFromQuery) {
+      setErrMsg(errorFromQuery);
     } else {
       setErrMsg("");
     }
-  }, [state]);
+  }, [state, errorFromQuery]);
+
+  useEffect(() => {
+    if (inputValue.trim() === "") {
+      setFilteredSchools([]);
+      return;
+    }
+
+    const results = schools.filter((school) =>
+      school.name.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    setFilteredSchools(results);
+  }, [inputValue, schools]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setFilteredSchools([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <section className="p-3">
@@ -77,7 +115,6 @@ function Form({ schools }: Schools) {
                 placeholder="Jane Doe"
               />
             </div>
-
             <div>
               <label
                 htmlFor="parent_email"
@@ -93,7 +130,6 @@ function Form({ schools }: Schools) {
                 placeholder="janedoe@gmail.com"
               />
             </div>
-
             <div>
               <label
                 htmlFor="parent_phone"
@@ -109,7 +145,6 @@ function Form({ schools }: Schools) {
                 placeholder="071234567"
               />
             </div>
-
             <div>
               <label
                 htmlFor="address"
@@ -125,7 +160,6 @@ function Form({ schools }: Schools) {
                 placeholder="apartment 1234, parklands"
               />
             </div>
-
             <div>
               <label
                 htmlFor="student_name"
@@ -142,7 +176,6 @@ function Form({ schools }: Schools) {
                 placeholder="John Doe"
               />
             </div>
-
             <div>
               <label
                 htmlFor="student_gender"
@@ -161,7 +194,6 @@ function Form({ schools }: Schools) {
                 <option value="Female">Female</option>
               </select>
             </div>
-
             <div>
               <label
                 htmlFor="ride_type"
@@ -182,26 +214,71 @@ function Form({ schools }: Schools) {
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="school"
-                className="block text-base font-medium text-gray-700"
-              >
-                School:
-              </label>
-              <select
-                name="school_id"
-                required
-                className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
-              >
-                <option value="">Select School</option>
-                {schools.map((school) => (
-                  <option key={school.id} value={school.id}>
-                    {school.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {current_school !== "" ? (
+              <input
+                type="hidden"
+                name="current_school"
+                value={current_school}
+              />
+            ) : (
+              <div className="relative" ref={wrapperRef}>
+                <label
+                  htmlFor="current_school"
+                  className="block text-base font-medium text-gray-700"
+                >
+                  School:
+                </label>
+                <input
+                  type="text"
+                  id="current_school"
+                  name="current_school"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  required
+                  autoComplete="off"
+                  className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+                  placeholder="Start typing your school name..."
+                />
+                {inputValue.length > 0 && filteredSchools.length > 0 && (
+                  <ul className="absolute z-10 bg-white border border-gray-300 w-full mt-1 rounded shadow max-h-48 overflow-y-auto">
+                    {filteredSchools.map((school) => (
+                      <li
+                        key={school.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // prevents input blur before value is set
+                          setInputValue(school.name);
+                          setFilteredSchools([]);
+                        }}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      >
+                        {school.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              // <div>
+              //   <label
+              //     htmlFor="school"
+              //     className="block text-base font-medium text-gray-700"
+              //   >
+              //     School:
+              //   </label>
+              //   <select
+              //     name="current_school"
+              //     required
+              //     className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+              //   >
+              //     <option value="">Select School</option>
+              //     {schools.map((school: School) => (
+              //       <option key={school.id} value={school.name}>
+              //         {school.name}
+              //       </option>
+              //     ))}
+              //   </select>
+              // </div>
+            )}
           </section>
 
           <div id="home-area-suggestions" className="z-10 relative"></div>

@@ -1,6 +1,5 @@
 # Zidallie Platform
 
-
 ## Installation
 
 ```bash
@@ -12,6 +11,7 @@ pnpm install
 ```bash
 cd packages/database
 npx kysely migrate:up
+
 ```
 
 ## Running the app

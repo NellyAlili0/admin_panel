@@ -14,7 +14,7 @@ const formSchema = zfd.formData({
   student_name: zfd.text(z.string().min(1)),
   student_gender: zfd.text(z.enum(["Male", "Female"])),
   ride_type: zfd.text(z.enum(["dropoff", "pickup", "pickup & dropoff"])),
-  school_id: zfd.text(),
+  current_school: zfd.text(),
 });
 
 export async function onboard(
@@ -36,9 +36,24 @@ export async function onboard(
     address,
     student_name,
     student_gender,
-    school_id,
+    current_school,
     ride_type,
   } = data.data;
+
+  const school = await db
+    .selectFrom("school")
+    .select(["id", "name"])
+    .where("name", "=", current_school)
+    .executeTakeFirst();
+
+  console.log(current_school);
+  console.log(school);
+
+  if (!school) {
+    return redirect(
+      "/?error=School%20not%20found,%20please%20type%20your%20current%20school"
+    );
+  }
 
   await db
     .insertInto("onboarding")
@@ -50,7 +65,7 @@ export async function onboard(
       student_name,
       student_gender,
       ride_type,
-      school_id: parseInt(school_id),
+      school_id: school.id,
     })
     .executeTakeFirst();
 

@@ -1,15 +1,17 @@
 import React from "react";
-import Form from "./form";
+import Form from "../(home)/form";
 import { db } from "@repo/database";
 
 async function Home() {
+  const school = "";
   const schools = await db
     .selectFrom("school")
     .select(["id", "name"])
     .execute();
+
   return (
     <div>
-      <Form schools={schools} />
+      <Form current_school={school} schools={schools} />
     </div>
   );
 }

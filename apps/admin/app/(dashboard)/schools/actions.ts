@@ -46,13 +46,14 @@ export async function create(prevState: any, formData: FormData) {
   } = data.data;
 
   // Generate a subdomain slug
-  const slug = slugifyForSubdomain(name);
-  const url = `https://${slug}.zidallie.co.ke`;
+  const school_name = name.toLowerCase();
+  const slug = slugifyForSubdomain(school_name);
+  const url = `https://schools.zidallie.co.ke/${slug}`;
 
   let school = await db
     .insertInto("school")
     .values({
-      name: name,
+      name: school_name,
       location: location,
       comments: comments,
       url: url,

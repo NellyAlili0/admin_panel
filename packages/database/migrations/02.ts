@@ -5,12 +5,12 @@ console.log("Starting migration 02");
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema.alterTable("school").addColumn("url", "text").execute();
 
-  await db.schema
-    .createIndex("unique_school_url")
-    .on("school")
-    .column("url")
-    .unique()
-    .execute();
+  // await db.schema
+  //   .createIndex("unique_school_url")
+  //   .on("school")
+  //   .column("url")
+  //   .unique()
+  //   .execute();
 
   await db.schema
     .createTable("onboarding")
