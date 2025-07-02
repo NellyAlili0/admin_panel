@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Form from "./form";
 import { db } from "@repo/database";
 
@@ -11,7 +11,9 @@ async function Home() {
 
   return (
     <div>
-      <Form current_school={school} schools={schools} />
+      <Suspense fallback={<div>Loading form...</div>}>
+        <Form current_school={school} schools={schools} />
+      </Suspense>
     </div>
   );
 }
