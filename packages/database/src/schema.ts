@@ -227,5 +227,12 @@ export interface OnboardingFormTable {
   school_id: number;
   ride_type: "dropoff" | "pickup" | "pickup & dropoff";
 
+  // New Fields
+  pickup: string | null;
+  dropoff: string | null;
+  start_date: ColumnType<Date, string | undefined, string | undefined>;
+  mid_term: ColumnType<Date, string | undefined, string | undefined>;
+  end_date: ColumnType<Date, string | undefined, string | undefined>;
+
   created_at: ColumnType<Date, string | undefined, never>;
 }

@@ -10,6 +10,8 @@ import {
   Mail,
   VenusAndMars,
   School,
+  Clock7,
+  CalendarDays,
 } from "lucide-react";
 
 export default async function Page({ params }: { params: any }) {
@@ -24,6 +26,12 @@ export default async function Page({ params }: { params: any }) {
       "onboarding.address",
       "onboarding.student_name",
       "onboarding.student_gender",
+      "onboarding.pickup",
+      "onboarding.dropoff",
+      "onboarding.start_date",
+      "onboarding.mid_term",
+      "onboarding.end_date",
+      "onboarding.created_at",
       "school.name as school_name",
       "onboarding.ride_type",
     ])
@@ -48,11 +56,11 @@ export default async function Page({ params }: { params: any }) {
         ]}
       />
       <div className="flex justify-between items-center">
-        <div>
+        <section>
           <h2 className="text-2xl font-bold tracking-tight my-5">
             Parent and Student Information
           </h2>
-        </div>
+        </section>
       </div>
       <Card className="mb-8 w-full">
         <CardContent>
@@ -137,6 +145,93 @@ export default async function Page({ params }: { params: any }) {
                     <p className="text-gray-700">{dataInfo.school_name}</p>
                   </div>
                 </div>
+                {/* ############################################################################ */}
+                {/* Pickup Time*/}
+                <div className="flex items-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">
+                    <Clock7 />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-500">
+                      Pickup Time:
+                    </p>
+                    <p className="text-gray-700">{dataInfo.pickup}</p>
+                  </div>
+                </div>
+                {/* Dropoff Time*/}
+                <div className="flex items-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">
+                    <Clock7 />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-500">
+                      Dropoff Time:
+                    </p>
+                    <p className="text-gray-700">{dataInfo.dropoff}</p>
+                  </div>
+                </div>
+
+                {/* Start Date*/}
+                <section className="flex items-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">
+                    <CalendarDays />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-500">
+                      Start Date:
+                    </p>
+                    <p className="text-gray-700">
+                      {new Date(dataInfo.start_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </section>
+
+                {/* Mid Term*/}
+                <div className="flex items-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">
+                    <CalendarDays />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-500">
+                      Mid Term:
+                    </p>
+                    <p className="text-gray-700">
+                      {new Date(dataInfo.mid_term).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* End Date*/}
+                <div className="flex items-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">
+                    <CalendarDays />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-500">
+                      End Date:
+                    </p>
+                    <p className="text-gray-700">
+                      {new Date(dataInfo.end_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Created*/}
+                <div className="flex items-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">
+                    <CalendarDays />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-500">
+                      Creation Date:
+                    </p>
+                    <p className="text-gray-700">
+                      {new Date(dataInfo.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                {/* ############################################################################ */}
+
                 {/* Ride Type */}
                 <div className="flex items-center">
                   <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full">

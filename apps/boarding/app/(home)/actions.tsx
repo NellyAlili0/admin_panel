@@ -15,6 +15,11 @@ const formSchema = zfd.formData({
   student_gender: zfd.text(z.enum(["Male", "Female"])),
   ride_type: zfd.text(z.enum(["dropoff", "pickup", "pickup & dropoff"])),
   current_school: zfd.text(),
+  pickup: zfd.text(),
+  dropoff: zfd.text(),
+  start_date: zfd.text(),
+  mid_term: zfd.text(),
+  end_date: zfd.text(),
 });
 
 export async function onboard(
@@ -38,6 +43,11 @@ export async function onboard(
     student_gender,
     current_school,
     ride_type,
+    pickup,
+    dropoff,
+    start_date,
+    mid_term,
+    end_date,
   } = data.data;
 
   const school = await db
@@ -65,6 +75,11 @@ export async function onboard(
       student_name,
       student_gender,
       ride_type,
+      pickup,
+      dropoff,
+      start_date,
+      mid_term,
+      end_date,
       school_id: school.id,
     })
     .executeTakeFirst();

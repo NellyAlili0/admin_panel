@@ -126,6 +126,7 @@ function Form({
                 type="email"
                 id="parent_email"
                 name="parent_email"
+                required
                 className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
                 placeholder="janedoe@gmail.com"
               />
@@ -143,6 +144,7 @@ function Form({
                 name="parent_phone"
                 className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
                 placeholder="071234567"
+                required
               />
             </div>
             <div>
@@ -158,6 +160,7 @@ function Form({
                 name="address"
                 className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
                 placeholder="apartment 1234, parklands"
+                required
               />
             </div>
             <div>
@@ -257,31 +260,88 @@ function Form({
                   </ul>
                 )}
               </div>
-
-              // <div>
-              //   <label
-              //     htmlFor="school"
-              //     className="block text-base font-medium text-gray-700"
-              //   >
-              //     School:
-              //   </label>
-              //   <select
-              //     name="current_school"
-              //     required
-              //     className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
-              //   >
-              //     <option value="">Select School</option>
-              //     {schools.map((school: School) => (
-              //       <option key={school.id} value={school.name}>
-              //         {school.name}
-              //       </option>
-              //     ))}
-              //   </select>
-              // </div>
             )}
           </section>
 
           <div id="home-area-suggestions" className="z-10 relative"></div>
+
+          <section>
+            <label
+              htmlFor="pickup"
+              className="block text-base font-medium text-gray-700"
+            >
+              Pickup (pickup from school):
+            </label>
+            <input
+              type="time"
+              id="pickup"
+              name="pickup"
+              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+              placeholder="7:00"
+              required
+            />
+          </section>
+          <section>
+            <label
+              htmlFor="dropoff"
+              className="block text-base font-medium text-gray-700"
+            >
+              Dropoff (dropoff from school):
+            </label>
+            <input
+              type="time"
+              id="dropoff"
+              name="dropoff"
+              required
+              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+              placeholder="17:00"
+            />
+          </section>
+          <section>
+            <label
+              htmlFor="start_date"
+              className="block text-base font-medium text-gray-700"
+            >
+              Start_Date(school opening date):
+            </label>
+            <input
+              type="date"
+              id="start_date"
+              name="start_date"
+              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+              placeholder="7/7/2025"
+            />
+          </section>
+          <section>
+            <label
+              htmlFor="mid_term"
+              className="block text-base font-medium text-gray-700"
+            >
+              Mid_Term(school mid term)
+            </label>
+            <input
+              type="date"
+              id="mid_term"
+              name="mid_term"
+              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+              placeholder="7/7/2025"
+            />
+          </section>
+          <section>
+            <label
+              htmlFor="end_date"
+              className="block text-base font-medium text-gray-700"
+            >
+              End_Date( school closing date)
+            </label>
+            <input
+              type="date"
+              id="end_date"
+              name="end_date"
+              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+              placeholder="7/7/2025"
+            />
+          </section>
 
           <button
             type="submit"
