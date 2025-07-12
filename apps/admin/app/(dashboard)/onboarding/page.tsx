@@ -8,8 +8,10 @@ export default async function Page() {
       id, 
       parent_name, 
       parent_email, 
-      address 
-    FROM onboarding
+      address ,
+      created_at
+      FROM onboarding
+      ORDER BY created_at DESC
   `.execute(db);
 
   const countResult = await sql<{ count: number }>`
@@ -38,7 +40,7 @@ export default async function Page() {
       </div>
       <GenTable
         title="All Schools"
-        cols={["id", "parent_name", "parent_email", "address"]}
+        cols={["id", "created_at", "parent_name", "parent_email", "address"]}
         data={data.rows}
         baseLink="/onboarding/"
         uniqueKey="id"
