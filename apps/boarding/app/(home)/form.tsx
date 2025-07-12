@@ -270,7 +270,7 @@ function Form({
               htmlFor="pickup"
               className="block text-base font-medium text-gray-700"
             >
-              Pickup (pickup from school):
+              Pickup (pickup from home):
             </label>
             <input
               type="time"
