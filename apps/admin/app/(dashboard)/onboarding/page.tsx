@@ -17,9 +17,12 @@ export default async function Page() {
   const countResult = await sql<{ count: number }>`
   SELECT COUNT(*) AS count FROM onboarding
 `.execute(db);
-
-  console.log(countResult);
   let total = countResult.rows[0].count;
+
+  const formatted_data = data.rows.map((row: any) => ({
+    ...row,
+    date: new Date(row.created_at).toLocaleDateString(),
+  }));
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -40,8 +43,8 @@ export default async function Page() {
       </div>
       <GenTable
         title="All Schools"
-        cols={["id", "created_at", "parent_name", "parent_email", "address"]}
-        data={data.rows}
+        cols={["id", "parent_name", "parent_email", "address", "date"]}
+        data={formatted_data}
         baseLink="/onboarding/"
         uniqueKey="id"
       />
