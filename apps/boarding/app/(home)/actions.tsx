@@ -15,12 +15,20 @@ const formSchema = zfd.formData({
   student_gender: zfd.text(z.enum(["Male", "Female"])),
   ride_type: zfd.text(z.enum(["dropoff", "pickup", "pickup & dropoff"])),
   current_school: zfd.text(),
-  pickup: zfd.text(),
-  dropoff: zfd.text(),
+  pickup: zfd.text().optional(),
+  dropoff: zfd.text().optional(),
   start_date: zfd.text(),
-  mid_term: zfd.text(),
+  mid_term: zfd.text(z.string().optional()),
   end_date: zfd.text(),
 });
+
+function getTodayDate(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export async function onboard(
   prevState: { message: string },
@@ -29,7 +37,12 @@ export async function onboard(
   const data = formSchema.safeParse(formData);
 
   if (!data.success) {
-    return { message: "Invalid data" };
+    const errorMap = data.error.flatten().fieldErrors;
+    console.log(errorMap);
+    return {
+      message:
+        "Some fields are missing or incorrect. Please double-check your input and try again.",
+    };
   }
 
   console.log(data);
@@ -81,6 +94,7 @@ export async function onboard(
       mid_term,
       end_date,
       school_id: school.id,
+      created_at: getTodayDate(),
     })
     .executeTakeFirst();
 

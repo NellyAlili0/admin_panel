@@ -155,7 +155,7 @@ export default async function Page({ params }: { params: any }) {
                     <p className="text-sm font-medium text-gray-500">
                       Pickup Time:
                     </p>
-                    <p className="text-gray-700">{dataInfo.pickup}</p>
+                    <p className="text-gray-700">{dataInfo.pickup || "None"}</p>
                   </div>
                 </div>
                 {/* Dropoff Time*/}
@@ -167,7 +167,9 @@ export default async function Page({ params }: { params: any }) {
                     <p className="text-sm font-medium text-gray-500">
                       Dropoff Time:
                     </p>
-                    <p className="text-gray-700">{dataInfo.dropoff}</p>
+                    <p className="text-gray-700">
+                      {dataInfo.dropoff || "None"}
+                    </p>
                   </div>
                 </div>
 
@@ -196,7 +198,10 @@ export default async function Page({ params }: { params: any }) {
                       Mid Term:
                     </p>
                     <p className="text-gray-700">
-                      {new Date(dataInfo.mid_term).toLocaleDateString()}
+                      {new Date(dataInfo.mid_term).getFullYear() === 1970 ||
+                      isNaN(new Date(dataInfo.mid_term).getTime())
+                        ? "None"
+                        : new Date(dataInfo.mid_term).toLocaleDateString()}
                     </p>
                   </div>
                 </div>

@@ -27,6 +27,7 @@ function Form({
 
   const [errMsg, setErrMsg] = useState("");
   const [inputValue, setInputValue] = useState("");
+  const [rideType, setRideType] = useState("");
   const [filteredSchools, setFilteredSchools] = useState<School[]>(schools);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +80,7 @@ function Form({
           </h1>
         </section>
         <form
-          className="space-y-4 form_className px-8 py-6"
+          className="space-y-4 form_className px-8 py-8"
           id="carpool_form"
           action={formAction}
         >
@@ -190,7 +191,7 @@ function Form({
                 id="student_gender"
                 name="student_gender"
                 required
-                className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+                className="w-full p-1 focus:outline-none  text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
               >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
@@ -208,6 +209,8 @@ function Form({
                 id="ride_type"
                 name="ride_type"
                 required
+                value={rideType}
+                onChange={(e) => setRideType(e.target.value)}
                 className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
               >
                 <option value="">Select Ride Type</option>
@@ -264,39 +267,42 @@ function Form({
           </section>
 
           <div id="home-area-suggestions" className="z-10 relative"></div>
+          {(rideType === "pickup" || rideType === "pickup & dropoff") && (
+            <section>
+              <label
+                htmlFor="pickup"
+                className="block text-base font-medium text-gray-700"
+              >
+                Pickup (pickup from home):
+              </label>
+              <input
+                type="time"
+                id="pickup"
+                name="pickup"
+                className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+                placeholder="7:00"
+              />
+            </section>
+          )}
 
-          <section>
-            <label
-              htmlFor="pickup"
-              className="block text-base font-medium text-gray-700"
-            >
-              Pickup (pickup from home):
-            </label>
-            <input
-              type="time"
-              id="pickup"
-              name="pickup"
-              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
-              placeholder="7:00"
-              required
-            />
-          </section>
-          <section>
-            <label
-              htmlFor="dropoff"
-              className="block text-base font-medium text-gray-700"
-            >
-              Dropoff (dropoff from school):
-            </label>
-            <input
-              type="time"
-              id="dropoff"
-              name="dropoff"
-              required
-              className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
-              placeholder="17:00"
-            />
-          </section>
+          {(rideType === "dropoff" || rideType === "pickup & dropoff") && (
+            <section>
+              <label
+                htmlFor="dropoff"
+                className="block text-base font-medium text-gray-700"
+              >
+                Dropoff (dropoff from school):
+              </label>
+              <input
+                type="time"
+                id="dropoff"
+                name="dropoff"
+                className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
+                placeholder="17:00"
+              />
+            </section>
+          )}
+
           <section>
             <label
               htmlFor="start_date"
@@ -310,6 +316,7 @@ function Form({
               name="start_date"
               className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
               placeholder="7/7/2025"
+              required
             />
           </section>
           <section>
@@ -340,6 +347,7 @@ function Form({
               name="end_date"
               className="w-full p-1 focus:outline-none text-sm shadow-xs border border-gray-100 py-3 px-2 mt-2 focus:border-gray-400 rounded"
               placeholder="7/7/2025"
+              required
             />
           </section>
 
