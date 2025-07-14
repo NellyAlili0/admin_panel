@@ -308,7 +308,7 @@ function Form({
               htmlFor="start_date"
               className="block text-base font-medium text-gray-700"
             >
-              Start_Date(school opening date):
+              School Opening Date:
             </label>
             <input
               type="date"
@@ -324,7 +324,7 @@ function Form({
               htmlFor="mid_term"
               className="block text-base font-medium text-gray-700"
             >
-              Mid_Term(school mid term)
+              Mid Term Date:
             </label>
             <input
               type="date"
@@ -339,7 +339,7 @@ function Form({
               htmlFor="end_date"
               className="block text-base font-medium text-gray-700"
             >
-              End_Date( school closing date)
+              School Closing Date:
             </label>
             <input
               type="date"
