@@ -1,0 +1,858 @@
+openapi: 3.0.3
+info:
+  title: School Transport System API
+  version: 1.0.0
+  description: Endpoints for auth, driver,location, parent e.t.c
+
+servers:
+  - url: http://localhost:3001/api
+
+tags:
+  - name: Driver
+    description: All authenticated driver operations
+
+paths:
+  /driver:
+    get:
+      tags: [Driver]
+      summary: Get authenticated driver's profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Driver profile data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string }
+                  email: { type: string }
+                  phone_number: { type: string }
+                  meta: { type: object }
+                  kind: { type: string }
+                  created_at: { type: string }
+                  updated_at: { type: string }
+                  wallet_balance: { type: number }
+                  status: { type: string }
+
+  /driver/kyc:
+    get:
+      tags: [Driver]
+      summary: Get driver's KYC status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: KYC status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_verified: { type: boolean }
+                  created_at: { type: string }
+                  updated_at: { type: string }
+    post:
+      tags: [Driver]
+      summary: Submit KYC documents
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                national_id_front: { type: string, format: binary }
+                national_id_back: { type: string, format: binary }
+                passport_photo: { type: string, format: binary }
+                driving_license: { type: string, format: binary }
+                certificate_of_good_conduct: { type: string, format: binary }
+      responses:
+        "200":
+          description: KYC submitted
+
+  /driver/profile/notifications:
+    get:
+      tags: [Driver]
+      summary: Get last 50 notifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title: { type: string }
+                  message: { type: string }
+                  is_read: { type: boolean }
+                  kind:
+                    type: string
+                    enum: [Personal, System]
+                  section:
+                    type: string
+                    enum: [Profile, Rides, Vehicle, Payments, Other]
+                  created_at: { type: string }
+    patch:
+      tags: [Driver]
+      summary: Mark notification as read
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Notification updated
+    post:
+      tags: [Driver]
+      summary: Update notification preferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                start_trip_reminder: { type: boolean }
+                trip_cancellation_alert: { type: boolean }
+                delay_alerts: { type: boolean }
+                payments_notifications: { type: boolean }
+                shift_assignments: { type: boolean }
+      responses:
+        "200":
+          description: Settings updated
+
+  /driver/vehicle:
+    get:
+      tags: [Driver]
+      summary: Get registered vehicle
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Vehicle info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: number }
+                  vehicle_name: { type: string }
+                  registration_number: { type: string }
+                  vehicle_type:
+                    type: string
+                    enum: [Bus, Van, Car]
+                  vehicle_model: { type: string }
+                  vehicle_year: { type: number }
+                  vehicle_image_url: { type: string }
+                  seat_count: { type: number }
+                  available_seats: { type: number }
+                  is_inspected: { type: boolean }
+                  vehicle_registration: { type: string }
+                  insurance_certificate: { type: string }
+                  comments: { type: string }
+                  status:
+                    type: string
+                    enum: [Active, Inactive]
+    post:
+      tags: [Driver]
+      summary: Register vehicle
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [
+                  vehicle_name,
+                  registration_number,
+                  vehicle_type,
+                  vehicle_model,
+                  vehicle_year,
+                  seat_count,
+                ]
+              properties:
+                vehicle_name: { type: string }
+                registration_number: { type: string }
+                vehicle_type:
+                  type: string
+                  enum: [Bus, Van, Car]
+                vehicle_model: { type: string }
+                vehicle_year: { type: number }
+                vehicle_image_url: { type: string }
+                seat_count: { type: number }
+                vehicle_registration: { type: string }
+                insurance_certificate: { type: string }
+      responses:
+        "201":
+          description: Vehicle registered
+
+  /driver/wallet:
+    get:
+      tags: [Driver]
+      summary: Get transaction history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  amount: { type: number }
+                  kind:
+                    type: string
+                    enum: [Bank, M-pesa]
+                  transaction_type:
+                    type: string
+                    enum: [Deposit, Withdrawal]
+                  comments: { type: string }
+                  transaction_id: { type: string }
+                  created_at: { type: string }
+                  updated_at: { type: string }
+    post:
+      tags: [Driver]
+      summary: Update payout details
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum: [Bank, M-Pesa]
+                bank: { type: string }
+                account_name: { type: string }
+                account_number: { type: string }
+      responses:
+        "200":
+          description: Payout settings updated
+
+  /api/driver/trips:
+    post:
+      summary: Perform driver trip actions (pickup, dropoff, history, etc.)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum:
+                    [
+                      view,
+                      history,
+                      today,
+                      pickup,
+                      pickup-all,
+                      dropoff,
+                      dropoff-all,
+                    ]
+                  description: Action to perform
+                trip_id: { type: integer }
+                trips:
+                  type: array
+                  items:
+                    type: integer
+                ride_id:
+                  type: string
+                date:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          description: Success response
+
+  /api/driver/trips/daily:
+    post:
+      tags: [Driver]
+      summary: Get today's ride summary for the driver
+      description: |
+        Returns all rides scheduled for today for the authenticated driver, including counts of pickups, dropoffs, total trips, and upcoming rides.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Summary of today's rides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  rides:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        passenger:
+                          type: string
+                        passenger_id:
+                          type: integer
+                        parent_id:
+                          type: integer
+                        gender:
+                          type: string
+                        driver_name:
+                          type: string
+                        driver_phone:
+                          type: string
+                        kind:
+                          type: string
+                          enum: [Pickup, Dropoff]
+                        vehicle_name:
+                          type: string
+                        registration_number:
+                          type: string
+                        start_time:
+                          type: string
+                          format: time
+                        end_time:
+                          type: string
+                          format: time
+                        status:
+                          type: string
+                  total_trips:
+                    type: integer
+                    example: 10
+                  upcoming:
+                    type: integer
+                    example: 3
+                  pickups:
+                    type: integer
+                    example: 5
+                  dropoffs:
+                    type: integer
+                    example: 5
+
+  /api/driver/trips/manager:
+    post:
+      tags:
+        - Driver
+      summary: Perform trip actions (today, start, end, update, students)
+      description: |
+        This endpoint allows a driver to perform various actions on their daily rides such as:
+        - Fetching today's rides
+        - Starting all pickup/dropoff trips
+        - Ending all pickup/dropoff trips
+        - Updating the ride status of a student
+        - Retrieving students and ride progress
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum: [today, start_all, end_all, update, students]
+                kind:
+                  type: string
+                  enum: [pickup, dropoff]
+                student_id:
+                  type: integer
+                trip_id:
+                  type: integer
+                ride_id:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                trips:
+                  type: array
+                  items:
+                    type: integer
+                ride_update:
+                  type: string
+                  enum: [embark, complete]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  rides:
+                    type: array
+                    items:
+                      type: object
+                    description: Present when `action=today`
+                  pickup:
+                    type: array
+                    items:
+                      type: object
+                    description: Present when `action=today`
+                  dropoff:
+                    type: array
+                    items:
+                      type: object
+                    description: Present when `action=today`
+                  total_trips:
+                    type: integer
+                    description: Present when `action=today`
+                  upcoming:
+                    type: integer
+                    description: Present when `action=today`
+                  students:
+                    type: array
+                    items:
+                      type: object
+                    description: Present when `action=students`
+
+  /api/hooks/location:
+    post:
+      summary: Post driver's current location
+      tags:
+        - Driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                driver_id:
+                  type: string
+                  example: driver@example.com
+                latitude:
+                  type: number
+                  format: float
+                  example: -1.2921
+                longitude:
+                  type: number
+                  format: float
+                  example: 36.8219
+                timestamp:
+                  type: number
+                  example: 1627384952
+                kind:
+                  type: string
+                  enum: [pickup, dropoff]
+                  example: pickup
+              required:
+                - driver_id
+                - latitude
+                - longitude
+                - timestamp
+      responses:
+        "200":
+          description: Location successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+
+  /api/location:
+    post:
+      summary: Get latest driver coordinates from the last 10 minutes
+      operationId: streamDrivers
+      tags:
+        - hooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - daily_ride_id
+              properties:
+                daily_ride_id:
+                  type: string
+                  description: The ID of the daily ride.
+      responses:
+        "200":
+          description: Latest coordinates of the driver
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  latitude:
+                    type: number
+                    format: float
+                    example: -1.2921
+                  longitude:
+                    type: number
+                    format: float
+                    example: 36.8219
+
+  /api/parent:
+    get:
+      summary: Get parent profile
+      tags:
+        - Parent
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved parent profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  parent:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      phone_number:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+                      status:
+                        type: string
+    patch:
+      summary: Update parent profile
+      tags:
+        - Parent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone_number:
+                  type: string
+                  minLength: 10
+                  maxLength: 15
+              required:
+                - name
+      responses:
+        "200":
+          description: Successfully updated parent profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  parent:
+                    type: object
+
+  /api/parent/notifications:
+    get:
+      tags:
+        - Parent
+      summary: Get parent profile details
+      description: Retrieve the logged-in parent's profile details using a Bearer token.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  parent:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      phone_number:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+                      status:
+                        type: string
+    post:
+      tags:
+        - Parent
+      summary: Update parent profile
+      description: Update the parent's profile info. Requires authentication.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Jane Doe
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                phone_number:
+                  type: string
+                  example: "0712345678"
+              required:
+                - name
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  parent:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      phone_number:
+                        type: string
+                      meta:
+                        type: object
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+                      status:
+                        type: string
+
+  /api/parent/students:
+    get:
+      summary: Get a list of students for the authenticated parent
+      tags:
+        - Student
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  students:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        gender:
+                          type: string
+                          enum: [Male, Female]
+    post:
+      summary: Add a student for the authenticated parent
+      tags:
+        - Student
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - names
+                - gender
+              properties:
+                names:
+                  type: string
+                gender:
+                  type: string
+                  enum: [Male, Female]
+                address:
+                  type: string
+                profile_picture:
+                  type: string
+      responses:
+        "200":
+          description: Student created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  student:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      gender:
+                        type: string
+                        enum: [Male, Female]
+
+  /api/parent/trips:
+    post:
+      tags: [Ride]
+      summary: Perform ride-related actions (create, view, history, today, all, view_trip)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum: [create, view, history, today, all, view_trip]
+                student_id:
+                  type: integer
+                ride_id:
+                  type: integer
+                trip_id:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                schedule:
+                  type: object
+                  properties:
+                    pickup:
+                      type: object
+                      required: [start_time, location, latitude, longitude]
+                      properties:
+                        start_time:
+                          type: string
+                        location:
+                          type: string
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+                    dropoff:
+                      type: object
+                      required: [start_time, location, latitude, longitude]
+                      properties:
+                        start_time:
+                          type: string
+                        location:
+                          type: string
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+                    comments:
+                      type: string
+                    dates:
+                      type: array
+                      items:
+                        type: string
+                        format: date
+                    kind:
+                      type: string
+                      enum: [Private, Carpool, Bus]
+      responses:
+        "200":
+          description: Success response depending on action
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  ride:
+                    type: object
+                  rides:
+                    type: array
+                    items:
+                      type: object
+                  location:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      latitude:
+                        type: number
+                      longitude:
+                        type: number
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -77,7 +77,7 @@ export interface SchoolTable {
   name: string;
   location: string | null;
   comments: string | null;
-  url: string | null; // <- NEW FIELD
+  url: string | null;
   meta: JSONColumnType<{
     administrator_name: string | null;
     administrator_phone: string | null;

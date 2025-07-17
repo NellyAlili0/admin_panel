@@ -40,6 +40,7 @@ const RealTimeDriverMap = ({
   const [selectedMarker, setSelectedMarker] = useState<any>(null);
   const [isAutoCenter, setIsAutoCenter] = useState(true);
   const [showRecenterButton, setShowRecenterButton] = useState(false);
+
   // Simulate driver movement
   const fetchCordinates = async () => {
     const response = await fetch("/api/location", {
@@ -54,6 +55,7 @@ const RealTimeDriverMap = ({
     const data = await response.json();
     return data;
   };
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -454,21 +456,23 @@ const RealTimeDriverMap = ({
       </GoogleMap>
 
       {/* Legend */}
-      {kind == "driver" && <div className="absolute top-6 left-6 bg-gray-800 bg-opacity-70 p-4 rounded-lg shadow-lg text-white">
-        <div className="text-lg font-bold mb-2">Route Map</div>
-        <div className="flex items-center mb-1">
-          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-          <span>Driver</span>
+      {kind == "driver" && (
+        <div className="absolute top-6 left-6 bg-gray-800 bg-opacity-70 p-4 rounded-lg shadow-lg text-white">
+          <div className="text-lg font-bold mb-2">Route Map</div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            <span>Driver</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+            <span> Passenger </span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            <span> Destination</span>
+          </div>
         </div>
-        <div className="flex items-center mb-1">
-          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-          <span> Passenger </span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-          <span> Destination</span>
-        </div>
-      </div>}
+      )}
     </div>
   ) : (
     <div className="w-full h-screen flex items-center justify-center bg-gray-900 text-white">
