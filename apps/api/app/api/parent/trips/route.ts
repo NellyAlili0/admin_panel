@@ -35,6 +35,7 @@ const actionSchema = z.object({
 export async function POST(req: Request) {
   const auth = new Auth();
   const payload = auth.checkApiToken({ req });
+
   if (!payload) {
     return Response.json(
       {
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
     );
   }
   const { action, student_id, ride_id, trip_id, date, schedule } = check.data;
+
   if (action === "create") {
     // request new ride
     if (!schedule || !student_id) {
@@ -95,6 +97,7 @@ export async function POST(req: Request) {
       })
       .returning(["id"])
       .executeTakeFirst();
+
     await db
       .insertInto("notification")
       .values({
@@ -106,6 +109,7 @@ export async function POST(req: Request) {
         is_read: false,
       })
       .executeTakeFirst();
+
     const notify = new Notify();
     await notify.sendSingle({
       title: "New Ride Request",
@@ -115,6 +119,7 @@ export async function POST(req: Request) {
         ". This request is being processed by the operators",
       email: payload.email!,
     });
+
     return Response.json(
       {
         status: "success",
@@ -147,6 +152,7 @@ export async function POST(req: Request) {
       ])
       .where("ride.parent_id", "=", payload.id)
       .execute();
+
     return Response.json(
       {
         status: "success",
@@ -278,6 +284,7 @@ export async function POST(req: Request) {
       .where("daily_ride.date", "=", new Date(date!))
       .where("daily_ride.id", "=", trip_id!)
       .executeTakeFirst();
+
     // location data
     const location = await db
       .selectFrom("location")

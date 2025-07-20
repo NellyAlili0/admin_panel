@@ -12,6 +12,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   const data = await req.json();
   const check = schema.safeParse(data);
+
   if (!check.success) {
     return Response.json(
       {
@@ -21,7 +22,9 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
   const { driver_id, latitude, longitude, timestamp, kind } = check.data;
+
   // find all trips that are active with the current driver id
   const trips = await db
     .selectFrom("daily_ride")

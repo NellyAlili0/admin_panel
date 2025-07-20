@@ -23,6 +23,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   const auth = new Auth();
   const payload = auth.checkApiToken({ req });
+
   if (!payload) {
     return Response.json(
       {
@@ -79,8 +80,10 @@ export async function POST(req: Request) {
       .where("daily_ride.date", "=", today)
       .orderBy("daily_ride.start_time", "asc")
       .execute();
+
     let pickup = rides.filter((ride) => ride.kind === "Pickup");
     let dropoff = rides.filter((ride) => ride.kind === "Dropoff");
+
     return Response.json(
       {
         status: "success",
@@ -117,6 +120,7 @@ export async function POST(req: Request) {
       .where("daily_ride.status", "=", "Finished")
       .orderBy("daily_ride.date", "desc")
       .execute();
+
     return Response.json(
       {
         status: "success",
@@ -151,6 +155,7 @@ export async function POST(req: Request) {
       .where("daily_ride.id", "=", trip_id!)
       .where("daily_ride.driver_id", "=", payload.id)
       .executeTakeFirst();
+
     if (!trip_details) {
       return Response.json(
         {
@@ -167,6 +172,7 @@ export async function POST(req: Request) {
       .where("daily_ride_id", "=", trip_id!)
       .orderBy("created_at", "asc")
       .execute();
+
     return Response.json(
       {
         status: "success",
@@ -183,7 +189,9 @@ export async function POST(req: Request) {
       })
       .where("id", "=", trip_id!)
       .execute();
+
     await getParentEmailByTripId(trip_id!);
+
     return Response.json(
       {
         status: "success",
@@ -199,11 +207,13 @@ export async function POST(req: Request) {
       })
       .where("id", "in", trips!)
       .execute();
+
     if (trips) {
       trips.forEach(async (trip_id) => {
         await getParentEmailByTripId(trip_id);
       });
     }
+
     return Response.json(
       {
         status: "success",
@@ -219,7 +229,9 @@ export async function POST(req: Request) {
       })
       .where("id", "=", trip_id!)
       .execute();
+
     await getParentEmailByTripId(trip_id!);
+
     return Response.json(
       {
         status: "success",
@@ -235,6 +247,7 @@ export async function POST(req: Request) {
       })
       .where("id", "in", trips!)
       .execute();
+
     if (trips) {
       trips.forEach(async (trip_id) => {
         await getParentEmailByTripId(trip_id);

@@ -95,6 +95,7 @@ export async function POST(req: Request) {
     })
     .executeTakeFirst();
 
+  // send notification
   let notify = new Notify();
   await notify.sendSingle({
     email: payload.email,
