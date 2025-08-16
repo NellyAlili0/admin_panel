@@ -1,390 +1,309 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   GoogleMap,
   useJsApiLoader,
   Marker,
-  DirectionsService,
-  DirectionsRenderer,
   InfoWindow,
 } from "@react-google-maps/api";
-import { Crosshair, MapPin, Navigation } from "lucide-react";
+import "./mapstyles.css";
 
-// Map container styles - full page
+// Define TypeScript interface for driver data based on /api/stream-drivers response
+interface Driver {
+  id: string;
+  name: string;
+  email: string;
+  phone_number: string;
+  vehicle_id: string;
+  vehicle_name: string;
+  registration_number: string;
+  seat_count: number;
+  available_seats: number;
+  location: {
+    lat: number;
+    lng: number;
+  };
+}
+
+// Map container style
 const containerStyle = {
   width: "100%",
-  height: "100vh",
+  height: "400px",
 };
 
-// Sample coordinates (would come from your real-time data source)
-// use details around Nairobi
-const initialDriverLocation = {
-  lat: -1.2071700715827154,
-  lng: 36.78596406330276,
+// Default center - Nairobi coordinates
+const defaultCenter = {
+  lat: -1.2921,
+  lng: 36.8219,
 };
 
-const pickupLocations = [
-  { lat: -1.22052770350171, lng: 36.80154598526434, name: "Pickup 1" },
-  { lat: -1.2119874795118437, lng: 36.79116946511205, name: "Pickup 2" },
-  { lat: -1.2070296650242485, lng: 36.786034873219236, name: "Pickup 3" },
+const defaultZoom = 12;
+const exampleMapStyles = [
+  {
+    featureType: "poi",
+    elementType: "geometry",
+    stylers: [{ color: "#eeeeee" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text",
+    stylers: [{ visibility: "off" }],
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#9e9e9e" }],
+  },
 ];
 
-const finalDestination = {
-  lat: -1.2615222363538,
-  lng: 36.80129957714152,
-  name: "Final Destination",
-};
+export default function DriverMap() {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [mapZoom, setMapZoom] = useState(defaultZoom);
+  const [bounds, setBounds] = useState<google.maps.LatLngBounds | null>(null);
 
-// Map options for dark mode and minimalist design
-const mapOptions = {
-  styles: [
-    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-    {
-      featureType: "administrative.locality",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#263c3f" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#6b9a76" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#38414e" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#212a37" }],
-    },
-    {
-      featureType: "road",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#9ca5b3" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#746855" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#1f2835" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#f3d19c" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "geometry",
-      stylers: [{ color: "#2f3948" }],
-    },
-    {
-      featureType: "transit.station",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#17263c" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#515c6d" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.stroke",
-      stylers: [{ color: "#17263c" }],
-    },
-    {
-      featureType: "poi",
-      stylers: [{ visibility: "off" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "labels.icon",
-      stylers: [{ visibility: "off" }],
-    },
-  ],
-  disableDefaultUI: true,
-  zoomControl: true,
-};
-
-// Replace with your Google Maps API key
-const API_KEY = "AIzaSyCSmmBwrPkYacuOtfp6Wtlg7QGbnq2aUFE";
-
-const RealTimeDriverMap = () => {
-  const { isLoaded } = useJsApiLoader({
+  // Load Google Maps API
+  const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: API_KEY,
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
   });
 
-  const userInteractedRef = useRef(false);
+  // Function to fetch driver data from API
+  const fetchDriverData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/stream-drivers");
 
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [driverLocation, setDriverLocation] = useState(initialDriverLocation);
-  const [directions, setDirections] =
-    useState<google.maps.DirectionsResult | null>(null);
-  const [selectedMarker, setSelectedMarker] = useState<any>(null);
-  const [isAutoCenter, setIsAutoCenter] = useState(true);
-  const [showRecenterButton, setShowRecenterButton] = useState(false);
-  // Simulate driver movement
-  const fetchCordinates = async () => {
-    const response = await fetch("/api/location");
-    const data = await response.json();
-    return data;
-  };
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    const interval = setInterval(async () => {
-      // Simulate some random movement
-      const cordinates = await fetchCordinates();
-      setDriverLocation({
-        lat: cordinates.latitude,
-        lng: cordinates.longitude,
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [isLoaded]);
-
-  // Get directions
-  const fetchDirections = useCallback(() => {
-    if (!isLoaded) return;
-
-    const directionsService = new window.google.maps.DirectionsService();
-
-    // Create waypoints from pickup locations
-    const waypoints = pickupLocations.map((location) => ({
-      location: new window.google.maps.LatLng(location.lat, location.lng),
-      stopover: true,
-    }));
-
-    directionsService.route(
-      {
-        origin: new window.google.maps.LatLng(
-          driverLocation.lat,
-          driverLocation.lng
-        ),
-        destination: new window.google.maps.LatLng(
-          finalDestination.lat,
-          finalDestination.lng
-        ),
-        waypoints: waypoints,
-        optimizeWaypoints: true,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setDirections(result);
-        } else {
-          console.error(`Directions request failed: ${status}`);
-        }
+      if (!response.ok) {
+        throw new Error(`Failed to fetch drivers: ${response.statusText}`);
       }
-    );
-  }, [driverLocation, isLoaded]);
 
-  // Fetch directions when driver location changes
-  useEffect(() => {
-    if (isLoaded) {
-      fetchDirections();
+      const data: Driver[] = await response.json();
+      setDrivers(data);
+      if (data.length > 0 && mapRef.current) {
+        const newBounds = new google.maps.LatLngBounds();
+
+        // Add each driver location to bounds
+        data.forEach((driver) => {
+          newBounds.extend(
+            new google.maps.LatLng(driver.location.lat, driver.location.lng)
+          );
+        });
+
+        // Store the new bounds
+        setBounds(newBounds);
+
+        // If we have only one driver, set a reasonable zoom level
+        if (data.length === 1) {
+          const center = newBounds.getCenter();
+          setMapCenter({
+            lat: center.lat(),
+            lng: center.lng(),
+          });
+          setMapZoom(15); // Closer zoom for single driver
+        } else {
+          // Let the bounds determine the view
+          mapRef.current.fitBounds(newBounds, 50);
+        }
+      } else if (data.length === 0) {
+        // If no drivers, reset to default view
+        setMapCenter(defaultCenter);
+        setMapZoom(defaultZoom);
+      }
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching driver data:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error fetching driver data"
+      );
+    } finally {
+      setIsLoading(false);
     }
-  }, [fetchDirections, isLoaded, driverLocation]);
-  useEffect(() => {
-    if (map && isAutoCenter && !userInteractedRef.current) {
-      map.panTo(driverLocation);
-    }
-  }, [driverLocation, map, isAutoCenter]);
-
-  const onLoad = useCallback((map) => {
-    setMap(map);
-    // Add listeners to detect when user interacts with map
-    map.addListener("dragstart", () => {
-      userInteractedRef.current = true;
-      setIsAutoCenter(false);
-      setShowRecenterButton(true);
-    });
-
-    map.addListener("zoom_changed", () => {
-      userInteractedRef.current = true;
-      setIsAutoCenter(false);
-      setShowRecenterButton(true);
-    });
   }, []);
 
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
+  // Setup interval for fetching data when component mounts
+  useEffect(() => {
+    if (!isLoaded) return;
 
-//   const handleRecenter = () => {
-//     if (map) {
-//       map.panTo(driverLocation);
-//       map.setZoom(14); // Reset to default zoom level
-//       setIsAutoCenter(true);
-//       userInteractedRef.current = false;
-//       setShowRecenterButton(false);
-//     }
-//   };
+    // Fetch data immediately on load
+    fetchDriverData();
 
-  // Handle marker click
-  const handleMarkerClick = (marker) => {
-    setSelectedMarker(marker);
+    // Set up interval to fetch data every 5 seconds
+    intervalRef.current = setInterval(fetchDriverData, 5000);
+
+    // Clean up interval on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isLoaded, fetchDriverData]);
+
+  // Handle map load
+  const onMapLoad = (map: google.maps.Map) => {
+    mapRef.current = map;
+
+    // If we already have drivers when the map loads, fit bounds
+    if (drivers.length > 0) {
+      const newBounds = new google.maps.LatLngBounds();
+
+      drivers.forEach((driver) => {
+        newBounds.extend(
+          new google.maps.LatLng(driver.location.lat, driver.location.lng)
+        );
+      });
+
+      map.fitBounds(newBounds, 50);
+      setBounds(newBounds);
+    }
   };
 
-  return isLoaded ? (
-    <div className="w-full h-screen relative">
+  // Navigate to driver detail page
+  const handleDriverClick = (driver: Driver) => {
+    router.push(`/drivers/${driver.id}`);
+  };
+
+  const resetMapView = useCallback(() => {
+    if (mapRef.current && bounds) {
+      mapRef.current.fitBounds(bounds, 50);
+    } else if (mapRef.current) {
+      mapRef.current.setCenter(mapCenter);
+      mapRef.current.setZoom(mapZoom);
+    }
+  }, [bounds, mapCenter, mapZoom]);
+
+  // Handle API key issues
+  if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+    console.error(
+      "Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local"
+    );
+    return (
+      <div className="error text-red-500 p-4">
+        Error: Google Maps API key is missing. Please configure
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your environment variables.
+      </div>
+    );
+  }
+
+  if (loadError) {
+    console.error("Google Maps load error:", loadError);
+    return (
+      <div className="error text-red-500 p-4">
+        Error loading Google Maps: {loadError.message}
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="loading flex items-center justify-center h-[400px]">
+        <svg
+          className="animate-spin h-8 w-8 text-amber-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8z"
+          ></path>
+        </svg>
+        <span className="ml-2">Loading Maps...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mapContainer h-[400px]">
+      {error && <div className="error text-red-500 p-4">{error}</div>}
+      {isLoading && (
+        <div className="loading absolute top-2 left-2 z-10 bg-white p-2 rounded-lg shadow-lg">
+          Fetching driver data...
+        </div>
+      )}
+      <button
+        className="absolute top-2 right-2 z-10 bg-white text-black p-2 rounded-lg shadow-lg cursor-pointer"
+        onClick={resetMapView}
+        title="Reset map view to show all drivers"
+      >
+        Center Map
+      </button>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={driverLocation}
-        zoom={14}
-        onLoad={onLoad}
-        onUnmount={onUnmount}
-        options={mapOptions}
+        center={mapCenter}
+        zoom={mapZoom}
+        onLoad={onMapLoad}
+        options={{
+          fullscreenControl: false,
+          mapTypeControl: false,
+          styles: exampleMapStyles,
+        }}
       >
-        {/* Driver marker with custom icon */}
-        <Marker
-          position={driverLocation}
-          icon={{
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: "#4285F4",
-            fillOpacity: 1,
-            strokeColor: "#FFFFFF",
-            strokeWeight: 2,
-          }}
-          title="Driver"
-          onClick={() =>
-            handleMarkerClick({ ...driverLocation, name: "Driver" })
-          }
-        />
-
-        {/* Pickup location markers */}
-        {pickupLocations.map((location, index) => (
+        {drivers.map((driver) => (
           <Marker
-            key={`pickup-${index}`}
-            position={location}
+            key={driver.id}
+            position={driver.location}
+            onClick={() => handleDriverClick(driver)}
+            onMouseOver={() => setSelectedDriver(driver)}
+            onMouseOut={() => setSelectedDriver(null)}
             icon={{
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 7,
-              fillColor: "#34A853",
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: "#FFC107", // amber color
               fillOpacity: 1,
-              strokeColor: "#FFFFFF",
               strokeWeight: 2,
+              strokeColor: "#FFFFFF", // white
+              scale: 12,
             }}
-            title={location.name}
-            onClick={() => handleMarkerClick(location)}
           />
         ))}
-        {/* {showRecenterButton && (
-          <div className="absolute bottom-6 right-6 bg-gray-800 bg-opacity-80 p-4 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-gray-700">
-            <button
-              className="text-white flex items-center justify-center"
-              onClick={handleRecenter}
-              aria-label="Center on driver"
-            >
-              <Crosshair size={24} />
-            </button>
-          </div>
-        )} */}
 
-        {/* Final destination marker */}
-        <Marker
-          position={finalDestination}
-          icon={{
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 7,
-            fillColor: "#EA4335",
-            fillOpacity: 1,
-            strokeColor: "#FFFFFF",
-            strokeWeight: 2,
-          }}
-          title={finalDestination.name}
-          onClick={() => handleMarkerClick(finalDestination)}
-        />
-
-        {/* Info window for selected marker */}
-        {selectedMarker && (
+        {selectedDriver && (
           <InfoWindow
-            position={selectedMarker}
-            onCloseClick={() => setSelectedMarker(null)}
+            position={selectedDriver.location}
+            onCloseClick={() => setSelectedDriver(null)}
           >
-            <div className="text-gray-900 font-medium p-1">
-              {selectedMarker.name}
+            <div className="infoCard bg-amber-500 border-amber-500 border-2 text-white p-4 rounded-lg">
+              <h3 className="text-lg font-bold text-center text-white">
+                {selectedDriver.name}
+              </h3>
+              <p className="text-white">
+                <strong className="text-white">Vehicle:</strong>{" "}
+                {selectedDriver.vehicle_name}
+              </p>
+              <p className="text-white">
+                <strong className="text-white">Passengers:</strong>{" "}
+                {selectedDriver.seat_count - selectedDriver.available_seats}/
+                {selectedDriver.seat_count}
+              </p>
+              <button
+                className="viewButton bg-white text-amber-500 px-2 py-1 rounded mt-2"
+                onClick={() => router.push(`/drivers/${selectedDriver.id}`)}
+              >
+                View Details
+              </button>
             </div>
           </InfoWindow>
         )}
-
-        {/* Directions renderer */}
-        {directions && (
-          <DirectionsRenderer
-            directions={directions}
-            options={{
-              polylineOptions: {
-                strokeColor: "#FBBC04",
-                strokeWeight: 5,
-                strokeOpacity: 0.7,
-              },
-              suppressMarkers: true,
-            }}
-          />
-        )}
       </GoogleMap>
-
-      {/* Navigation control */}
-      <div className="absolute bottom-6 right-6 bg-gray-800 bg-opacity-70 p-4 rounded-full shadow-lg">
-        <button
-          className="text-white"
-          onClick={() => map && map.panTo(driverLocation)}
-          aria-label="Center on driver"
-        >
-          <Navigation size={24} color="white" />
-        </button>
-      </div>
-
-      {/* Legend */}
-      <div className="absolute top-6 left-6 bg-gray-800 bg-opacity-70 p-4 rounded-lg shadow-lg text-white">
-        <div className="text-lg font-bold mb-2">Route Map</div>
-        <div className="flex items-center mb-1">
-          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-          <span>Driver</span>
-        </div>
-        <div className="flex items-center mb-1">
-          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-          <span>Pickup Points</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-          <span>Final Destination</span>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div className="w-full h-screen flex items-center justify-center bg-gray-900 text-white">
-      Loading Map...
     </div>
   );
-};
-
-export default RealTimeDriverMap;
+}

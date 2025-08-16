@@ -1,17 +1,37 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
-import { db, sql } from "@repo/database";
+import { database } from "@/database/config";
 import { CreateSchool } from "./forms";
 
+// Define interface for school data
+interface School {
+  id: number;
+  name: string;
+  location: string | null;
+  url: string | null;
+  students: number;
+}
+
 export default async function Page() {
-  const schools = await sql`SELECT 
-        id,
-        name,
-        location,
-        url,
-        (SELECT COUNT(*) FROM student WHERE student.school_id = school.id) as students
-    FROM school`.execute(db);
-  let totalSchools = schools.rows.length;
+  // Fetch schools with student count
+  const schools = await database
+    .selectFrom("school")
+    .select([
+      "school.id",
+      "school.name",
+      "school.location",
+      "school.url",
+      (eb) =>
+        eb
+          .selectFrom("student")
+          .select((eb) => eb.fn.countAll().as("count"))
+          .whereRef("student.schoolId", "=", "school.id")
+          .as("students"),
+    ])
+    .execute();
+
+  const totalSchools = schools.length;
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -26,8 +46,7 @@ export default async function Page() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Schools</h1>
           <p className="text-muted-foreground">
-            {" "}
-            Total of {totalSchools} schools{" "}
+            Total of {totalSchools} schools
           </p>
         </div>
         <CreateSchool />
@@ -35,7 +54,11 @@ export default async function Page() {
       <GenTable
         title="All Schools"
         cols={["id", "name", "location", "students", "url"]}
-        data={schools.rows}
+        data={schools.map((school) => ({
+          ...school,
+          location: school.location ?? "Not provided",
+          url: school.url ?? "Not provided",
+        }))}
         baseLink="/schools/"
         uniqueKey="id"
       />

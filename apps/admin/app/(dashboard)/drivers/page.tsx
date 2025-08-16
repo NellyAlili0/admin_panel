@@ -1,12 +1,12 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { db } from "@repo/database";
 import GenTable from "@/components/tables";
 import { AddDriverForm } from "./forms";
+import { database } from "@/database/config";
 
 export default async function Page() {
   // available drivers
   // kyc requests
-  let allDrivers = await db
+  let allDrivers = await database
     .selectFrom("user")
     .select([
       "user.id",
@@ -14,16 +14,18 @@ export default async function Page() {
       "user.email",
       "user.phone_number as phone",
       "user.wallet_balance as balance",
-      'is_kyc_verified as verified'
+      "user.is_kyc_verified as verified",
     ])
     .where("user.kind", "=", "Driver")
     .execute();
-  let kycRequests = await db
+
+  let kycRequests = await database
     .selectFrom("kyc")
-    .leftJoin("user", "kyc.user_id", "user.id")
+    .leftJoin("user", "kyc.userId", "user.id") // Changed from kyc.user_id to kyc.userId
     .select(["kyc.id", "user.name", "user.email", "kyc.is_verified"])
     .where("kyc.is_verified", "=", false)
     .execute();
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs

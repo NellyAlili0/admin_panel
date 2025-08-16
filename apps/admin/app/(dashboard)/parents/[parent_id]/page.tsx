@@ -1,6 +1,5 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
-import { db } from "@repo/database";
 import {
   Card,
   CardContent,
@@ -24,12 +23,64 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddStudentForm, SendNotificationForm } from "../forms";
+import { database } from "@/database/config";
 
-export default async function Page({ params }: { params: any }) {
-  const { parent_id } = await params;
-  let parent_email = parent_id.replace("%40", "@");
-  let parentInfo = await db
+// Define interfaces based on database schema
+interface ParentInfo {
+  id: number;
+  name: string | null;
+  email: string | null;
+  phone_number: string | null;
+  kind: "Parent" | "Driver" | "Admin" | null;
+  meta: any | null;
+  is_kyc_verified: boolean;
+  created_at: Date;
+  updated_at: Date;
+  statusName: string | null;
+}
+
+interface Student {
+  id: number;
+  name: string;
+  profile_picture: string | null;
+  comments: string | null;
+  address: string | null;
+  gender: "Male" | "Female";
+}
+
+interface Ride {
+  id: number;
+  passenger: string | null;
+  comments: string | null;
+  admin_comments: string | null;
+  status: "Requested" | "Cancelled" | "Ongoing" | "Pending" | "Completed";
+}
+
+interface DailyRide {
+  id: number;
+  status: "Active" | "Inactive" | "Started" | "Finished";
+  passenger: string | null;
+  start_time: Date | null;
+  end_time: Date | null;
+  kind: "Pickup" | "Dropoff";
+}
+
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  created_at: Date;
+}
+
+export default async function Page(props: {
+  params: Promise<{ parent_id: string }>;
+}) {
+  const { parent_id } = await props.params; // ✅ await params
+  const parent_email = parent_id.replace("%40", "@");
+  // Fetch parent info with status name from StatusTable
+  const parentInfo = await database
     .selectFrom("user")
+    .leftJoin("status", "status.id", "user.statusId")
     .select([
       "user.id",
       "user.name",
@@ -40,16 +91,18 @@ export default async function Page({ params }: { params: any }) {
       "user.is_kyc_verified",
       "user.created_at",
       "user.updated_at",
-      "user.status",
+      "status.name as statusName",
     ])
-    .where("user.email", "=", parent_email)
+    .where("user.id", "=", Number(parent_id))
     .where("user.kind", "=", "Parent")
     .executeTakeFirst();
+
   if (!parentInfo) {
     return <div>Parent not found</div>;
   }
-  // get students, rides assigned, trip history
-  let students = await db
+
+  // Fetch students
+  const students = await database
     .selectFrom("student")
     .select([
       "student.id",
@@ -57,13 +110,15 @@ export default async function Page({ params }: { params: any }) {
       "student.profile_picture",
       "student.comments",
       "student.address",
-      "student.gender"
+      "student.gender",
     ])
-    .where("student.parent_id", "=", parentInfo.id)
+    .where("student.parentId", "=", parentInfo.id)
     .execute();
-  let assignedRides = await db
+
+  // Fetch assigned rides
+  const assignedRides = await database
     .selectFrom("ride")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "ride.id",
       "student.name as passenger",
@@ -71,12 +126,14 @@ export default async function Page({ params }: { params: any }) {
       "ride.admin_comments",
       "ride.status",
     ])
-    .where("ride.parent_id", "=", parentInfo.id)
+    .where("ride.parentId", "=", parentInfo.id)
     .execute();
-  let tripHistory = await db
+
+  // Fetch trip history
+  const tripHistory = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.ride_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("ride", "ride.id", "daily_ride.rideId")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "daily_ride.id",
       "daily_ride.status",
@@ -85,12 +142,13 @@ export default async function Page({ params }: { params: any }) {
       "daily_ride.end_time",
       "daily_ride.kind",
     ])
-    .where("ride.parent_id", "=", parentInfo.id)
+    .where("ride.parentId", "=", parentInfo.id)
     .where("daily_ride.status", "!=", "Inactive")
     .orderBy("daily_ride.date", "desc")
     .execute();
 
-  let notifications = await db
+  // Fetch notifications
+  const notifications = await database
     .selectFrom("notification")
     .select([
       "notification.id",
@@ -98,8 +156,9 @@ export default async function Page({ params }: { params: any }) {
       "notification.message",
       "notification.created_at",
     ])
-    .where("notification.user_id", "=", parentInfo.id)
+    .where("notification.userId", "=", parentInfo.id)
     .execute();
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -110,17 +169,17 @@ export default async function Page({ params }: { params: any }) {
           },
           {
             href: `/parents/${parent_id}`,
-            label: parentInfo.name,
+            label: parentInfo.name ?? "Unknown",
           },
         ]}
       />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Parent Info </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Parent Info</h1>
         </div>
         <div className="flex gap-2 items-center">
-          <SendNotificationForm parent_id={parentInfo.id.toString()} />
-          <AddStudentForm parent_id={parentInfo.id.toString()} />
+          <SendNotificationForm parentId={parentInfo.id.toString()} />
+          <AddStudentForm parentId={parentInfo.id.toString()} />
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -135,8 +194,20 @@ export default async function Page({ params }: { params: any }) {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex flex-col items-center gap-3">
                 <div className="text-center">
-                  <h2 className="text-xl font-bold">{parentInfo.name}</h2>
+                  <h2 className="text-xl font-bold">
+                    {parentInfo.name ?? "Unknown"}
+                  </h2>
                 </div>
+                <Badge
+                  variant={
+                    parentInfo.is_kyc_verified ? "default" : "destructive"
+                  }
+                >
+                  {parentInfo.is_kyc_verified
+                    ? "KYC Verified"
+                    : "KYC Not Verified"}
+                </Badge>
+                <Badge>{parentInfo.statusName ?? "Unknown Status"}</Badge>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
@@ -145,7 +216,9 @@ export default async function Page({ params }: { params: any }) {
                     <Phone className="h-4 w-4" />
                     <span>Phone</span>
                   </div>
-                  <p className="font-medium">{parentInfo.phone_number}</p>
+                  <p className="font-medium">
+                    {parentInfo.phone_number ?? "Not provided"}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -153,7 +226,9 @@ export default async function Page({ params }: { params: any }) {
                     <Mail className="h-4 w-4" />
                     <span>Email</span>
                   </div>
-                  <p className="font-medium">{parentInfo.email}</p>
+                  <p className="font-medium">
+                    {parentInfo.email ?? "Not provided"}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -162,7 +237,11 @@ export default async function Page({ params }: { params: any }) {
                     <span>Joined</span>
                   </div>
                   <p className="font-medium">
-                    {parentInfo.created_at.toLocaleDateString()}
+                    {parentInfo.created_at.toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </p>
                 </div>
               </div>
@@ -170,7 +249,6 @@ export default async function Page({ params }: { params: any }) {
           </CardContent>
         </Card>
       </div>
-      {/* Tabs for Transactions, Ride History, Assigned Rides */}
       <Card>
         <CardHeader>
           <CardTitle>Parent Activity</CardTitle>
@@ -193,7 +271,10 @@ export default async function Page({ params }: { params: any }) {
                 <Calendar className="h-4 w-4" />
                 <span>Assigned Rides</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <TabsTrigger
+                value="notifications"
+                className="flex items-center gap-2"
+              >
                 <Bell className="h-4 w-4" />
                 <span>Notifications</span>
               </TabsTrigger>
@@ -204,7 +285,10 @@ export default async function Page({ params }: { params: any }) {
                 <GenTable
                   title="Students"
                   cols={["id", "name", "gender", "comments"]}
-                  data={students}
+                  data={students.map((student) => ({
+                    ...student,
+                    comments: student.comments ?? "None",
+                  }))}
                   baseLink="/parents/students/"
                   uniqueKey="id"
                 />
@@ -223,7 +307,20 @@ export default async function Page({ params }: { params: any }) {
                     "end_time",
                     "kind",
                   ]}
-                  data={tripHistory}
+                  data={tripHistory.map((ride) => ({
+                    ...ride,
+                    start_time:
+                      ride.start_time?.toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }) ?? "Not started",
+                    end_time:
+                      ride.end_time?.toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }) ?? "Not ended",
+                    passenger: ride.passenger ?? "Unknown",
+                  }))}
                   baseLink="/rides/trip/"
                   uniqueKey="id"
                 />
@@ -235,20 +332,33 @@ export default async function Page({ params }: { params: any }) {
                 <GenTable
                   title="Assigned Rides"
                   cols={["id", "status", "passenger"]}
-                  data={assignedRides}
+                  data={assignedRides.map((ride) => ({
+                    ...ride,
+                    passenger: ride.passenger ?? "Unknown",
+                  }))}
                   baseLink="/rides/"
                   uniqueKey="id"
                 />
               </div>
             </TabsContent>
+
             <TabsContent value="notifications" className="space-y-4">
               <div className="rounded-md border">
                 <GenTable
                   title="Notifications"
-                  cols={["id", "title", "message"]}
-                  data={notifications}
+                  cols={["id", "title", "message", "created_at"]}
+                  data={notifications.map((notification) => ({
+                    ...notification,
+                    created_at: notification.created_at.toLocaleString(
+                      "en-US",
+                      {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }
+                    ),
+                  }))}
                   baseLink={`/parents/${parent_id}`}
-                  uniqueKey=""
+                  uniqueKey="id"
                 />
               </div>
             </TabsContent>

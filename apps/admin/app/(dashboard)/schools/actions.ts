@@ -2,21 +2,41 @@
 
 import { zfd } from "zod-form-data";
 import { z } from "zod";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+// Define form schema
 const createSchoolSchema = zfd.formData(
   z.object({
-    name: zfd.text(z.string()),
-    location: zfd.text(z.string()),
-    comments: zfd.text(z.string().optional()),
-    longitude: zfd.text(z.string()),
-    latitude: zfd.text(z.string()),
-    administratorName: zfd.text(z.string()),
-    administratorPhone: zfd.text(z.string()),
+    name: zfd.text(z.string().min(1, "Name is required")),
+    location: zfd.text(z.string().optional()),
+    comment: zfd.text(z.string().optional()),
+    longitude: zfd.text(
+      z
+        .string()
+        .regex(/^-?\d*\.?\d+$/, "Invalid longitude")
+        .transform(Number)
+    ),
+    latitude: zfd.text(
+      z
+        .string()
+        .regex(/^-?\d*\.?\d+$/, "Invalid latitude")
+        .transform(Number)
+    ),
+    administratorName: zfd.text(
+      z.string().min(1, "Administrator name is required")
+    ),
+    administratorPhone: zfd.text(
+      z.string().min(1, "Administrator phone is required")
+    ),
   })
 );
+
+// Define return type for the action
+interface ActionResponse {
+  message?: string;
+}
 
 // Slugify function to generate a subdomain
 function slugifyForSubdomain(name: string): string {
@@ -28,17 +48,23 @@ function slugifyForSubdomain(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export async function create(prevState: any, formData: FormData) {
+export async function create(
+  prevState: ActionResponse,
+  formData: FormData
+): Promise<ActionResponse> {
   const data = createSchoolSchema.safeParse(formData);
   if (!data.success) {
     return {
-      message: "Invalid Data Submitted",
+      message:
+        "Invalid data submitted: " +
+        data.error.issues.map((issue) => issue.message).join(", "),
     };
   }
+
   const {
     name,
     location,
-    comments,
+    comment,
     longitude,
     latitude,
     administratorName,
@@ -50,27 +76,36 @@ export async function create(prevState: any, formData: FormData) {
   const slug = slugifyForSubdomain(school_name);
   const url = `https://schools.zidallie.co.ke/${slug}`;
 
-  let school = await db
-    .insertInto("school")
-    .values({
-      name: school_name,
-      location: location,
-      comments: comments,
-      url: url,
-      meta: JSON.stringify({
-        administrator_name: administratorName,
-        administrator_phone: administratorPhone,
-        longitude: Number(longitude),
-        latitude: Number(latitude),
-      }),
-    })
-    .returning("id")
-    .executeTakeFirst();
-  revalidatePath("/schools");
-  if (!school) {
+  try {
+    const school = await database
+      .insertInto("school")
+      .values({
+        name: school_name,
+        location: location ?? null,
+        url: url,
+        meta: JSON.stringify({
+          administrator_name: administratorName,
+          administrator_phone: administratorPhone,
+          longitude,
+          latitude,
+        }),
+      })
+      .returning("id")
+      .executeTakeFirst();
+
+    if (!school) {
+      return {
+        message: "Failed to create school",
+      };
+    }
+
+    revalidatePath("/schools");
+    return redirect(`/schools/${school.id}`);
+  } catch (error) {
     return {
-      message: "Failed to create school",
+      message:
+        "Error creating school: " +
+        (error instanceof Error ? error.message : "Unknown error"),
     };
   }
-  return redirect(`/schools/${school.id}`);
 }

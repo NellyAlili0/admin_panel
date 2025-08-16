@@ -1,18 +1,18 @@
-// pages/api/stream-drivers.ts
-import { db, sql } from "@repo/database";
-
+import { database, sql } from "@/database/config";
 
 export async function GET(req: Request) {
-  // check cordinates in the last 10 minutes
-  let cordinates = await db.selectFrom('location')
-    .select([
-      'latitude',
-      'longitude',
-    ])
-    .where('location.daily_ride_id', '=', 1)
+  // Check coordinates in the last 10 minutes
+  let coordinates = await database
+    .selectFrom("location")
+    .select(["latitude", "longitude"])
+    .where("location.daily_rideId", "=", 1)
+    .where(
+      sql<boolean>`"location"."timestamp" >= NOW() - INTERVAL '10 minutes'`
+    )
     .executeTakeFirst();
+
   return Response.json({
-    latitude: Number(cordinates?.latitude),
-    longitude: Number(cordinates?.longitude),
-  })
+    latitude: coordinates ? Number(coordinates.latitude) : 0,
+    longitude: coordinates ? Number(coordinates.longitude) : 0,
+  });
 }

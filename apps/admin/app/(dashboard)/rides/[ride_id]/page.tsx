@@ -1,41 +1,49 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import { RideDetailsPage } from "./dets";
 import { Mapping } from "@repo/handlers/mapping";
+
 export default async function Page({ params }: { params: any }) {
   const { ride_id } = await params;
-  let ride = await db
+
+  let ride = await database
     .selectFrom("ride")
     .selectAll()
     .where("id", "=", ride_id)
     .executeTakeFirst();
+
   if (!ride) {
     return <div>Ride not found</div>;
   }
-  let student = await db
+
+  let student = await database
     .selectFrom("student")
     .selectAll()
-    .where("id", "=", ride.student_id)
+    .where("id", "=", ride.studentId)
     .executeTakeFirst();
-  let vehicle = await db
+
+  let vehicle = await database
     .selectFrom("vehicle")
     .selectAll()
-    .where("id", "=", ride.vehicle_id)
+    .where("id", "=", ride.vehicleId)
     .executeTakeFirst();
-  let driver = await db
+
+  let driver = await database
     .selectFrom("user")
     .selectAll()
-    .where("id", "=", ride.driver_id)
+    .where("id", "=", ride.driverId)
     .executeTakeFirst();
-  let guardian = await db
+
+  let guardian = await database
     .selectFrom("user")
     .selectAll()
-    .where("id", "=", ride.parent_id)
+    .where("id", "=", ride.parentId)
     .executeTakeFirst();
-  let tripHistory = await db
+
+  let tripHistory = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.ride_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("ride", "ride.id", "daily_ride.rideId")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "daily_ride.id",
       "daily_ride.status",
@@ -44,9 +52,10 @@ export default async function Page({ params }: { params: any }) {
       "daily_ride.end_time",
       "daily_ride.kind",
     ])
-    .where("daily_ride.ride_id", "=", ride.id)
+    .where("daily_ride.rideId", "=", ride.id)
     .orderBy("daily_ride.date", "desc")
     .execute();
+
   // let mapping = new Mapping();
   // let route = await mapping.getRoute({
   //   origin: {
@@ -58,6 +67,7 @@ export default async function Page({ params }: { params: any }) {
   //     longitude: ride.schedule?.dropoff.longitude!,
   //   },
   // });
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs

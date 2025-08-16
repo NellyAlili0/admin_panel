@@ -1,10 +1,10 @@
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 
 export async function GET(req: Request) {
-  let drivers = await db
+  let drivers = await database
     .selectFrom("daily_ride")
-    .leftJoin("user", "daily_ride.driver_id", "user.id")
-    .leftJoin("vehicle", "user.id", "vehicle.user_id")
+    .leftJoin("user", "daily_ride.driverId", "user.id")
+    .leftJoin("vehicle", "vehicle.userId", "user.id")
     .select([
       "user.email",
       "user.phone_number",
@@ -16,17 +16,16 @@ export async function GET(req: Request) {
     .where((eb) => eb.or([eb("daily_ride.status", "=", "Started")]))
     .execute();
 
-  // last locations of driver, passenger count
   let allDriverInfo: any = [];
   for (let driver of drivers) {
-    let lastLocation = await db
+    let lastLocation = await database
       .selectFrom("location")
-      .leftJoin("daily_ride", "location.daily_ride_id", "daily_ride.id")
-      .leftJoin("user", "daily_ride.driver_id", "user.id")
+      .leftJoin("daily_ride", "location.daily_rideId", "daily_ride.id")
+      .leftJoin("user", "daily_ride.driverId", "user.id")
       .select(["latitude", "longitude"])
       .where("user.email", "=", driver.email)
       .executeTakeFirst();
-    // convert last location to integer or double
+
     if (lastLocation) {
       lastLocation.latitude = Number(lastLocation.latitude);
       lastLocation.longitude = Number(lastLocation.longitude);
@@ -36,10 +35,11 @@ export async function GET(req: Request) {
         longitude: 0,
       };
     }
-    const { count } = await db
+
+    const { count } = await database
       .selectFrom("daily_ride")
-      .leftJoin("user", "daily_ride.driver_id", "user.id")
-      .select(db.fn.countAll().as("count"))
+      .leftJoin("user", "daily_ride.driverId", "user.id")
+      .select(database.fn.countAll().as("count"))
       .where("user.email", "=", driver.email)
       .executeTakeFirstOrThrow();
 
@@ -49,5 +49,6 @@ export async function GET(req: Request) {
       passengerCount: count,
     });
   }
+
   return Response.json(allDriverInfo);
 }

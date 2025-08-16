@@ -32,8 +32,25 @@ import { School } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+// Define minimal School interface
+interface School {
+  id: number;
+  name: string;
+}
+
 export function CreateParent() {
   const [state, formAction] = useActionState(createParent, initialState);
+
+  useEffect(() => {
+    if (state.message) {
+      if (state.message.includes("successfully")) {
+        toast.success(state.message);
+      } else {
+        toast.error(state.message);
+      }
+    }
+  }, [state]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -44,15 +61,39 @@ export function CreateParent() {
           <DialogTitle>Create Parent</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="name" placeholder="Name" required />
-          <Input name="email" placeholder="Email" required />
-          <Input name="phone_number" placeholder="Phone Number" required />
-          <Input
-            name="password"
-            type="password"
-            placeholder="Password"
-            required
-          />
+          <div className="grid gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input name="name" id="name" placeholder="Name" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              name="email"
+              id="email"
+              type="email"
+              placeholder="Email"
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="phone_number">Phone Number</Label>
+            <Input
+              name="phone_number"
+              id="phone_number"
+              placeholder="Phone Number"
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              name="password"
+              id="password"
+              type="password"
+              placeholder="Password"
+              required
+            />
+          </div>
           <SubmitButton title="Create Parent Account" />
         </form>
       </DialogContent>
@@ -60,13 +101,19 @@ export function CreateParent() {
   );
 }
 
-export function SendNotificationForm({ parent_id }: { parent_id: string }) {
+export function SendNotificationForm({ parentId }: { parentId: string }) {
   const [state, formAction] = useActionState(sendNotification, initialState);
+
   useEffect(() => {
     if (state.message) {
-      toast.error(state.message)
+      if (state.message.includes("successfully")) {
+        toast.success(state.message);
+      } else {
+        toast.error(state.message);
+      }
     }
-  }, [state])
+  }, [state]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -77,9 +124,15 @@ export function SendNotificationForm({ parent_id }: { parent_id: string }) {
           <DialogTitle>Send Notification</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="parent_id" value={parent_id} hidden />
-          <Input name="title" placeholder="Title" required />
-          <Input name="body" placeholder="Body" required />
+          <Input name="parent_id" value={parentId} hidden />
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input name="title" id="title" placeholder="Title" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="body">Message</Label>
+            <Input name="body" id="body" placeholder="Message" required />
+          </div>
           <SubmitButton title="Send Notification" />
         </form>
       </DialogContent>
@@ -87,8 +140,19 @@ export function SendNotificationForm({ parent_id }: { parent_id: string }) {
   );
 }
 
-export function AddStudentForm({ parent_id }: { parent_id: string }) {
+export function AddStudentForm({ parentId }: { parentId: string }) {
   const [state, formAction] = useActionState(addStudent, initialState);
+
+  useEffect(() => {
+    if (state.message) {
+      if (state.message.includes("successfully")) {
+        toast.success(state.message);
+      } else {
+        toast.error(state.message);
+      }
+    }
+  }, [state]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -99,19 +163,39 @@ export function AddStudentForm({ parent_id }: { parent_id: string }) {
           <DialogTitle>Add Student</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="parent_id" value={parent_id} hidden />
-          <Input name="name" placeholder="Name" required />
-          <Select name="gender">
-            <SelectTrigger>
-              <SelectValue placeholder="Gender" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Female">Female</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input name="address" placeholder="Address" required />
-          <Input name="comments" placeholder="Comments" />
+          <Input name="parent_id" value={parentId} hidden />
+          <div className="grid gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input name="name" id="name" placeholder="Name" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="gender">Gender</Label>
+            <Select name="gender" required>
+              <SelectTrigger id="gender">
+                <SelectValue placeholder="Select Gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              name="address"
+              id="address"
+              placeholder="Address (optional)"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="comments">Comments</Label>
+            <Input
+              name="comments"
+              id="comments"
+              placeholder="Comments (optional)"
+            />
+          </div>
           <SubmitButton title="Add Student" />
         </form>
       </DialogContent>
@@ -119,15 +203,25 @@ export function AddStudentForm({ parent_id }: { parent_id: string }) {
   );
 }
 
-// Link School Dialog Component
 export function LinkSchoolDialog({
-  student_id,
+  studentId,
   schools,
 }: {
-  student_id: string;
-  schools: any;
+  studentId: string;
+  schools: School[];
 }) {
   const [state, formAction] = useActionState(linkSchool, initialState);
+
+  useEffect(() => {
+    if (state.message) {
+      if (state.message.includes("successfully")) {
+        toast.success(state.message);
+      } else {
+        toast.error(state.message);
+      }
+    }
+  }, [state]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -144,17 +238,17 @@ export function LinkSchoolDialog({
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="student_id" value={student_id} hidden />
+          <Input name="student_id" value={studentId} hidden />
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="school">Select School</Label>
-              <Select name="school_id">
-                <SelectTrigger id="school">
+              <Label htmlFor="school_id">Select School</Label>
+              <Select name="school_id" required>
+                <SelectTrigger id="school_id">
                   <SelectValue placeholder="Select a school" />
                 </SelectTrigger>
                 <SelectContent>
-                  {schools.map((school: any) => (
-                    <SelectItem key={school.id} value={school.id}>
+                  {schools.map((school) => (
+                    <SelectItem key={school.id} value={school.id.toString()}>
                       {school.name}
                     </SelectItem>
                   ))}

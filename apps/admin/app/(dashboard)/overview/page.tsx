@@ -6,33 +6,87 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Car, Fuel, TrendingUp, Users } from "lucide-react";
-import { db, sql } from "@repo/database";
+import { database } from "@/database/config";
 import { VehicleCard } from "@/components/vehicle-card";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
 
-export default async function Page() {
-  let metrics: any = await sql`SELECT 
-    (SELECT COUNT(*) FROM public."vehicle") as total_vehicles,
-    (SELECT COUNT(*) FROM public."user" WHERE "kind" = 'Driver') as total_drivers,
-    (SELECT COUNT(*) FROM public."user" WHERE "kind" = 'Parent') as total_parents,
-    (SELECT COUNT(*) FROM public."ride" WHERE "status" != 'Cancelled') as total_rides
-    `.execute(db);
-  let totalVehicles = metrics.rows[0].total_vehicles;
-  let totalDrivers = metrics.rows[0].total_drivers;
-  let totalParents = metrics.rows[0].total_parents;
-  let totalRides = metrics.rows[0].total_rides;
+// Define interfaces for query results
+interface Metrics {
+  total_vehicles: number;
+  total_drivers: number;
+  total_parents: number;
+  total_rides: number;
+}
 
-  let requested = await db
+interface RequestedRide {
+  id: number;
+  name: string | null;
+  phone_number: string | null;
+  status: string | null;
+}
+
+interface KYCRequest {
+  id: number;
+  name: string | null;
+  email: string | null;
+  is_verified: boolean;
+}
+
+export default async function Page() {
+  // Fetch metrics using query builder
+  const [vehicleCount, driverCount, parentCount, rideCount] = await Promise.all(
+    [
+      database
+        .selectFrom("vehicle")
+        .select((eb) => [eb.fn.countAll<number>().as("count")])
+        .executeTakeFirst(),
+
+      database
+        .selectFrom("user")
+        .select((eb) => [eb.fn.countAll<number>().as("count")])
+        .where("kind", "=", "Driver")
+        .executeTakeFirst(),
+
+      database
+        .selectFrom("user")
+        .select((eb) => [eb.fn.countAll<number>().as("count")])
+        .where("kind", "=", "Parent")
+        .executeTakeFirst(),
+
+      database
+        .selectFrom("ride")
+        .select((eb) => [eb.fn.countAll<number>().as("count")])
+        .where("status", "!=", "Cancelled")
+        .executeTakeFirst(),
+    ]
+  );
+
+  const metrics: Metrics = {
+    total_vehicles: vehicleCount?.count ?? 0,
+    total_drivers: driverCount?.count ?? 0,
+    total_parents: parentCount?.count ?? 0,
+    total_rides: rideCount?.count ?? 0,
+  };
+
+  if (!metrics) {
+    return <div>Error fetching dashboard metrics</div>;
+  }
+
+  const { total_vehicles, total_drivers, total_parents, total_rides } = metrics;
+
+  // Fetch requested rides
+  const requested = await database
     .selectFrom("ride")
-    .leftJoin("user", "ride.parent_id", "user.id")
-    .select(["ride.id", "user.name", "user.phone_number"])
+    .leftJoin("user", "ride.parentId", "user.id")
+    .select(["ride.id", "user.name", "user.phone_number", "ride.status"])
     .where("ride.status", "=", "Requested")
     .execute();
 
-  let kycRequests = await db
+  // Fetch KYC requests
+  const kycRequests = await database
     .selectFrom("kyc")
-    .leftJoin("user", "kyc.user_id", "user.id")
+    .leftJoin("user", "kyc.userId", "user.id")
     .select(["kyc.id", "user.name", "user.email", "kyc.is_verified"])
     .where("kyc.is_verified", "=", false)
     .execute();
@@ -63,7 +117,7 @@ export default async function Page() {
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalVehicles}</div>
+            <div className="text-2xl font-bold">{total_vehicles}</div>
           </CardContent>
         </Card>
         <Card>
@@ -72,7 +126,7 @@ export default async function Page() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalDrivers}</div>
+            <div className="text-2xl font-bold">{total_drivers}</div>
           </CardContent>
         </Card>
         <Card>
@@ -81,7 +135,7 @@ export default async function Page() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalParents}</div>
+            <div className="text-2xl font-bold">{total_parents}</div>
           </CardContent>
         </Card>
         <Card>
@@ -90,21 +144,25 @@ export default async function Page() {
             <Fuel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRides}</div>
+            <div className="text-2xl font-bold">{total_rides}</div>
           </CardContent>
         </Card>
       </div>
       <div className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader>
-            <CardTitle>Requested Rides </CardTitle>
+            <CardTitle>Requested Rides</CardTitle>
             <CardDescription>Trips requested by parents</CardDescription>
           </CardHeader>
           <CardContent>
             <GenTable
               title="Requested Rides"
               cols={["id", "name", "phone_number"]}
-              data={requested}
+              data={requested.map((ride) => ({
+                ...ride,
+                name: ride.name ?? "Unknown",
+                phone_number: ride.phone_number ?? "Not provided",
+              }))}
               baseLink="/rides/"
               uniqueKey="id"
             />
@@ -112,16 +170,21 @@ export default async function Page() {
         </Card>
         <Card className="md:col-span-3">
           <CardHeader>
-            <CardTitle> Driver KYC Requests </CardTitle>
-            <CardDescription> KYC requests from drivers </CardDescription>
+            <CardTitle>Driver KYC Requests</CardTitle>
+            <CardDescription>KYC requests from drivers</CardDescription>
           </CardHeader>
           <CardContent>
             <GenTable
               title="Requests"
-              cols={["id", "name", "email", "verified"]}
-              data={kycRequests}
+              cols={["id", "name", "email", "is_verified"]}
+              data={kycRequests.map((kyc) => ({
+                ...kyc,
+                name: kyc.name ?? "Unknown",
+                email: kyc.email ?? "Not provided",
+                is_verified: kyc.is_verified ? "Verified" : "Pending",
+              }))}
               baseLink="/drivers/"
-              uniqueKey="email"
+              uniqueKey="id"
             />
           </CardContent>
         </Card>

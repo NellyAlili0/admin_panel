@@ -37,6 +37,7 @@ import {
   MapIcon,
   ArrowRight,
   CheckCheckIcon,
+  X,
 } from "lucide-react";
 import { assignRide } from "./action";
 import MapPreview from "./mapPreview";
@@ -47,14 +48,46 @@ import {
   useLoadScript,
   StandaloneSearchBox,
   LoadScript,
+  Autocomplete,
 } from "@react-google-maps/api";
-const libraries = ["places"];
+
+const libraries: "places"[] = ["places"];
+
+// Updated type definitions to match database schema
+interface Driver {
+  id: number; // user.id
+  name: string | null; // user.name
+  email: string | null; // user.email
+  phone_number: string | null; // user.phone_number
+  vehicle_id: number; // vehicle.id
+  vehicle_name: string | null; // vehicle.vehicle_name
+  registration_number: string; // vehicle.registration_number
+  vehicle_type: "Bus" | "Van" | "Car"; // vehicle.vehicle_type
+  seat_count: number; // vehicle.seat_count
+  available_seats: number; // vehicle.available_seats
+  avatar?: string; // Optional for UI
+}
+
+interface Student {
+  id: number; // student.id
+  name: string; // student.name
+  gender: "Female" | "Male"; // student.gender
+  address: string | null; // student.address
+  parent_id: number | null; // student.parentId
+  parent_name: string | null; // user.name (parent)
+  parent_email: string | null; // user.email (parent)
+  parent_phone: string | null; // user.phone_number (parent)
+  school_id: number | null; // student.schoolId
+  school_name?: string | null; // school.name
+  avatar?: string; // Optional for UI
+}
+
 export default function AssignRidePage({
   drivers,
   students,
 }: {
-  drivers: any;
-  students: any;
+  drivers: Driver[];
+  students: Student[];
 }) {
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -67,19 +100,9 @@ export default function AssignRidePage({
   const [selectedPassenger, setSelectedPassenger] = useState<string | null>(
     null
   );
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "AIzaSyCSmmBwrPkYacuOtfp6Wtlg7QGbnq2aUFE", // Replace with your actual API key
-    libraries: ["places"],
-  });
+
   const [searchBox, setSearchBox] = useState<any | null>(null);
   const [searchBoxRef, setSearchBoxRef] = useState<any | null>(null);
-  // Callback function when the search box loads
-  // const onLoad = useCallback((ref: StandaloneSearchBox) => {
-  //   setSearchBox(ref);
-  //   // Set component restrictions to Kenya (ISO 3166-1 Alpha-2 code for Kenya is 'KE')
-  //   // This restricts the autocomplete suggestions to Kenya.
-  //   searchBoxRef.current?.setComponentRestrictions({ country: "KE" });
-  // }, []);
 
   const [pickupDetails, setPickupDetails] = useState({
     location: "",
@@ -93,40 +116,58 @@ export default function AssignRidePage({
     lat: "",
     lng: "",
   });
-  const [type, setType] = useState("private");
+  const [type, setType] = useState("Private"); // Updated to match RideSchedule.kind
   const [cost, setCost] = useState("1000");
   const [comments, setComments] = useState("");
   const [loading, setLoading] = useState(false);
+  const pickupRef = useRef(null);
+  const dropoffRef = useRef(null);
 
-  const onPlacesChanged = () => {
-    const places = searchBox?.getPlaces();
-    const selectedPlace = places[0]; // Get the first selected place
+  const [showPickupModal, setShowPickupModal] = useState(false);
+  const [showDropoffModal, setShowDropoffModal] = useState(false);
+  const [pickupSearchBoxRef, setPickupSearchBoxRef] = useState<any | null>(
+    null
+  );
+  const [dropoffSearchBoxRef, setDropoffSearchBoxRef] = useState<any | null>(
+    null
+  );
+  const onPickupPlacesChanged = () => {
+    console.log("Places changed - pickup");
+    const place = pickupSearchBoxRef?.getPlace();
+    console.log(place);
 
-    // Update state with the place name and coordinates
     setPickupDetails({
-      location: selectedPlace.name,
-      time: pickupDetails.time,
-      lat: selectedPlace.geometry.location.lat(),
-      lng: selectedPlace.geometry.location.lng(),
+      ...pickupDetails,
+      location: place.formatted_address,
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
     });
   };
+
   const onDropoffPlacesChanged = () => {
-    const places = searchBoxRef?.getPlaces();
-    const selectedPlace = places[0]; // Get the first selected place
+    console.log("Places changed- dropoff");
+
+    const place = dropoffSearchBoxRef?.getPlace();
+
     let newDropoffDetails = {
-      location: selectedPlace.name,
-      time: dropoffDetails.time,
-      lat: selectedPlace.geometry.location.lat(),
-      lng: selectedPlace.geometry.location.lng(),
+      ...dropoffDetails,
+      location: place.formatted_address,
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
     };
     setDropoffDetails(newDropoffDetails);
   };
-  const onSBLoad = (ref: any) => {
-    setSearchBox(ref);
+
+  const onPickupSBLoad = (ref: any) => {
+    console.log("✅ pickup loaded");
+    setPickupSearchBoxRef(ref);
   };
+
   const onDropoffSBLoad = (ref: any) => {
-    setSearchBoxRef(ref);
+    console.log("✅ dropoff loaded");
+    setDropoffSearchBoxRef(ref);
   };
+
   // Calculate weekdays between two dates
   const getWeekdayCount = (from: Date | undefined, to: Date | undefined) => {
     if (!from || !to) return 0;
@@ -159,15 +200,23 @@ export default function AssignRidePage({
     formData.append("dropoff_time", dropoffDetails.time);
     formData.append("dropoff_lat", dropoffDetails.lat);
     formData.append("dropoff_lng", dropoffDetails.lng);
-    formData.append("start_date", dateRange.from!.toDateString());
-    formData.append("end_date", dateRange.to!.toDateString());
+    formData.append("start_date", dateRange.from!.toISOString().split("T")[0]); // Format as YYYY-MM-DD
+    formData.append("end_date", dateRange.to!.toISOString().split("T")[0]); // Format as YYYY-MM-DD
     formData.append("type", type);
     formData.append("cost", cost);
     formData.append("comments", comments);
-    const result = await assignRide(formData);
-    if (result.message) {
-      toast(result.message);
+
+    try {
+      const result = await assignRide(formData);
+      if (result?.message) {
+        toast(result.message);
+      } else {
+        toast.success("Ride assigned successfully!");
+      }
+    } catch (error) {
+      toast.error("Failed to assign ride. Please try again.");
     }
+
     setLoading(false);
   };
 
@@ -179,16 +228,6 @@ export default function AssignRidePage({
   // Function to handle passenger selection
   const handlePassengerSelect = (passengerId: string) => {
     setSelectedPassenger(passengerId);
-  };
-
-  // Function to handle pickup details submission
-  const handlePickupSubmit = (details: typeof pickupDetails) => {
-    setPickupDetails(details);
-  };
-
-  // Function to handle dropoff details submission
-  const handleDropoffSubmit = (details: typeof dropoffDetails) => {
-    setDropoffDetails(details);
   };
 
   // Distance and cost calculation
@@ -217,42 +256,52 @@ export default function AssignRidePage({
               <CardContent className="space-y-4">
                 {drivers.map((driver) => (
                   <div
-                    key={driver.driver_id}
+                    key={driver.id}
                     className={cn(
                       "border rounded-lg p-4 cursor-pointer transition-all",
-                      selectedDriver === driver.driver_id
+                      selectedDriver === driver.id.toString()
                         ? "border-primary bg-primary/5"
                         : "hover:border-primary/50"
                     )}
-                    onClick={() => handleDriverSelect(driver.driver_id)}
+                    onClick={() => handleDriverSelect(driver.id.toString())}
                   >
                     <div className="flex items-start gap-3">
                       <Avatar className="h-12 w-12">
                         <AvatarImage
                           src={driver.avatar || "/placeholder.svg"}
-                          alt={driver.name}
+                          alt={driver.name || "Driver"}
                         />
                         <AvatarFallback>
                           {driver.name
-                            .split(" ")
+                            ?.split(" ")
                             .map((n) => n[0])
-                            .join("")}
+                            .join("") || "D"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-medium">{driver.name}</h3>
+                            <h3 className="font-medium">
+                              {driver.name || "Unknown Driver"}
+                            </h3>
                             <div className="flex items-center text-sm text-muted-foreground">
                               <span className="flex items-center">
                                 {driver.vehicle_name} (
                                 {driver.registration_number})
                               </span>
                             </div>
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <span>{driver.vehicle_type}</span>
+                              <span className="mx-1">•</span>
+                              <span>
+                                {driver.available_seats}/{driver.seat_count}{" "}
+                                seats available
+                              </span>
+                            </div>
                           </div>
-                          {selectedDriver === driver.id && (
+                          {selectedDriver === driver.id.toString() && (
                             <Badge className="bg-primary">
-                              <CheckCheckIcon />
+                              <CheckCheckIcon className="h-3 w-3" />
                             </Badge>
                           )}
                         </div>
@@ -271,21 +320,25 @@ export default function AssignRidePage({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RadioGroup defaultValue="private" className="space-y-3">
+                <RadioGroup
+                  value={type}
+                  onValueChange={setType}
+                  className="space-y-3"
+                >
                   <div className="flex items-center space-x-2 border rounded-md p-3">
-                    <RadioGroupItem value="private" id="private" />
+                    <RadioGroupItem value="Private" id="private" />
                     <Label htmlFor="private" className="flex-1 cursor-pointer">
                       <div className="font-medium">Private</div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 border rounded-md p-3">
-                    <RadioGroupItem value="carpool" id="carpool" />
+                    <RadioGroupItem value="Carpool" id="carpool" />
                     <Label htmlFor="carpool" className="flex-1 cursor-pointer">
                       <div className="font-medium">Carpool</div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 border rounded-md p-3">
-                    <RadioGroupItem value="bus" id="bus" />
+                    <RadioGroupItem value="Bus" id="bus" />
                     <Label htmlFor="bus" className="flex-1 cursor-pointer">
                       <div className="font-medium">Bus</div>
                     </Label>
@@ -306,7 +359,7 @@ export default function AssignRidePage({
                     id="cost"
                     type="number"
                     onChange={(e) => setCost(e.target.value)}
-                    defaultValue={cost}
+                    value={cost}
                   />
                 </div>
 
@@ -343,142 +396,216 @@ export default function AssignRidePage({
               <CardContent className="space-y-6">
                 {/* Pickup and Dropoff Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Pickup Dialog */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <div className="border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
-                            <MapPin className="h-3 w-3 text-green-600" />
-                          </div>
-                          <h3 className="font-medium">Pickup Information</h3>
+                  <>
+                    {/* Trigger */}
+                    <div
+                      className="border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all"
+                      onClick={() => setShowPickupModal(true)}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <MapPin className="h-3 w-3 text-green-600" />
                         </div>
-                        {pickupDetails.location ? (
-                          <div className="space-y-1 pl-8">
-                            <p className="text-sm">{pickupDetails.location}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {pickupDetails.time}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground pl-8">
-                            Click to add pickup details
+                        <h3 className="font-medium">Pickup Information</h3>
+                      </div>
+                      {pickupDetails.location ? (
+                        <div className="space-y-1 pl-8">
+                          <p className="text-sm">{pickupDetails.location}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {pickupDetails.time}
                           </p>
-                        )}
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Pickup Details</DialogTitle>
-                        <DialogDescription>
-                          Enter the pickup location and time
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <StandaloneSearchBox
-                            onPlacesChanged={onPlacesChanged}
-                            onLoad={onSBLoad}
-                          >
-                            <input
-                              type="text"
-                              id="location-search"
-                              placeholder="Start typing a place name..."
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                            />
-                          </StandaloneSearchBox>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="pickup-time">Pickup Time</Label>
-                          <div className="">
-                            <Input
-                              id="pickup-time"
-                              placeholder="Select time"
-                              // type="datetime-local"
-                              type="time"
-                              required
-                              step="3600"
-                              onChange={(e) =>
-                                setPickupDetails({
-                                  ...pickupDetails,
-                                  time: e.target.value,
-                                })
-                              }
-                              defaultValue={pickupDetails.time}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                      ) : (
+                        <p className="text-sm text-muted-foreground pl-8">
+                          Click to add pickup details
+                        </p>
+                      )}
+                    </div>
 
-                  {/* Dropoff Dialog */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <div className="border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
-                            <MapPin className="h-3 w-3 text-red-600" />
-                          </div>
-                          <h3 className="font-medium">Dropoff Information</h3>
-                        </div>
-                        {dropoffDetails.location ? (
-                          <div className="space-y-1 pl-8">
-                            <p className="text-sm">{dropoffDetails.location}</p>
+                    {/* Modal */}
+                    {showPickupModal && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+                          {/* Close button */}
+                          <button
+                            onClick={() => setShowPickupModal(false)}
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+
+                          {/* Header */}
+                          <div className="mb-4">
+                            <h2 className="text-lg font-semibold">
+                              Pickup Details
+                            </h2>
                             <p className="text-sm text-muted-foreground">
-                              {dropoffDetails.time}
+                              Enter the pickup location and time
                             </p>
                           </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground pl-8">
-                            Click to add dropoff details
-                          </p>
-                        )}
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Dropoff Details</DialogTitle>
-                        <DialogDescription>
-                          Enter the dropoff location and time
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <StandaloneSearchBox
-                            onLoad={onDropoffSBLoad}
-                            onPlacesChanged={onDropoffPlacesChanged}
-                          >
-                            <input
-                              type="text"
-                              id="location-search"
-                              placeholder="Start typing a place name..."
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                            />
-                          </StandaloneSearchBox>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="dropoff-time">Dropoff Time</Label>
-                          <div className="">
-                            <Input
-                              id="dropoff-time"
-                              placeholder="Select time"
-                              type="time"
-                              required
-                              step="3600"
-                              onChange={(e) =>
-                                setDropoffDetails({
-                                  ...dropoffDetails,
-                                  time: e.target.value,
-                                })
-                              }
-                              defaultValue={dropoffDetails.time}
-                            />
+
+                          {/* Body */}
+                          <div className="grid gap-4 py-2">
+                            {/* Location Search */}
+                            <div className="space-y-2">
+                              <Autocomplete
+                                onPlaceChanged={onPickupPlacesChanged}
+                                onLoad={onPickupSBLoad}
+                              >
+                                <input
+                                  type="text"
+                                  ref={pickupRef}
+                                  id="location-search"
+                                  placeholder="Start typing a place name..."
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                                />
+                              </Autocomplete>
+                            </div>
+
+                            {/* Time Picker */}
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="pickup-time"
+                                className="text-sm font-medium text-gray-700"
+                              >
+                                Pickup Time
+                              </label>
+                              <input
+                                id="pickup-time"
+                                type="time"
+                                required
+                                step="3600"
+                                value={pickupDetails.time}
+                                onChange={(e) =>
+                                  setPickupDetails({
+                                    ...pickupDetails,
+                                    time: e.target.value,
+                                  })
+                                }
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              onClick={() => setShowPickupModal(false)}
+                              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition"
+                            >
+                              Done
+                            </button>
                           </div>
                         </div>
                       </div>
-                    </DialogContent>
-                  </Dialog>
+                    )}
+                  </>
+                  <>
+                    {/* Trigger */}
+                    <div
+                      className="border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all"
+                      onClick={() => setShowDropoffModal(true)}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
+                          <MapPin className="h-3 w-3 text-red-600" />
+                        </div>
+                        <h3 className="font-medium">Dropoff Information</h3>
+                      </div>
+                      {dropoffDetails.location ? (
+                        <div className="space-y-1 pl-8">
+                          <p className="text-sm">{dropoffDetails.location}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {dropoffDetails.time}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground pl-8">
+                          Click to add dropoff details
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Modal */}
+                    {showDropoffModal && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+                          {/* Close button */}
+                          <button
+                            onClick={() => setShowDropoffModal(false)}
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+
+                          {/* Header */}
+                          <div className="mb-4">
+                            <h2 className="text-lg font-semibold">
+                              Dropoff Details
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                              Enter the dropoff location and time
+                            </p>
+                          </div>
+
+                          {/* Body */}
+                          <div className="grid gap-4 py-2">
+                            {/* Location Search */}
+                            <div className="space-y-2">
+                              <Autocomplete
+                                onPlaceChanged={onDropoffPlacesChanged}
+                                onLoad={onDropoffSBLoad}
+                              >
+                                <input
+                                  type="text"
+                                  ref={dropoffRef}
+                                  id="location-search"
+                                  placeholder="Start typing a place name..."
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                                />
+                              </Autocomplete>
+                            </div>
+
+                            {/* Time Picker */}
+                            <div className="space-y-2">
+                              <label
+                                htmlFor="dropoff-time"
+                                className="text-sm font-medium text-gray-700"
+                              >
+                                Dropoff Time
+                              </label>
+                              <input
+                                id="dropoff-time"
+                                type="time"
+                                required
+                                step="3600"
+                                value={dropoffDetails.time}
+                                onChange={(e) =>
+                                  setDropoffDetails({
+                                    ...dropoffDetails,
+                                    time: e.target.value,
+                                  })
+                                }
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              onClick={() => setShowDropoffModal(false)}
+                              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+
+                  {/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */}
                 </div>
 
                 {/* Route Map */}
@@ -621,39 +748,37 @@ export default function AssignRidePage({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {students.map((student: any) => (
                     <div
-                      key={student.student_id}
+                      key={student.id}
                       className={cn(
                         "border rounded-lg p-3 cursor-pointer transition-all",
-                        selectedPassenger === student.student_id
+                        selectedPassenger === student.id
                           ? "border-primary bg-primary/5"
                           : "hover:border-primary/50"
                       )}
-                      onClick={() => handlePassengerSelect(student.student_id)}
+                      onClick={() => handlePassengerSelect(student.id)}
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src={student.avatar || "/placeholder.svg"}
-                            alt={student.student_name}
+                            src={student?.profile_picture || "/placeholder.svg"}
+                            alt={student?.name}
                           />
                           <AvatarFallback>
-                            {student.student_name
+                            {student?.name
                               .split(" ")
                               .map((n) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h4 className="font-medium">
-                            {student.student_name}
-                          </h4>
+                          <h4 className="font-medium">{student?.name}</h4>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{student.parent_name}</span>
+                            <span>{student?.name}</span>
                             <span>•</span>
-                            <span>{student.parent_email}</span>
+                            <span>{student?.parentId?.email}</span>
                           </div>
                         </div>
-                        {selectedPassenger === student.student_id && (
+                        {selectedPassenger === student?.id && (
                           <Badge className="ml-auto bg-primary">
                             <CheckCheckIcon />
                           </Badge>
@@ -688,7 +813,7 @@ export default function AssignRidePage({
               !type
             }
           >
-            Assign Ride
+            {loading ? "Assigning..." : "Assign Ride"}
           </Button>
         </div>
       </LoadScript>

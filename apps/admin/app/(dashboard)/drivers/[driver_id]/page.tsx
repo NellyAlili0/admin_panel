@@ -32,7 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import Link from "next/link";
 import GenTable from "@/components/tables";
 import {
@@ -46,7 +46,7 @@ import { SendNotificationForm } from "../../parents/forms";
 export default async function Page({ params }: { params: any }) {
   const { driver_id } = await params;
   // driver information
-  let driverInfo = await db
+  let driverInfo = await database
     .selectFrom("user")
     .select([
       "user.id",
@@ -59,7 +59,7 @@ export default async function Page({ params }: { params: any }) {
       "user.is_kyc_verified",
       "user.created_at",
       "user.updated_at",
-      "user.status",
+      "user.statusId", // Changed from status to statusId
     ])
     .where("user.email", "=", driver_id.replace("%40", "@"))
     .where("user.kind", "=", "Driver")
@@ -68,13 +68,13 @@ export default async function Page({ params }: { params: any }) {
     return <div>Driver not found</div>;
   }
   // vehicle information
-  let vehicleInfo = await db
+  let vehicleInfo = await database
     .selectFrom("vehicle")
     .selectAll()
-    .where("vehicle.user_id", "=", driverInfo?.id!)
+    .where("vehicle.userId", "=", driverInfo?.id!) // Changed from user_id to userId
     .executeTakeFirst();
   // kyc information
-  let kycInfo = await db
+  let kycInfo = await database
     .selectFrom("kyc")
     .select([
       "kyc.id",
@@ -85,20 +85,20 @@ export default async function Page({ params }: { params: any }) {
       "kyc.certificate_of_good_conduct",
       "kyc.is_verified",
     ])
-    .where("kyc.user_id", "=", driverInfo?.id)
+    .where("kyc.userId", "=", driverInfo?.id) // Changed from user_id to userId
     .executeTakeFirst();
   // assigned rides
-  let assignedRides = await db
+  let assignedRides = await database
     .selectFrom("ride")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("student", "student.id", "ride.studentId") // Changed from ride.student_id to ride.studentId
     .select(["ride.id", "student.name", "ride.status", "ride.schedule"])
-    .where("driver_id", "=", driverInfo.id)
+    .where("driverId", "=", driverInfo.id) // Changed from driver_id to driverId
     .execute();
   // trip history
-  let tripHistory = await db
+  let tripHistory = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.ride_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("ride", "ride.id", "daily_ride.rideId") // Changed from daily_ride.ride_id to daily_ride.rideId
+    .leftJoin("student", "student.id", "ride.studentId") // Changed from ride.student_id to ride.studentId
     .select([
       "daily_ride.id",
       "daily_ride.status",
@@ -107,12 +107,12 @@ export default async function Page({ params }: { params: any }) {
       "daily_ride.end_time",
       "daily_ride.kind",
     ])
-    .where("daily_ride.driver_id", "=", driverInfo.id)
+    .where("daily_ride.driverId", "=", driverInfo.id) // Changed from daily_ride.driver_id to daily_ride.driverId
     .where("daily_ride.status", "!=", "Inactive")
     .orderBy("daily_ride.date", "desc")
     .execute();
   // transactions
-  let transactions = await db
+  let transactions = await database
     .selectFrom("payment")
     .select([
       "payment.id",
@@ -122,7 +122,7 @@ export default async function Page({ params }: { params: any }) {
       "payment.transaction_type",
       "payment.created_at",
     ])
-    .where("payment.user_id", "=", driverInfo.id)
+    .where("payment.userId", "=", driverInfo.id) // Changed from payment.user_id to payment.userId
     .execute();
   return (
     <div className="flex flex-col gap-2">
@@ -134,7 +134,7 @@ export default async function Page({ params }: { params: any }) {
           },
           {
             href: `/drivers/${driver_id}`,
-            label: driverInfo.name,
+            label: driverInfo?.name || driverInfo.email || "/driver",
           },
         ]}
       />
@@ -152,7 +152,7 @@ export default async function Page({ params }: { params: any }) {
           {driverInfo.is_kyc_verified == false && (
             <MarkVerifiedForm driver_id={driverInfo.id!.toString()} />
           )}
-          <SendNotificationForm parent_id={driverInfo.id!.toString()} />
+          <SendNotificationForm parentId={driverInfo.id!.toString()} />
           <EditDriverForm driver={driverInfo} />
           <ChangePasswordForm driver={driverInfo} />
         </div>

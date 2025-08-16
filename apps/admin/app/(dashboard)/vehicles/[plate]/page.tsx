@@ -1,10 +1,10 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import GenTable from "@/components/tables";
 import { MarkAsInspected } from "./forms";
 import { Badge } from "@/components/ui/badge";
-import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -23,38 +23,93 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default async function Page({ params }: { params: any }) {
+// Define interfaces for query results
+interface VehicleInfo {
+  id: number;
+  userId: number | null;
+  vehicle_name: string | null;
+  registration_number: string | null;
+  vehicle_type: string | null;
+  vehicle_model: string | null;
+  vehicle_year: number | null;
+  available_seats: number | null;
+  status: string | null;
+  vehicle_image_url: string | null;
+  vehicle_registration: string | null;
+  insurance_certificate: string | null;
+  is_inspected: boolean | null;
+}
+
+interface DriverInfo {
+  id: number;
+  name: string | null;
+  phone_number: string | null;
+  email: string | null;
+  meta: { neighborhood?: string; county?: string } | null;
+}
+
+interface AssignedRide {
+  id: number;
+  name: string | null;
+  status: string | null;
+  schedule: string | null;
+}
+
+interface TripHistory {
+  id: number;
+  status: string | null;
+  passenger: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  kind: string | null;
+}
+
+export default async function Page({ params }: { params: { plate: string } }) {
   const { plate } = await params;
-  // vehicle information
-  let vehicleInfo = await db
+
+  // Fetch vehicle information
+  const vehicleInfo = await database
     .selectFrom("vehicle")
     .selectAll()
     .where("registration_number", "=", plate)
     .executeTakeFirst();
+
   if (!vehicleInfo) {
-    return <div className="h-[500px] flex flex-col items-center justify-center">Vehicle not found</div>;
+    return (
+      <div className="h-[500px] flex flex-col items-center justify-center">
+        Vehicle not found
+      </div>
+    );
   }
-  //   driver information
-  let driverInfo = await db
+
+  // Fetch driver information
+  const driverInfo = await database
     .selectFrom("user")
     .selectAll()
-    .where("id", "=", vehicleInfo.user_id)
+    .where("id", "=", vehicleInfo.userId ?? 0)
     .executeTakeFirst();
+
   if (!driverInfo) {
-    return <div className="h-[500px] flex flex-col items-center justify-center">Driver not found</div>;
+    return (
+      <div className="h-[500px] flex flex-col items-center justify-center">
+        Driver not found
+      </div>
+    );
   }
-  // assigned rides
-  let assignedRides = await db
+
+  // Fetch assigned rides
+  const assignedRides = await database
     .selectFrom("ride")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select(["ride.id", "student.name", "ride.status", "ride.schedule"])
-    .where("driver_id", "=", driverInfo.id)
+    .where("driverId", "=", driverInfo.id)
     .execute();
-  // trip history
-  let tripHistory = await db
+
+  // Fetch trip history
+  const tripHistory = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.ride_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("ride", "ride.id", "daily_ride.rideId")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "daily_ride.id",
       "daily_ride.status",
@@ -63,11 +118,11 @@ export default async function Page({ params }: { params: any }) {
       "daily_ride.end_time",
       "daily_ride.kind",
     ])
-    .where("daily_ride.vehicle_id", "=", vehicleInfo.id)
+    .where("daily_ride.vehicleId", "=", vehicleInfo.id)
     .where("daily_ride.status", "!=", "Inactive")
     .orderBy("daily_ride.date", "desc")
     .execute();
-  // Button for mark as inspected
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -84,11 +139,11 @@ export default async function Page({ params }: { params: any }) {
       />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">{plate}</h1>
-        {/* {vehicleInfo.is_inspected ? (
+        {vehicleInfo.is_inspected ? (
           <Badge>Inspected</Badge>
         ) : (
           <MarkAsInspected plate={plate} />
-        )} */}
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="relative aspect-video rounded-lg overflow-hidden">
@@ -106,37 +161,38 @@ export default async function Page({ params }: { params: any }) {
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-2xl font-bold">
-                {" "}
-                {vehicleInfo.vehicle_name}{" "}
+                {vehicleInfo.vehicle_name ?? "Unnamed Vehicle"}
               </h2>
               <p className="text-muted-foreground">
-                {vehicleInfo.vehicle_model} - {vehicleInfo.vehicle_year}{" "}
+                {vehicleInfo.vehicle_model ?? "Unknown"} -{" "}
+                {vehicleInfo.vehicle_year ?? "N/A"}
               </p>
             </div>
             <Badge className="bg-green-500 hover:bg-green-600">
-              {vehicleInfo.vehicle_type}
+              {vehicleInfo.vehicle_type ?? "Unknown"}
             </Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Model</p>
-              <p className="font-medium"> {vehicleInfo.vehicle_model} </p>
+              <p className="font-medium">
+                {vehicleInfo.vehicle_model ?? "Unknown"}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Year</p>
-              <p className="font-medium"> {vehicleInfo.vehicle_year} </p>
+              <p className="font-medium">{vehicleInfo.vehicle_year ?? "N/A"}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">License Plate</p>
-              <p className="font-medium"> {plate} </p>
+              <p className="font-medium">{plate}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Seat Capacity</p>
               <p className="font-medium">
-                {" "}
-                {vehicleInfo.seat_count} seats ({vehicleInfo.available_seats}{" "}
-                available)
+                {vehicleInfo.available_seats ?? 0} seats (
+                {vehicleInfo.available_seats ?? 0} available)
               </p>
             </div>
           </div>
@@ -150,7 +206,9 @@ export default async function Page({ params }: { params: any }) {
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="flex items-center gap-4">
               <div>
-                <h3 className="text-xl font-medium"> {driverInfo.name} </h3>
+                <h3 className="text-xl font-medium">
+                  {driverInfo.name ?? "Unknown Driver"}
+                </h3>
                 <p className="text-muted-foreground">
                   Vehicle Owner & Primary Driver
                 </p>
@@ -160,18 +218,18 @@ export default async function Page({ params }: { params: any }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span> {driverInfo.phone_number} </span>
+                <span>{driverInfo.phone_number ?? "Not provided"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  {driverInfo.meta?.neighborhood},{" "}
-                  {driverInfo.meta?.county}{" "}
+                  {driverInfo.meta?.neighborhood ?? "Unknown"},{" "}
+                  {driverInfo.meta?.county ?? "Unknown"}
                 </span>
               </div>
             </div>
-            <Link href={"/drivers/" + driverInfo.email}>
-              <Button> View All Details </Button>
+            <Link href={`/drivers/${driverInfo.email ?? driverInfo.id}`}>
+              <Button>View All Details</Button>
             </Link>
           </div>
         </CardContent>
@@ -200,9 +258,14 @@ export default async function Page({ params }: { params: any }) {
             <TabsContent value="assigned" className="space-y-4">
               <div className="rounded-md border">
                 <GenTable
-                  title="Trip History"
-                  cols={["id", "Passenger", "Dates", "status"]}
-                  data={assignedRides}
+                  title="Assigned Rides"
+                  cols={["id", "name", "schedule", "status"]}
+                  data={assignedRides.map((ride) => ({
+                    ...ride,
+                    name: ride.name ?? "Unknown Passenger",
+                    schedule: ride.schedule ?? "Not scheduled",
+                    status: ride.status ?? "Unknown",
+                  }))}
                   baseLink="/rides/"
                   uniqueKey="id"
                 />
@@ -214,7 +277,14 @@ export default async function Page({ params }: { params: any }) {
                 <GenTable
                   title="Trip History"
                   cols={["id", "passenger", "start_time", "end_time", "status"]}
-                  data={tripHistory}
+                  data={tripHistory.map((trip) => ({
+                    ...trip,
+                    passenger: trip.passenger ?? "Unknown Passenger",
+                    start_time: trip.start_time ?? "N/A",
+                    end_time: trip.end_time ?? "N/A",
+                    status: trip.status ?? "Unknown",
+                    kind: trip.kind ?? "Unknown",
+                  }))}
                   baseLink="/rides/trip/"
                   uniqueKey="id"
                 />
@@ -228,7 +298,7 @@ export default async function Page({ params }: { params: any }) {
         <CardHeader>
           <CardTitle>Vehicle Documentation</CardTitle>
           <CardDescription>
-            View vehicle logbook, insurance certificate and comments
+            View vehicle logbook, insurance certificate, and comments
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -278,23 +348,10 @@ export default async function Page({ params }: { params: any }) {
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4">
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg border">
-                  <div className="flex items-start gap-3">
-                    {/* <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">John Doe</p>
-                        <span className="text-xs text-muted-foreground">
-                          May 10, 2023
-                        </span>
-                      </div>
-                      <p className="text-sm">
-                        Vehicle was serviced last month. All systems are
-                        functioning properly.
-                      </p>
-                    </div> */}
-                  </div>
-                </div>
+              <div className="p-4 rounded-lg border">
+                <p className="text-sm text-muted-foreground">
+                  No comments available for this vehicle.
+                </p>
               </div>
             </TabsContent>
           </Tabs>

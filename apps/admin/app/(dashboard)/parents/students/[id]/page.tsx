@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import {
   ArrowRight,
   Building,
@@ -25,12 +25,85 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import GenTable from "@/components/tables";
 
-export default async function Page({ params }: { params: any }) {
-  const { id } = await params;
-  // student info
-  let student = await db
+// Define interfaces based on database schema
+interface Student {
+  id: number;
+  name: string;
+  gender: "Male" | "Female";
+  address: string | null;
+  comments: string | null;
+  created_at: Date;
+  profile_picture: string | null;
+  parentId: number | null;
+  school: string | null;
+  schoolId: number | null;
+}
+
+interface Parent {
+  id: number;
+  name: string | null;
+  email: string | null;
+  phone_number: string | null;
+  kind: "Parent" | "Driver" | "Admin" | null;
+  meta: any | null;
+  is_kyc_verified: boolean;
+  created_at: Date;
+  updated_at: Date;
+  statusName: string | null;
+}
+
+interface DailyRide {
+  id: number;
+  status: "Active" | "Inactive" | "Started" | "Finished";
+  driver: string | null;
+  start_time: Date | null;
+  end_time: Date | null;
+  kind: "Pickup" | "Dropoff";
+}
+
+interface AssignedRide {
+  id: number;
+  schedule: {
+    cost: number | null;
+    paid: number | null;
+    pickup: {
+      start_time: string;
+      location: string;
+      latitude: number;
+      longitude: number;
+    };
+    dropoff: {
+      start_time: string;
+      location: string;
+      latitude: number;
+      longitude: number;
+    };
+    comments?: string;
+    dates?: string[];
+    kind?: "Private" | "Carpool" | "Bus";
+  } | null;
+  driver: string | null;
+  admin_comments: string | null;
+  meta: any | null;
+  created_at: Date;
+  updated_at: Date;
+  status: "Requested" | "Cancelled" | "Ongoing" | "Pending" | "Completed";
+  vehicle_name: string | null;
+  registration_number: string;
+}
+
+interface School {
+  id: number;
+  name: string;
+}
+
+export default async function Page({ params }: { params: { id: string } }) {
+  const studentId = Number(params.id);
+
+  // Fetch student info with school name
+  const student = await database
     .selectFrom("student")
-    .leftJoin("school", "school.id", "student.school_id")
+    .leftJoin("school", "school.id", "student.schoolId")
     .select([
       "student.id",
       "student.name",
@@ -39,18 +112,21 @@ export default async function Page({ params }: { params: any }) {
       "student.comments",
       "student.created_at",
       "student.profile_picture",
-      "student.parent_id",
+      "student.parentId",
       "school.name as school",
-      "student.school_id",
+      "student.schoolId",
     ])
-    .where("student.id", "=", Number(id))
+    .where("student.id", "=", studentId)
     .executeTakeFirst();
+
   if (!student) {
     return <div>Student not found</div>;
   }
-  // parent info
-  let parent = await db
+
+  // Fetch parent info with status name
+  const parent = await database
     .selectFrom("user")
+    .leftJoin("status", "status.id", "user.statusId")
     .select([
       "user.id",
       "user.name",
@@ -61,19 +137,21 @@ export default async function Page({ params }: { params: any }) {
       "user.is_kyc_verified",
       "user.created_at",
       "user.updated_at",
-      "user.status",
+      "status.name as statusName",
     ])
-    .where("user.id", "=", student.parent_id)
+    .where("user.id", "=", student.parentId ?? 0)
     .executeTakeFirst();
+
   if (!parent) {
     return <div>Parent not found</div>;
   }
-  // ride history
-  let tripHistory = await db
+
+  // Fetch ride history
+  const tripHistory = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.ride_id")
-    .leftJoin("student", "student.id", "ride.student_id")
-    .leftJoin("user", "user.id", "ride.driver_id")
+    .leftJoin("ride", "ride.id", "daily_ride.rideId")
+    .leftJoin("student", "student.id", "ride.studentId")
+    .leftJoin("user", "user.id", "ride.driverId")
     .select([
       "daily_ride.id",
       "daily_ride.status",
@@ -82,32 +160,34 @@ export default async function Page({ params }: { params: any }) {
       "daily_ride.end_time",
       "daily_ride.kind",
     ])
-    .where("ride.parent_id", "=", parent.id)
-    .where("student.id", "=", Number(student.id))
+    .where("ride.parentId", "=", parent.id)
+    .where("student.id", "=", studentId)
     .where("daily_ride.status", "!=", "Inactive")
     .orderBy("daily_ride.date", "desc")
     .execute();
-  // check if there is any active ride
-  let activeRide = await db
+
+  // Check for active ride
+  const activeRide = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.ride_id")
-    .leftJoin("student", "student.id", "ride.student_id")
-    .leftJoin("user", "user.id", "ride.driver_id")
+    .leftJoin("ride", "ride.id", "daily_ride.rideId")
+    .leftJoin("student", "student.id", "ride.studentId")
+    .leftJoin("user", "user.id", "ride.driverId")
     .select(["daily_ride.id"])
-    .where("ride.parent_id", "=", parent.id)
-    .where("student.id", "=", Number(student.id))
+    .where("ride.parentId", "=", parent.id)
+    .where("student.id", "=", studentId)
     .where("daily_ride.status", "=", "Active")
     .executeTakeFirst();
-  // check if there is any active assigned ride
-  let assignedRide = await db
+
+  // Check for assigned ride
+  const assignedRide = await database
     .selectFrom("ride")
-    .leftJoin("user", "user.id", "ride.driver_id")
-    .leftJoin("vehicle", "vehicle.id", "ride.vehicle_id")
+    .leftJoin("user", "user.id", "ride.driverId")
+    .leftJoin("vehicle", "vehicle.id", "ride.vehicleId")
     .select([
       "ride.id",
-      "schedule",
+      "ride.schedule",
       "user.name as driver",
-      "admin_comments",
+      "ride.admin_comments",
       "ride.meta",
       "ride.created_at",
       "ride.updated_at",
@@ -115,15 +195,17 @@ export default async function Page({ params }: { params: any }) {
       "vehicle.vehicle_name",
       "vehicle.registration_number",
     ])
-    .where("ride.parent_id", "=", parent.id)
-    .where("ride.student_id", "=", Number(student.id))
+    .where("ride.parentId", "=", parent.id)
+    .where("ride.studentId", "=", studentId)
     .where("ride.status", "=", "Ongoing")
     .executeTakeFirst();
-    // get a list of all schools
-    let schools = await db
-      .selectFrom("school")
-      .select(["id", "name"])
-      .execute();
+
+  // Fetch all schools
+  const schools = await database
+    .selectFrom("school")
+    .select(["id", "name"])
+    .execute();
+
   return (
     <div>
       <Breadcrumbs
@@ -133,11 +215,11 @@ export default async function Page({ params }: { params: any }) {
             label: "Parents",
           },
           {
-            href: `/parents/${parent.email?.replace("@", "%40")}`,
-            label: parent.name,
+            href: `/parents/${parent.email?.replace("@", "%40") ?? "#"}`,
+            label: parent.name ?? "Unknown",
           },
           {
-            href: `/students/${id}`,
+            href: `/students/${studentId}`,
             label: student.name,
           },
         ]}
@@ -149,7 +231,6 @@ export default async function Page({ params }: { params: any }) {
             {activeRide && (
               <Link href={`/rides/trip/${activeRide.id}`}>
                 <Badge variant="default">
-                  {/* Pulse animation */}
                   <span className="animate-pulse">On Trip</span>
                 </Badge>
               </Link>
@@ -200,7 +281,9 @@ export default async function Page({ params }: { params: any }) {
                       <MapPin className="h-4 w-4" />
                       <span>Address</span>
                     </div>
-                    <p className="font-medium">{student.address}</p>
+                    <p className="font-medium">
+                      {student.address ?? "Not provided"}
+                    </p>
                   </div>
 
                   <div className="space-y-1">
@@ -208,10 +291,15 @@ export default async function Page({ params }: { params: any }) {
                       <School className="h-4 w-4" />
                       <span>School</span>
                     </div>
-                    {student.school_id ? (
-                      <p className="font-medium">{student.school}</p>
+                    {student.schoolId ? (
+                      <p className="font-medium">
+                        {student.school ?? "Unknown"}
+                      </p>
                     ) : (
-                      <LinkSchoolDialog student_id={student.id.toString()} schools={schools} />
+                      <LinkSchoolDialog
+                        studentId={student.id.toString()}
+                        schools={schools}
+                      />
                     )}
                   </div>
                 </div>
@@ -230,13 +318,14 @@ export default async function Page({ params }: { params: any }) {
                   <Avatar className="h-10 w-10">
                     <AvatarFallback>
                       {parent.name
-                        .split(" ")
+                        ?.split(" ")
                         .map((n) => n[0])
-                        .join("")}
+                        .join("") ?? "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{parent.name}</p>
+                    <p className="font-medium">{parent.name ?? "Unknown"}</p>
+                    <Badge>{parent.statusName ?? "Unknown Status"}</Badge>
                   </div>
                 </div>
 
@@ -245,19 +334,21 @@ export default async function Page({ params }: { params: any }) {
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Phone className="h-4 w-4" />
                     </div>
-                    <span>{parent.phone_number}</span>
+                    <span>{parent.phone_number ?? "Not provided"}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Mail className="h-4 w-4" />
                     </div>
-                    <span>{parent.email}</span>
+                    <span>{parent.email ?? "Not provided"}</span>
                   </div>
                 </div>
 
                 <div className="pt-2">
-                  <Link href={`/parents/${parent.email?.replace("@", "%40")}`}>
+                  <Link
+                    href={`/parents/${parent.email?.replace("@", "%40") ?? "#"}`}
+                  >
                     View Guardian Details
                   </Link>
                 </div>
@@ -275,44 +366,54 @@ export default async function Page({ params }: { params: any }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {assignedRide != null ? (
+            {assignedRide ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-lg">Daily Schedule</h3>
-                      <Badge>Active</Badge>
+                      <Badge>{assignedRide.status}</Badge>
                     </div>
 
                     <div className="space-y-4">
                       <div className="border rounded-lg p-4 space-y-3">
                         <div className="flex items-center gap-2">
                           <Home className="h-5 w-5 text-primary" />
-                          <h4 className="font-medium"> Pickup</h4>
+                          <h4 className="font-medium">Pickup</h4>
                         </div>
                         <div className="pl-7 space-y-2">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Time:</span>
-                            <span className="font-medium"> {assignedRide.schedule?.pickup.start_time}</span>
+                            <span className="font-medium">
+                              {assignedRide.schedule?.pickup.start_time ??
+                                "N/A"}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Location:
                             </span>
-                            <span className="font-medium">{assignedRide.schedule?.pickup.location}</span>
+                            <span className="font-medium">
+                              {assignedRide.schedule?.pickup.location ?? "N/A"}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Driver:
                             </span>
-                            <span className="font-medium">{assignedRide.driver}</span>
+                            <span className="font-medium">
+                              {assignedRide.driver ?? "Not assigned"}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Vehicle:
                             </span>
                             <span className="font-medium">
-                              {assignedRide.vehicle_name} ({assignedRide.registration_number})
+                              {assignedRide.vehicle_name &&
+                              assignedRide.registration_number
+                                ? `${assignedRide.vehicle_name} (${assignedRide.registration_number})`
+                                : "N/A"}
                             </span>
                           </div>
                         </div>
@@ -326,26 +427,36 @@ export default async function Page({ params }: { params: any }) {
                         <div className="pl-7 space-y-2">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Time:</span>
-                            <span className="font-medium">{assignedRide.schedule?.dropoff.start_time}</span>
+                            <span className="font-medium">
+                              {assignedRide.schedule?.dropoff.start_time ??
+                                "N/A"}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Location:
                             </span>
-                            <span className="font-medium">{assignedRide.schedule?.dropoff.location}</span>
+                            <span className="font-medium">
+                              {assignedRide.schedule?.dropoff.location ?? "N/A"}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Driver:
                             </span>
-                            <span className="font-medium">{assignedRide.driver}</span>
+                            <span className="font-medium">
+                              {assignedRide.driver ?? "Not assigned"}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Vehicle:
                             </span>
                             <span className="font-medium">
-                              {assignedRide.vehicle_name} ({assignedRide.registration_number})
+                              {assignedRide.vehicle_name &&
+                              assignedRide.registration_number
+                                ? `${assignedRide.vehicle_name} (${assignedRide.registration_number})`
+                                : "N/A"}
                             </span>
                           </div>
                         </div>
@@ -372,7 +483,6 @@ export default async function Page({ params }: { params: any }) {
                     </div>
 
                     <div className="relative aspect-[16/9] w-full rounded-lg overflow-hidden border">
-                      {/* This would be replaced with an actual map component in a real application */}
                       <div className="absolute inset-0 bg-slate-100 flex items-center justify-center">
                         <div className="text-center">
                           <MapIcon className="h-12 w-12 mx-auto text-slate-400" />
@@ -389,11 +499,15 @@ export default async function Page({ params }: { params: any }) {
                     <div className="flex justify-between text-sm">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4 text-green-500" />
-                        <span>{assignedRide.schedule?.pickup.location}</span>
+                        <span>
+                          {assignedRide.schedule?.pickup.location ?? "N/A"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4 text-blue-500" />
-                        <span>{assignedRide.schedule?.dropoff.location}</span>
+                        <span>
+                          {assignedRide.schedule?.dropoff.location ?? "N/A"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -424,8 +538,21 @@ export default async function Page({ params }: { params: any }) {
                 "kind",
                 "status",
               ]}
-              data={tripHistory}
-              baseLink={"/rides/trip/"}
+              data={tripHistory.map((ride) => ({
+                ...ride,
+                driver: ride.driver ?? "Not assigned",
+                start_time:
+                  ride.start_time?.toLocaleString("en-US", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }) ?? "Not started",
+                end_time:
+                  ride.end_time?.toLocaleString("en-US", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }) ?? "Not ended",
+              }))}
+              baseLink="/rides/trip/"
               uniqueKey="id"
             />
           </CardContent>

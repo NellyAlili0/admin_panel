@@ -1,5 +1,5 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import GenTable from "@/components/tables";
 import {
   Card,
@@ -12,11 +12,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default async function Page() {
-  // requested, ongoing
-  let all_rides = await db
+  // All rides
+  let all_rides = await database
     .selectFrom("ride")
-    .leftJoin("user", "user.id", "ride.parent_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("user", "user.id", "ride.parentId")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "ride.id",
       "ride.status",
@@ -26,11 +26,12 @@ export default async function Page() {
       "ride.admin_comments",
     ])
     .execute();
-  // ongoing
-  let ongoing_rides = await db
+
+  // Ongoing rides
+  let ongoing_rides = await database
     .selectFrom("ride")
-    .leftJoin("user", "user.id", "ride.parent_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("user", "user.id", "ride.parentId")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "ride.id",
       "ride.status",
@@ -41,11 +42,12 @@ export default async function Page() {
     ])
     .where("ride.status", "=", "Ongoing")
     .execute();
-  // requested
-  let requested_rides = await db
+
+  // Requested rides
+  let requested_rides = await database
     .selectFrom("ride")
-    .leftJoin("user", "user.id", "ride.parent_id")
-    .leftJoin("student", "student.id", "ride.student_id")
+    .leftJoin("user", "user.id", "ride.parentId")
+    .leftJoin("student", "student.id", "ride.studentId")
     .select([
       "ride.id",
       "ride.status",
@@ -55,6 +57,7 @@ export default async function Page() {
     ])
     .where("ride.status", "=", "Requested")
     .execute();
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -75,12 +78,7 @@ export default async function Page() {
       </div>
       <GenTable
         title="All Rides"
-        cols={[
-          "id",
-          "status",
-          "parent",
-          "student",
-        ]}
+        cols={["id", "status", "parent", "student"]}
         data={all_rides}
         baseLink="/rides/"
         uniqueKey="id"
@@ -94,12 +92,7 @@ export default async function Page() {
           <CardContent>
             <GenTable
               title="Requested Rides"
-              cols={[
-                "id",
-                "status",
-                "parent",
-                "student",
-              ]}
+              cols={["id", "status", "parent", "student"]}
               data={requested_rides}
               baseLink="/rides/"
               uniqueKey="id"
@@ -114,12 +107,7 @@ export default async function Page() {
           <CardContent>
             <GenTable
               title="Ongoing Rides"
-              cols={[
-                "id",
-                "status",
-                "parent",
-                "student",
-              ]}
+              cols={["id", "status", "parent", "student"]}
               data={ongoing_rides}
               baseLink="/rides/"
               uniqueKey="id"
