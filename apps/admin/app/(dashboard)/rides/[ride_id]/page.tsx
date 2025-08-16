@@ -3,9 +3,12 @@ import { database } from "@/database/config";
 import { RideDetailsPage } from "./dets";
 import { Mapping } from "@repo/handlers/mapping";
 
-export default async function Page({ params }: { params: any }) {
-  const { ride_id } = await params;
-
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: any }>;
+}) {
+  const { ride_id } = use(params);
   let ride = await database
     .selectFrom("ride")
     .selectAll()
@@ -98,4 +101,7 @@ export default async function Page({ params }: { params: any }) {
       />
     </div>
   );
+}
+function use(params: Promise<{ id: any }>): { ride_id: any } {
+  throw new Error("Function not implemented.");
 }

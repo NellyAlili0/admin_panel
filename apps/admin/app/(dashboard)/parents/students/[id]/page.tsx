@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import GenTable from "@/components/tables";
+import { use } from "react";
 
 // Define interfaces based on database schema
 interface Student {
@@ -97,8 +98,13 @@ interface School {
   name: string;
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const studentId = Number(params.id);
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: any }>;
+}) {
+  const { id } = use(params);
+  const studentId = Number(id);
 
   // Fetch student info with school name
   const student = await database

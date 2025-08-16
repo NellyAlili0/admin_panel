@@ -22,6 +22,7 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
+import { use } from "react";
 
 // Define interfaces for query results
 interface VehicleInfo {
@@ -64,8 +65,13 @@ interface TripHistory {
   kind: string | null;
 }
 
-export default async function Page({ params }: { params: { plate: string } }) {
-  const { plate } = await params;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: any }>;
+}) {
+  const { id } = use(params);
+  let plate = id;
 
   // Fetch vehicle information
   const vehicleInfo = await database

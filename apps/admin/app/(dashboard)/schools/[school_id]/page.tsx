@@ -11,6 +11,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
+import { use } from "react";
 
 // Define interfaces based on database schema
 interface SchoolInfo {
@@ -39,9 +40,11 @@ interface Student {
 export default async function Page({
   params,
 }: {
-  params: { school_id: string };
+  params: Promise<{ school_id: any }>;
 }) {
-  const schoolId = Number(params.school_id);
+  const { school_id } = use(params);
+
+  const schoolId = Number(school_id);
 
   // Fetch school info
   const schoolInfo = await database
