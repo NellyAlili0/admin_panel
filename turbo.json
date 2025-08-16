@@ -23,7 +23,10 @@
         "DB_PROD_USER",
         "DB_PROD_NAME",
         "DB_PROD_PORT",
-        "DB_PROD_HOST"
+        "DB_PROD_HOST",
+        "MPESA_SHORTCODE",
+        "MPESA_PASSKEY ",
+        "DATABASE_URL"
       ]
     },
     "lint": {
