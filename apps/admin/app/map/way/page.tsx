@@ -8,7 +8,7 @@ import {
   Marker,
   InfoWindow,
 } from "@react-google-maps/api";
-import "./mapstyles.css";
+import "../../(dashboard)/overview/mapstyles.css";
 
 // Define TypeScript interface for driver data based on /api/stream-drivers response
 interface Driver {
