@@ -77,77 +77,77 @@ export default function DriverMap() {
   });
 
   // Function to fetch driver data from API
-  const fetchDriverData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/stream-drivers");
+  // const fetchDriverData = useCallback(async () => {
+  //   try {
+  //     setIsLoading(true);
+  //     const response = await fetch("/api/stream-drivers");
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch drivers: ${response.statusText}`);
-      }
+  //     if (!response.ok) {
+  //       throw new Error(`Failed to fetch drivers: ${response.statusText}`);
+  //     }
 
-      const data: Driver[] = await response.json();
-      setDrivers(data);
-      if (data.length > 0 && mapRef.current) {
-        const newBounds = new google.maps.LatLngBounds();
+  //     const data: Driver[] = await response.json();
+  //     setDrivers(data);
+  //     if (data.length > 0 && mapRef.current) {
+  //       const newBounds = new google.maps.LatLngBounds();
 
-        // Add each driver location to bounds
-        data.forEach((driver) => {
-          newBounds.extend(
-            new google.maps.LatLng(driver.location.lat, driver.location.lng)
-          );
-        });
+  //       // Add each driver location to bounds
+  //       data.forEach((driver) => {
+  //         newBounds.extend(
+  //           new google.maps.LatLng(driver.location.lat, driver.location.lng)
+  //         );
+  //       });
 
-        // Store the new bounds
-        setBounds(newBounds);
+  //       // Store the new bounds
+  //       setBounds(newBounds);
 
-        // If we have only one driver, set a reasonable zoom level
-        if (data.length === 1) {
-          const center = newBounds.getCenter();
-          setMapCenter({
-            lat: center.lat(),
-            lng: center.lng(),
-          });
-          setMapZoom(15); // Closer zoom for single driver
-        } else {
-          // Let the bounds determine the view
-          mapRef.current.fitBounds(newBounds, 50);
-        }
-      } else if (data.length === 0) {
-        // If no drivers, reset to default view
-        setMapCenter(defaultCenter);
-        setMapZoom(defaultZoom);
-      }
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching driver data:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unknown error fetching driver data"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  //       // If we have only one driver, set a reasonable zoom level
+  //       if (data.length === 1) {
+  //         const center = newBounds.getCenter();
+  //         setMapCenter({
+  //           lat: center.lat(),
+  //           lng: center.lng(),
+  //         });
+  //         setMapZoom(15); // Closer zoom for single driver
+  //       } else {
+  //         // Let the bounds determine the view
+  //         mapRef.current.fitBounds(newBounds, 50);
+  //       }
+  //     } else if (data.length === 0) {
+  //       // If no drivers, reset to default view
+  //       setMapCenter(defaultCenter);
+  //       setMapZoom(defaultZoom);
+  //     }
+  //     setError(null);
+  //   } catch (err) {
+  //     console.error("Error fetching driver data:", err);
+  //     setError(
+  //       err instanceof Error
+  //         ? err.message
+  //         : "Unknown error fetching driver data"
+  //     );
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, []);
 
   // Setup interval for fetching data when component mounts
-  useEffect(() => {
-    if (!isLoaded) return;
+  // useEffect(() => {
+  //   if (!isLoaded) return;
 
-    // Fetch data immediately on load
-    fetchDriverData();
+  //   // Fetch data immediately on load
+  //   fetchDriverData();
 
-    // Set up interval to fetch data every 5 seconds
-    intervalRef.current = setInterval(fetchDriverData, 5000);
+  //   // Set up interval to fetch data every 5 seconds
+  //   intervalRef.current = setInterval(fetchDriverData, 5000);
 
-    // Clean up interval on unmount
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isLoaded, fetchDriverData]);
+  //   // Clean up interval on unmount
+  //   return () => {
+  //     if (intervalRef.current) {
+  //       clearInterval(intervalRef.current);
+  //     }
+  //   };
+  // }, [isLoaded, fetchDriverData]);
 
   // Handle map load
   const onMapLoad = (map: google.maps.Map) => {

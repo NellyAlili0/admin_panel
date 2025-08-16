@@ -46,19 +46,19 @@ const DriverTrackingMap = () => {
   const [hoveredDriver, setHoveredDriver] = useState<Driver | null>(null);
   const router = useRouter();
 
-  const fetchDrivers = async (): Promise<Driver[]> => {
-    const response = await fetch("/api/live");
-    return await response.json();
-  };
+  // const fetchDrivers = async (): Promise<Driver[]> => {
+  //   const response = await fetch("/api/live");
+  //   return await response.json();
+  // };
 
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const liveDrivers = await fetchDrivers();
-      setDrivers(liveDrivers);
-    }, 3000);
+  // useEffect(() => {
+  //   const interval = setInterval(async () => {
+  //     const liveDrivers = await fetchDrivers();
+  //     setDrivers(liveDrivers);
+  //   }, 3000);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const handleMarkerClick = useCallback((driver: Driver) => {
     setHoveredDriver(driver);
