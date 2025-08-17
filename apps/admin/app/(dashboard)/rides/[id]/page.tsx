@@ -6,9 +6,11 @@ import { Mapping } from "@repo/handlers/mapping";
 export default async function Page({
   params,
 }: {
-  params: Promise<{ id: any }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { ride_id } = use(params);
+  const { id } = await params;
+  const ride_id = Number(id);
+
   let ride = await database
     .selectFrom("ride")
     .selectAll()

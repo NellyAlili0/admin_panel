@@ -65,13 +65,10 @@ interface TripHistory {
   kind: string | null;
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: any }>;
+export default async function Page(props: {
+  params: Promise<{ plate: string }>;
 }) {
-  const { id } = use(params);
-  let plate = id;
+  const { plate } = await props.params; // ✅ await params
 
   // Fetch vehicle information
   const vehicleInfo = await database

@@ -37,14 +37,10 @@ interface Student {
   email: string | null;
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ school_id: any }>;
-}) {
-  const { school_id } = use(params);
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params; // ✅ await params
 
-  const schoolId = Number(school_id);
+  const schoolId = Number(id);
 
   // Fetch school info
   const schoolInfo = await database

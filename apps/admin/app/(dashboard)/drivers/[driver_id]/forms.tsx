@@ -8,7 +8,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useActionState } from "react";
-import { initialState } from "@/lib/utils";
 import {
   markVerified,
   addVehicle,
@@ -16,7 +15,7 @@ import {
   changePassword,
 } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,16 +26,33 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+export const initialState = {
+  message: "",
+  success: false,
+  redirectTo: "/overview",
+};
 
 export function MarkVerifiedForm({ driver_id }: { driver_id: string }) {
   const [state, formAction] = useActionState(markVerified, initialState);
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
     if (state.message) {
-      toast.error(state.message);
+      if (state.success) {
+        toast.success(state.message);
+        setOpen(false);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        toast.error(state.message);
+      }
     }
   }, [state]);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default">Mark as Verified</Button>
       </DialogTrigger>
@@ -46,7 +62,7 @@ export function MarkVerifiedForm({ driver_id }: { driver_id: string }) {
           <p>This action cannot be undone</p>
         </DialogHeader>
         <form action={formAction}>
-          <input type="hidden" name="driver_id" value={driver_id} />
+          <Input type="hidden" name="driver_id" defaultValue={driver_id} />
           <SubmitButton title="Mark as Verified" />
         </form>
       </DialogContent>
@@ -56,13 +72,43 @@ export function MarkVerifiedForm({ driver_id }: { driver_id: string }) {
 
 export function AddVehicleForm({ driver_id }: { driver_id: string }) {
   const [state, formAction] = useActionState(addVehicle, initialState);
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
   useEffect(() => {
     if (state.message) {
-      toast.error(state.message);
+      if (state.success) {
+        toast.success(state.message);
+        setOpen(false);
+        // Handle redirect if provided
+        if (state.redirectTo) {
+          router.push(state.redirectTo);
+        } else {
+          // Refresh the page to show the new vehicle
+          window.location.reload();
+        }
+      } else {
+        toast.error(state.message);
+      }
     }
-  }, [state]);
+  }, [state, router]);
+
+  // Add form validation
+  const handleSubmit = async (formData: FormData) => {
+    try {
+      console.log(
+        "Submitting vehicle form with data:",
+        Object.fromEntries(formData)
+      );
+      await formAction(formData);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Failed to submit form. Please try again.");
+    }
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default">Add Vehicle</Button>
       </DialogTrigger>
@@ -70,8 +116,8 @@ export function AddVehicleForm({ driver_id }: { driver_id: string }) {
         <DialogHeader>
           <DialogTitle>Add Vehicle</DialogTitle>
         </DialogHeader>
-        <form action={formAction} className="flex flex-col gap-2">
-          <input type="hidden" name="driver_id" value={driver_id} />
+        <form action={handleSubmit} className="flex flex-col gap-2">
+          <Input type="hidden" name="driver_id" defaultValue={driver_id} />
           <Input
             type="text"
             name="vehicle_name"
@@ -91,18 +137,22 @@ export function AddVehicleForm({ driver_id }: { driver_id: string }) {
             required
           />
           <Input
-            type="text"
+            type="number"
             name="vehicle_year"
             placeholder="Vehicle Year"
+            min="1900"
+            max="2030"
             required
           />
           <Input
-            type="text"
+            type="number"
             name="seat_count"
             placeholder="Seat Count"
+            min="1"
+            max="50"
             required
           />
-          <Select name="vehicle_type">
+          <Select name="vehicle_type" required>
             <SelectTrigger>
               <SelectValue placeholder="Select Vehicle Type" />
             </SelectTrigger>
@@ -112,7 +162,7 @@ export function AddVehicleForm({ driver_id }: { driver_id: string }) {
               <SelectItem value="Car">Car</SelectItem>
             </SelectContent>
           </Select>
-          <Select name="is_inspected">
+          <Select name="is_inspected" required>
             <SelectTrigger>
               <SelectValue placeholder="Select Inspection Status" />
             </SelectTrigger>
@@ -121,7 +171,11 @@ export function AddVehicleForm({ driver_id }: { driver_id: string }) {
               <SelectItem value="false">Not Inspected</SelectItem>
             </SelectContent>
           </Select>
-          <Input type="text" name="comments" placeholder="Comments" required />
+          <Input
+            type="text"
+            name="comments"
+            placeholder="Comments (optional)"
+          />
           <SubmitButton title="Add Vehicle" />
         </form>
       </DialogContent>
@@ -131,13 +185,23 @@ export function AddVehicleForm({ driver_id }: { driver_id: string }) {
 
 export const EditDriverForm = ({ driver }: { driver: any }) => {
   const [state, action] = useActionState(editDriver, initialState);
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
   useEffect(() => {
     if (state.message) {
-      toast.error(state.message);
+      if (state.success) {
+        toast.success(state.message);
+        setOpen(false);
+        router.refresh();
+      } else {
+        toast.error(state.message);
+      }
     }
-  }, [state]);
+  }, [state, router]);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default">Edit Driver</Button>
       </DialogTrigger>
@@ -146,7 +210,7 @@ export const EditDriverForm = ({ driver }: { driver: any }) => {
           <DialogTitle>Edit Driver</DialogTitle>
         </DialogHeader>
         <form action={action} className="flex flex-col gap-2">
-          <input type="hidden" name="driver_id" value={driver.id} />
+          <Input type="hidden" name="driver_id" defaultValue={driver.id} />
           <Input
             type="text"
             name="name"
@@ -162,7 +226,7 @@ export const EditDriverForm = ({ driver }: { driver: any }) => {
             required
           />
           <Input
-            type="text"
+            type="tel"
             name="phone_number"
             defaultValue={driver.phone_number}
             placeholder="Phone Number"
@@ -191,13 +255,21 @@ export const EditDriverForm = ({ driver }: { driver: any }) => {
 
 export const ChangePasswordForm = ({ driver }: { driver: any }) => {
   const [state, action] = useActionState(changePassword, initialState);
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
     if (state.message) {
-      toast.error(state.message);
+      if (state.success) {
+        toast.success(state.message);
+        setOpen(false);
+      } else {
+        toast.error(state.message);
+      }
     }
   }, [state]);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default">Change Password</Button>
       </DialogTrigger>
@@ -206,12 +278,13 @@ export const ChangePasswordForm = ({ driver }: { driver: any }) => {
           <DialogTitle>Change Password</DialogTitle>
         </DialogHeader>
         <form action={action} className="flex flex-col gap-2">
-          <input type="hidden" name="driver_id" value={driver.id} />
+          <Input type="hidden" name="driver_id" defaultValue={driver.id} />
           <Input
             type="password"
             name="password"
             placeholder="New Password"
             required
+            minLength={6}
           />
           <SubmitButton title="Change Password" />
         </form>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-checkbox": "^1.3.1",
     "@radix-ui/react-dialog": "^1.1.13",
@@ -39,6 +40,7 @@
     "react-dom": "^19.0.0",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",
+    "uuid": "^11.0.5",
     "zod": "^3.24.3",
     "zod-form-data": "^2.0.7"
   },

@@ -36,6 +36,7 @@ const createSchoolSchema = zfd.formData(
 // Define return type for the action
 interface ActionResponse {
   message?: string;
+  id?: number;
 }
 
 // Slugify function to generate a subdomain
@@ -100,7 +101,8 @@ export async function create(
     }
 
     revalidatePath("/schools");
-    return redirect(`/schools/${school.id}`);
+    // server action
+    return { id: school.id };
   } catch (error) {
     return {
       message:

@@ -42,6 +42,7 @@ import {
   MarkVerifiedForm,
 } from "./forms";
 import { SendNotificationForm } from "../../parents/forms";
+import KYCForm from "./KYCForm";
 
 export default async function Page({ params }: { params: any }) {
   const { driver_id } = await params;
@@ -193,20 +194,22 @@ export default async function Page({ params }: { params: any }) {
                   <p className="font-medium">{driverInfo.email}</p>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <MapPin className="h-4 w-4" />
-                    <span>Neighborhood</span>
-                  </div>
-                  <p className="font-medium">{driverInfo.meta?.neighborhood}</p>
-                </div>
+                <p className="font-medium">
+                  {typeof driverInfo.meta?.neighborhood === "string"
+                    ? driverInfo.meta.neighborhood
+                    : JSON.stringify(driverInfo.meta?.neighborhood)}
+                </p>
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <MapPin className="h-4 w-4" />
                     <span>County</span>
                   </div>
-                  <p className="font-medium">{driverInfo.meta?.county}</p>
+                  <p className="font-medium">
+                    {typeof driverInfo.meta?.county === "string"
+                      ? driverInfo.meta.county
+                      : JSON.stringify(driverInfo.meta?.county)}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -254,15 +257,18 @@ export default async function Page({ params }: { params: any }) {
                   <div className="p-3 border rounded-md flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-12 bg-slate-200 rounded flex items-center justify-center text-xs font-bold">
-                        {driverInfo.meta?.payments.kind}
+                        {driverInfo.meta?.payments.kind ?? ""}
                       </div>
                       <div>
                         <p className="font-medium">
-                          {driverInfo.meta?.payments.bank}
+                          {String(driverInfo.meta?.payments.bank ?? "")}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {driverInfo.meta?.payments.account_number} -{" "}
-                          {driverInfo.meta?.payments.account_name}
+                          {String(
+                            driverInfo.meta?.payments.account_number ?? ""
+                          )}{" "}
+                          -{" "}
+                          {String(driverInfo.meta?.payments.account_name ?? "")}
                         </p>
                       </div>
                     </div>
@@ -273,6 +279,24 @@ export default async function Page({ params }: { params: any }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* KYC FORM */}
+      {!kycInfo?.certificate_of_good_conduct ||
+      !kycInfo?.driving_license ||
+      (!kycInfo?.national_id_back && !kycInfo?.national_id_front) ||
+      !kycInfo?.passport_photo ? (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Upload KYC Documents</CardTitle>
+            <CardDescription>Upload the driver's KYC Documents</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <KYCForm driverId={driverInfo.id} />
+          </CardContent>
+        </Card>
+      ) : (
+        <div></div>
+      )}
 
       {/* KYC Information */}
       <Card className="mb-8">
@@ -285,31 +309,45 @@ export default async function Page({ params }: { params: any }) {
         <CardContent>
           {kycInfo && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              <KycDocumentCard
-                title="National ID (Front)"
-                icon={<FileText className="h-5 w-5" />}
-                imagePath={kycInfo.national_id_front!}
-              />
-              <KycDocumentCard
-                title="National ID (Back)"
-                icon={<FileText className="h-5 w-5" />}
-                imagePath={kycInfo.national_id_back!}
-              />
-              <KycDocumentCard
-                title="Passport Photo"
-                icon={<User className="h-5 w-5" />}
-                imagePath={kycInfo.passport_photo!}
-              />
-              <KycDocumentCard
-                title="Driving License"
-                icon={<Car className="h-5 w-5" />}
-                imagePath={kycInfo.driving_license!}
-              />
-              <KycDocumentCard
-                title="Cert. of Good Conduct"
-                icon={<Shield className="h-5 w-5" />}
-                imagePath={kycInfo.certificate_of_good_conduct!}
-              />
+              {kycInfo.national_id_front && (
+                <KycDocumentCard
+                  title="National ID (Front)"
+                  icon={<FileText className="h-5 w-5" />}
+                  imagePath={kycInfo.national_id_front}
+                />
+              )}
+
+              {kycInfo.national_id_back && (
+                <KycDocumentCard
+                  title="National ID (Back)"
+                  icon={<FileText className="h-5 w-5" />}
+                  imagePath={kycInfo.national_id_back}
+                />
+              )}
+
+              {kycInfo.passport_photo && (
+                <KycDocumentCard
+                  title="Passport Photo"
+                  icon={<User className="h-5 w-5" />}
+                  imagePath={kycInfo.passport_photo}
+                />
+              )}
+
+              {kycInfo.driving_license && (
+                <KycDocumentCard
+                  title="Driving License"
+                  icon={<Car className="h-5 w-5" />}
+                  imagePath={kycInfo.driving_license}
+                />
+              )}
+
+              {kycInfo.certificate_of_good_conduct && (
+                <KycDocumentCard
+                  title="Cert. of Good Conduct"
+                  icon={<Shield className="h-5 w-5" />}
+                  imagePath={kycInfo.certificate_of_good_conduct}
+                />
+              )}
             </div>
           )}
         </CardContent>

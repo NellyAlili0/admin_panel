@@ -72,11 +72,16 @@ interface Notification {
   created_at: Date;
 }
 
-export default async function Page(props: {
-  params: Promise<{ parent_id: string }>;
-}) {
-  const { parent_id } = await props.params; // ✅ await params
-  const parent_email = parent_id.replace("%40", "@");
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params; // ✅ await params
+  const parent_id = id;
+
+  // Add validation
+  if (!parent_id || isNaN(Number(parent_id))) {
+    console.error("Invalid parent_id:", parent_id);
+    return <div>Invalid parent ID</div>;
+  }
+
   // Fetch parent info with status name from StatusTable
   const parentInfo = await database
     .selectFrom("user")
@@ -96,6 +101,8 @@ export default async function Page(props: {
     .where("user.id", "=", Number(parent_id))
     .where("user.kind", "=", "Parent")
     .executeTakeFirst();
+
+  console.log("Query result:", parentInfo);
 
   if (!parentInfo) {
     return <div>Parent not found</div>;

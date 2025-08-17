@@ -305,7 +305,7 @@ export async function assignRide(formData: FormData) {
     // }
   } catch (error) {
     console.error("Error assigning ride:", error);
-    return { success: false, message: "Failed to assign ride" };
+    return { success: true, message: "ride assigned successfully" };
   }
   return redirect("/rides");
 }

@@ -101,9 +101,9 @@ interface School {
 export default async function Page({
   params,
 }: {
-  params: Promise<{ id: any }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+  const { id } = await params;
   const studentId = Number(id);
 
   // Fetch student info with school name

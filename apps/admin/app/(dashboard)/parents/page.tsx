@@ -1,11 +1,11 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { db } from "@repo/database";
+import { database } from "@/database/config";
 import GenTable from "@/components/tables";
 import { CreateParent } from "./forms";
 
 export default async function Page() {
   // Fetch all parents from the `user` table
-  const parents = await db
+  const parents = await database
     .selectFrom("user")
     .select([
       "user.id",
@@ -20,6 +20,7 @@ export default async function Page() {
     .execute();
 
   const totalParents = parents.length;
+  console.log(totalParents);
 
   return (
     <div className="flex flex-col gap-2">

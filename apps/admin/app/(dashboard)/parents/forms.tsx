@@ -124,7 +124,8 @@ export function SendNotificationForm({ parentId }: { parentId: string }) {
           <DialogTitle>Send Notification</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="parent_id" value={parentId} hidden />
+          {/* Fix: Use defaultValue instead of value, or make it readOnly */}
+          <Input name="parent_id" defaultValue={parentId} type="hidden" />
           <div className="grid gap-2">
             <Label htmlFor="title">Title</Label>
             <Input name="title" id="title" placeholder="Title" required />
@@ -163,7 +164,8 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
           <DialogTitle>Add Student</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="parent_id" value={parentId} hidden />
+          {/* Fix: Use defaultValue instead of value, or make it readOnly */}
+          <Input name="parent_id" defaultValue={parentId} type="hidden" />
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input name="name" id="name" placeholder="Name" required />
@@ -238,7 +240,8 @@ export function LinkSchoolDialog({
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-2">
-          <Input name="student_id" value={studentId} hidden />
+          {/* Fix: Use defaultValue instead of value, or make it readOnly */}
+          <Input name="student_id" defaultValue={studentId} type="hidden" />
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="school_id">Select School</Label>
