@@ -262,13 +262,21 @@ export default async function Page(props: {
               <div className="rounded-md border">
                 <GenTable
                   title="Assigned Rides"
-                  cols={["id", "name", "schedule", "status"]}
-                  data={assignedRides.map((ride) => ({
-                    ...ride,
-                    name: ride.name ?? "Unknown Passenger",
-                    schedule: ride.schedule ?? "Not scheduled",
-                    status: ride.status ?? "Unknown",
-                  }))}
+                  cols={["id", "name", "schedule_info", "status"]}
+                  data={assignedRides.map((ride) => {
+                    let scheduleInfo = "Not scheduled";
+                    if (ride.schedule && typeof ride.schedule === "object") {
+                      const schedule = ride.schedule as any;
+                      scheduleInfo = `${schedule.pickup.location || "Unknown"} → ${schedule.dropoff.location || "Unknown"} | $${schedule.cost || "0"}`;
+                    }
+
+                    return {
+                      ...ride,
+                      name: ride.name ?? "Unknown Passenger",
+                      schedule_info: scheduleInfo,
+                      status: ride.status ?? "Unknown",
+                    };
+                  })}
                   baseLink="/rides/"
                   uniqueKey="id"
                 />
