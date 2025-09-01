@@ -42,9 +42,9 @@ export async function createParent(prevState: any, formData: FormData) {
         socialId: null, // Optional field, setting to null as it's not used
         firstName: null, // Optional field
         lastName: null, // Optional field
-        photoId: null, // Optional field
-        roleId: null, // Optional field
+        roleId: 4, // Optional field
         deleted_at: null, // Optional field
+        photo: null,
       })
       .executeTakeFirst();
 

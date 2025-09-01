@@ -48,6 +48,7 @@ export async function addDriver(prevState: any, formData: FormData) {
       statusId: 1,
       wallet_balance: 0,
       is_kyc_verified: false,
+      roleId: 3,
       meta: {
         neighborhood: neighborhood || "",
         county: county || "",

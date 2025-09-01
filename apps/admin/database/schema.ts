@@ -101,7 +101,7 @@ export interface UserTable {
   meta: UserMeta | null;
   wallet_balance: number;
   is_kyc_verified: boolean;
-  photoId: number | null; // Foreign key to files table
+  photo: string | null; // Foreign key to files table
   roleId: number | null; // Foreign key to role table
   statusId: number | null; // Foreign key to status table
   created_at: Generated<Date>;
