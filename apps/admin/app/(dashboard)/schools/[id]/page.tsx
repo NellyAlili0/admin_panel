@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
 import { use } from "react";
+import { CreateSchoolCredentials } from "../credentials";
 
 // Define interfaces based on database schema
 interface SchoolInfo {
@@ -75,6 +76,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     .where("student.schoolId", "=", schoolId)
     .execute();
 
+  const data = {
+    name: schoolInfo.name,
+    phone_number: schoolInfo.meta?.administrator_phone || "",
+    school_id: schoolInfo.id,
+  };
+
   return (
     <div className="flex flex-col gap-2 w-full">
       <Breadcrumbs
@@ -98,10 +105,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             {schoolInfo.name} ({students.length} students)
           </p>
         </div>
-        <Button variant="default" className="flex items-center gap-2">
+        {/* <Button variant="default" className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Import Students
-        </Button>
+        </Button> */}
+        <CreateSchoolCredentials data={data} />
       </div>
       <Card className="mb-8">
         <CardHeader>

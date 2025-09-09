@@ -25,6 +25,8 @@ export default function KYCForm({ driverId, onSubmitted }: KYCFormProps) {
       setMessage("✅ KYC submitted successfully");
       if (onSubmitted) onSubmitted();
     } catch (error: any) {
+      console.log("KYC submission error:", error);
+      console.log("Error details:", error.message);
       setMessage("❌ Failed to submit KYC");
     } finally {
       setLoading(false);
