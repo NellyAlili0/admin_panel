@@ -4,16 +4,22 @@ import { Auth } from "@repo/handlers/auth";
 import Form from "./form";
 
 export const metadata = {
-    title: 'Login',
-    description: 'Login to admin panel',
-}
+  title: "Login",
+  description: "Login to admin panel",
+};
 export default async function Page() {
-    return (
-        <div className="flex items-center justify-center h-screen bg-primary">
-            <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-                <h1 className="text-2xl font-bold mb-4 text-center"> Admin Panel </h1>
-                <Form />
-            </div>
+  return (
+    <section className="bg-gray-100 min-h-screen flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Zidallie Admin</h1>
+          <p className="text-gray-600 mt-2">
+            Please enter your credentials to login
+          </p>
         </div>
-    )
+
+        <Form />
+      </div>
+    </section>
+  );
 }

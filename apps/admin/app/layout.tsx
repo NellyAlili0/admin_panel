@@ -14,6 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <link rel="icon" type="image/svg+xml" href="/icon.webp" />
       <body className="antialiased relative">
         <NextTopLoader color="yellow" height={3} />
         <Toaster position="top-right" richColors />

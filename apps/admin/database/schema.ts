@@ -19,7 +19,7 @@ export type NotificationSection =
 export type PaymentKind = "Bank" | "M-Pesa";
 export type TransactionType = "Deposit" | "Withdrawal";
 export type DailyRideKind = "Pickup" | "Dropoff";
-export type DailyRideStatus = "Active" | "Inactive" | "Started" | "Finished";
+export type DailyRideStatus = "Ongoing" | "Inactive" | "Started" | "Finished";
 export type RideStatus =
   | "Requested"
   | "Cancelled"
@@ -95,7 +95,6 @@ export interface UserTable {
   socialId: string | null;
   firstName: string | null;
   lastName: string | null;
-  school_id: number | null; // Foreign key to school table
   name: string | null;
   phone_number: string | null;
   kind: UserKind | null;
@@ -108,6 +107,7 @@ export interface UserTable {
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
   deleted_at: Date | null;
+  school_id: number | null; // Foreign key to school table
 }
 
 export interface KycTable {
