@@ -3,8 +3,84 @@ import GenTable from "@/components/tables";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Fuel, TrendingUp, Users } from "lucide-react";
 import React from "react";
+import { cookies } from "next/headers";
+import { database } from "../../../database/config";
 
-function Overview() {
+async function Overview() {
+  const cookieStore = await cookies();
+  const school_id = cookieStore.get("school_id")?.value;
+  const schoolId = Number(school_id);
+
+  // All statistics derived from students of this school through their rides
+  const [vehicleCount, driverCount, parentCount, rideCount] = await Promise.all(
+    [
+      // Vehicles: Get unique vehicles from rides of students in this school
+      database
+        .selectFrom("student")
+        .innerJoin("ride", "ride.studentId", "student.id")
+        .innerJoin("vehicle", "ride.vehicleId", "vehicle.id")
+        .select((eb) => [eb.fn.count("vehicle.id").distinct().as("count")])
+        .where("student.schoolId", "=", schoolId)
+        .where("ride.status", "!=", "Cancelled")
+        .where("ride.vehicleId", "is not", null)
+        .executeTakeFirst(),
+
+      // Drivers: Get unique drivers from rides of students in this school
+      database
+        .selectFrom("student")
+        .innerJoin("ride", "ride.studentId", "student.id")
+        .innerJoin("user as driver", "ride.driverId", "driver.id")
+        .select((eb) => [eb.fn.count("driver.id").distinct().as("count")])
+        .where("student.schoolId", "=", schoolId)
+        .where("ride.status", "!=", "Cancelled")
+        .where("ride.driverId", "is not", null)
+        .where("driver.kind", "=", "Driver")
+        .executeTakeFirst(),
+
+      // Parents: Get unique parents from students in this school
+      database
+        .selectFrom("student")
+        .innerJoin("user as parent", "student.parentId", "parent.id")
+        .select((eb) => [eb.fn.count("parent.id").distinct().as("count")])
+        .where("student.schoolId", "=", schoolId)
+        .where("parent.kind", "=", "Parent")
+        .executeTakeFirst(),
+
+      // Total rides: All rides for students in this school
+      database
+        .selectFrom("student")
+        .innerJoin("ride", "ride.studentId", "student.id")
+        .select((eb) => [eb.fn.countAll<number>().as("count")])
+        .where("student.schoolId", "=", schoolId)
+        .where("ride.status", "!=", "Cancelled")
+        .executeTakeFirst(),
+    ]
+  );
+
+  const metrics = {
+    total_vehicles: vehicleCount?.count ?? 0,
+    total_drivers: driverCount?.count ?? 0,
+    total_parents: parentCount?.count ?? 0,
+    total_rides: rideCount?.count ?? 0,
+  };
+
+  // Latest 5 students in this school
+  const latestStudents = await database
+    .selectFrom("student")
+    .leftJoin("user as parent", "student.parentId", "parent.id")
+    .select([
+      "student.id",
+      "student.name",
+      "parent.phone_number",
+      "student.created_at",
+      "student.parentId",
+      "student.schoolId",
+    ])
+    .where("student.schoolId", "=", schoolId)
+    .orderBy("student.created_at", "desc")
+    .limit(5)
+    .execute();
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -31,7 +107,10 @@ function Overview() {
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{5}</div>
+            <div className="text-2xl font-bold">{metrics.total_vehicles}</div>
+            <p className="text-xs text-muted-foreground">
+              Serving students in this school
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -40,7 +119,10 @@ function Overview() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{6}</div>
+            <div className="text-2xl font-bold">{metrics.total_drivers}</div>
+            <p className="text-xs text-muted-foreground">
+              Active drivers for this school
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -49,7 +131,10 @@ function Overview() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{45}</div>
+            <div className="text-2xl font-bold">{metrics.total_parents}</div>
+            <p className="text-xs text-muted-foreground">
+              Parents with students here
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -58,7 +143,10 @@ function Overview() {
             <Fuel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{12}</div>
+            <div className="text-2xl font-bold">{metrics.total_rides}</div>
+            <p className="text-xs text-muted-foreground">
+              For students in this school
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -69,10 +157,10 @@ function Overview() {
           </CardHeader>
           <CardContent>
             <GenTable
-              title="Requested Rides"
+              title="Recently Added Students"
               cols={["id", "name", "phone_number"]}
-              data={[]}
-              baseLink="/rides/"
+              data={latestStudents}
+              baseLink="/students/"
               uniqueKey="id"
             />
           </CardContent>

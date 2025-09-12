@@ -50,6 +50,18 @@ export class Auth {
     }
   }
 
+  school_decode({ token }: { token: string }) {
+    try {
+      const payload = this.jwt.decode(token, process.env.JWT_SECRET);
+      if (payload && payload.kind === "School" && payload.exp > Date.now()) {
+        return payload;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   hash({ password }: { password: string }) {
     return this.bcrypt.hashSync(password, this.bcrypt.genSaltSync());
   }

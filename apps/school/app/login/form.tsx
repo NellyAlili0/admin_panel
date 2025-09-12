@@ -4,9 +4,11 @@ import { useActionState } from "react";
 import { useEffect } from "react";
 import { initialState } from "@/lib/utils";
 import { toast } from "sonner";
+import { LoginButton } from "../../components/login-button";
 
 export default function Form() {
   const [state, formAction] = useActionState(login, initialState);
+
   useEffect(() => {
     if (state.message) {
       toast.error(state.message);
@@ -48,32 +50,7 @@ export default function Form() {
         />
       </div>
 
-      {/* <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="remember"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label
-            htmlFor="remember"
-            className="ml-2 block text-sm text-gray-700"
-          >
-            Remember me
-          </label>
-        </div>
-
-        <a href="#" className="text-sm text-blue-600 hover:text-blue-500">
-          Forgot password?
-        </a>
-      </div> */}
-
-      <button
-        type="submit"
-        className="w-full bg-[#efb100] text-white py-2 px-4 rounded-md hover:bg-[#b88600] focus:outline-none focus:ring-2 focus:ring-[#b88600] focus:ring-offset-2 transition duration-150"
-      >
-        Sign In
-      </button>
+      <LoginButton title="Sign In" />
       {state.message && (
         <p className="text-red-500 mt-2 text-center">{state.message}</p>
       )}

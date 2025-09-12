@@ -19,7 +19,7 @@ export type NotificationSection =
 export type PaymentKind = "Bank" | "M-Pesa";
 export type TransactionType = "Deposit" | "Withdrawal";
 export type DailyRideKind = "Pickup" | "Dropoff";
-export type DailyRideStatus = "Active" | "Inactive" | "Started" | "Finished";
+export type DailyRideStatus = "Ongoing" | "Inactive" | "Started" | "Finished";
 export type RideStatus =
   | "Requested"
   | "Cancelled"

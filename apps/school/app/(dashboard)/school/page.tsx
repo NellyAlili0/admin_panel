@@ -1,14 +1,14 @@
 import { database } from "@/database/config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, MapPin, UserIcon, Plus, Globe } from "lucide-react";
+import { Phone, MapPin, UserIcon, Globe } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { cookies } from "next/headers";
 
-export default async function Page(props: { params: Promise<{ id: string }> }) {
-  const { id } = await props.params; // ✅ await params
-
-  const schoolId = Number(id);
+export default async function Page() {
+  const cookieStore = await cookies();
+  const school_id = cookieStore.get("school_id")?.value;
+  const schoolId = Number(school_id);
 
   // Fetch school info
   const schoolInfo = await database
@@ -20,7 +20,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       "school.meta",
       "school.url",
     ])
-    .where("school.id", "=", 4)
+    .where("school.id", "=", schoolId)
     .executeTakeFirst();
 
   if (!schoolInfo) {

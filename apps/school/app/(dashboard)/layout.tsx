@@ -16,7 +16,7 @@ export default async function Layout({
     return redirect("/login");
   }
 
-  const payload = auth.admin_decode({ token: session.value });
+  const payload = auth.school_decode({ token: session.value });
 
   if (!payload) {
     return redirect("/login");

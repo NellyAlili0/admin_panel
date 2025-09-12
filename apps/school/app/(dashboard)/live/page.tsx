@@ -1,68 +1,116 @@
-"use client";
+// app/(dashboard)/live/page.tsx (Server Component)
+import { cookies } from "next/headers";
+import { database } from "../../../database/config";
+import SchoolTrackingMap from "./SchoolTrackingMap";
 
-import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
-import { useMemo } from "react";
+export default async function LiveTrackingPage() {
+  const cookieStore = await cookies();
+  const school_id = cookieStore.get("school_id")?.value;
+  const schoolId = Number(school_id);
 
-type Driver = {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-};
+  if (!schoolId || isNaN(schoolId)) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-red-600">School ID not found in cookies</div>
+      </div>
+    );
+  }
 
-const drivers: Driver[] = [
-  { id: "1", name: "Driver A", lat: -1.2921, lng: 36.8219 }, // Nairobi
-  { id: "2", name: "Driver B", lat: -1.3, lng: 36.8 },
-  { id: "3", name: "Driver C", lat: -1.31, lng: 36.85 },
-];
+  // Get school information
+  const school = await database
+    .selectFrom("school")
+    .select(["school.id", "school.name"])
+    .where("school.id", "=", schoolId)
+    .executeTakeFirst();
 
-// Convert Lucide <Car /> to an inline SVG string
-function carIconSvg() {
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-         viewBox="0 0 24 24" fill="none" 
-         stroke="red" stroke-width="2" 
-         stroke-linecap="round" stroke-linejoin="round" 
-         class="lucide lucide-bus">
-      <path d="M8 6v6"/>
-      <path d="M15 6v6"/>
-      <path d="M2 12h19.6"/>
-      <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/>
-      <circle cx="7" cy="18" r="2"/>
-      <path d="M9 18h5"/>
-      <circle cx="16" cy="18" r="2"/>
-    </svg>
-  `)}`,
-    scaledSize: new google.maps.Size(40, 40), // marker size
-    anchor: new google.maps.Point(20, 20), // center the icon
-  };
-}
+  if (!school) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-red-600">School not found</div>
+      </div>
+    );
+  }
 
-function Live() {
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyA7dadlEnMc9mu1baJMBE0k-wUiZPCP1OA", // move to .env
-  });
+  // Get students for this school
+  const students = await database
+    .selectFrom("student")
+    .select([
+      "student.id",
+      "student.name",
+      "student.address",
+      "student.schoolId",
+    ])
+    .where("student.schoolId", "=", schoolId)
+    .execute();
 
-  const center = useMemo(() => ({ lat: -1.2921, lng: 36.8219 }), []);
+  // Get today's date in the format your API expects
+  const today = new Date();
 
-  if (!isLoaded) return <div>Loading Map...</div>;
+  // Get active daily rides for today for students in this school
+  const activeRides = await database
+    .selectFrom("daily_ride")
+    .innerJoin("ride", "daily_ride.rideId", "ride.id")
+    .innerJoin("student", "ride.studentId", "student.id")
+    .innerJoin("vehicle", "ride.vehicleId", "vehicle.id")
+    .innerJoin("user as driver", "ride.driverId", "driver.id")
+    .select([
+      "daily_ride.id",
+      "daily_ride.status",
+      "daily_ride.date",
+      "daily_ride.kind",
+      "ride.id as rideId",
+      "student.id as studentId",
+      "student.name as studentName",
+      "student.address as studentAddress",
+      "vehicle.id as vehicleId",
+      "vehicle.registration_number as vehicleReg",
+      "vehicle.available_seats",
+      "driver.id as driverId",
+      "driver.name as driverName",
+      "driver.phone_number as driverPhone",
+      "driver.email as driverEmail",
+    ])
+    .where("student.schoolId", "=", schoolId)
+    .where("daily_ride.status", "=", "Ongoing")
+    .where("daily_ride.date", "=", today)
+    .where("driver.kind", "=", "Driver")
+    .execute();
+
+  // Get latest driver locations for active rides
+  const driverIds = [...new Set(activeRides.map((ride) => ride.driverId))];
+
+  const locations = await Promise.all(
+    driverIds.map(async (driverId) => {
+      const location = await database
+        .selectFrom("location")
+        .innerJoin("user as driver", "location.driverId", "driver.id")
+        .select([
+          "location.id",
+          "location.latitude",
+          "location.longitude",
+          "location.timestamp",
+          "location.driverId",
+          "driver.name as driverName",
+          "driver.phone_number as driverPhone",
+        ])
+        .where("location.driverId", "=", driverId)
+        .orderBy("location.timestamp", "desc")
+        .limit(1)
+        .executeTakeFirst();
+
+      return location;
+    })
+  );
+
+  const validLocations = locations.filter((loc) => loc !== undefined);
 
   return (
-    <GoogleMap
-      zoom={12}
-      center={center}
-      mapContainerClassName="w-full h-[100vh]" // full screen map
-    >
-      {drivers.map((driver) => (
-        <Marker
-          key={driver.id}
-          position={{ lat: driver.lat, lng: driver.lng }}
-          icon={carIconSvg()} // use Lucide Car as marker
-        />
-      ))}
-    </GoogleMap>
+    <SchoolTrackingMap
+      schoolId={schoolId}
+      schoolName={school.name}
+      students={students}
+      active_rides={activeRides}
+      locations={validLocations}
+    />
   );
 }
-
-export default Live;
