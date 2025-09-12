@@ -18,7 +18,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { logout } from "../login/actions";
-// import { logout } from "@/app/login/actions"
 
 export function Navbar() {
   const pathname = usePathname();
@@ -54,12 +53,6 @@ export function Navbar() {
       icon: BusFrontIcon,
       active: pathname === "/rides" || pathname.startsWith("/rides/"),
     },
-    // {
-    //   href: "/finance",
-    //   label: "Finance",
-    //   icon: WalletIcon,
-    //   active: pathname === "/finance" || pathname.startsWith("/finance/"),
-    // },
     {
       href: "/vehicles",
       label: "Vehicles",
