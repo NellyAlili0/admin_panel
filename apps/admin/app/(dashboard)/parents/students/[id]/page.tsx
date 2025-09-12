@@ -181,7 +181,7 @@ export default async function Page({
     .select(["daily_ride.id"])
     .where("ride.parentId", "=", parent.id)
     .where("student.id", "=", studentId)
-    .where("daily_ride.status", "=", "Active")
+    .where("daily_ride.status", "=", "Ongoing")
     .executeTakeFirst();
 
   // Check for assigned ride
