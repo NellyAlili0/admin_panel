@@ -141,12 +141,12 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
 
       // Server errors
       newSocket.on("error", (err) => {
-        console.error("⚠️ Socket server error:", err);
+        console.error("⚠️ Socket server error:=>", err);
       });
 
       // Disconnection
       newSocket.on("disconnect", (reason) => {
-        console.warn("⚠️ School tracking socket disconnected:", reason);
+        console.warn("⚠️ School tracking socket disconnected:=>", reason);
         setConnectionStatus("disconnected");
 
         if (reason === "io server disconnect") {
