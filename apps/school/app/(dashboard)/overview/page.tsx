@@ -160,7 +160,7 @@ async function Overview() {
               title="Recently Added Students"
               cols={["id", "name", "phone_number"]}
               data={latestStudents}
-              baseLink="/students/"
+              baseLink="/records/students/"
               uniqueKey="id"
             />
           </CardContent>

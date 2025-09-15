@@ -46,6 +46,7 @@ const SchoolTrackingMap = ({
   );
   const [socket, setSocket] = useState<any>(null);
   const [rideKind, setRideKind] = useState<"morning" | "evening">("morning");
+
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected"
   >("connecting");
@@ -97,7 +98,6 @@ const SchoolTrackingMap = ({
 
   const driverIds = useMemo(() => drivers.map((d) => d.driverId), [drivers]);
 
-  // Enhanced socket connection with ride status updates
   useEffect(() => {
     if (driverIds.length === 0) {
       console.log("⚠️ No drivers to track");
