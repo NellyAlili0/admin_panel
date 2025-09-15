@@ -1,10 +1,10 @@
 import React, { Suspense } from "react";
 import Form from "./form";
-import { db } from "@repo/database";
+import { database } from "../../database/config";
 
 async function Home() {
   const school = "";
-  const schools = await db
+  const schools = await database
     .selectFrom("school")
     .select(["id", "name"])
     .execute();

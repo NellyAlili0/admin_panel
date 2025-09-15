@@ -14,6 +14,8 @@ export default async function Page() {
       ORDER BY created_at DESC
   `.execute(db);
 
+  console.log(data);
+
   const countResult = await sql<{ count: number }>`
   SELECT COUNT(*) AS count FROM onboarding
 `.execute(db);

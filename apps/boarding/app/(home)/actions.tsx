@@ -5,6 +5,7 @@ import { zfd } from "zod-form-data";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { database } from "../../database/config";
 
 const formSchema = zfd.formData({
   parent_name: zfd.text(),
@@ -63,7 +64,7 @@ export async function onboard(
     end_date,
   } = data.data;
 
-  const school = await db
+  const school = await database
     .selectFrom("school")
     .select(["id", "name"])
     .where("name", "=", current_school)

@@ -205,12 +205,18 @@ importers:
       '@repo/handlers':
         specifier: workspace:*
         version: link:../../packages/handlers
+      kysely:
+        specifier: ^0.27.5
+        version: 0.27.6
       lucide-react:
         specifier: ^0.501.0
         version: 0.501.0(react@19.1.0)
       next:
         specifier: 15.3.4
         version: 15.3.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      pg:
+        specifier: ^8.16.3
+        version: 8.16.3
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -233,6 +239,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.13
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.15.5
       '@types/react':
         specifier: ^19
         version: 19.1.13
