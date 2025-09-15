@@ -13,10 +13,12 @@ function deslugifyFromSubdomain(slug: string): string {
 async function Home({ params }: { params: Promise<{ school: string }> }) {
   const school_url = (await params).school;
   const school = deslugifyFromSubdomain(school_url);
+
   const schools = await database
     .selectFrom("school")
     .select(["id", "name"])
     .execute();
+
   return (
     <div>
       <Form current_school={school} schools={schools} />

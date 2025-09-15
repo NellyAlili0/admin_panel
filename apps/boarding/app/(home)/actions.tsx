@@ -70,9 +70,6 @@ export async function onboard(
     .where("name", "=", current_school)
     .executeTakeFirst();
 
-  console.log(current_school);
-  console.log(school);
-
   if (!school) {
     return redirect(
       "/?error=School%20not%20found,%20please%20type%20your%20current%20school"

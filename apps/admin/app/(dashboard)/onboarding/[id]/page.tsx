@@ -1,6 +1,7 @@
 import { db } from "@repo/database";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { database } from "../../../../database/config";
 import {
   Phone,
   MapPin,
@@ -16,9 +17,10 @@ import {
 
 export default async function Page({ params }: { params: any }) {
   const { id } = await params;
-  let dataInfo = await db
+
+  // Get onboarding info from main db
+  let onboardingInfo = await db
     .selectFrom("onboarding")
-    .innerJoin("school", "school.id", "onboarding.school_id")
     .select([
       "onboarding.parent_name",
       "onboarding.parent_email",
@@ -32,15 +34,29 @@ export default async function Page({ params }: { params: any }) {
       "onboarding.mid_term",
       "onboarding.end_date",
       "onboarding.created_at",
-      "school.name as school_name",
+      "onboarding.school_id",
       "onboarding.ride_type",
     ])
     .where("onboarding.id", "=", id)
     .executeTakeFirst();
 
-  if (!dataInfo) {
+  if (!onboardingInfo) {
     return <div>Data not found</div>;
   }
+
+  // Get school info from separate database
+  let schoolInfo = await database
+    .selectFrom("school")
+    .select(["school.name as school_name"])
+    .where("school.id", "=", onboardingInfo.school_id)
+    .executeTakeFirst();
+
+  // Combine the data
+  const dataInfo = {
+    ...onboardingInfo,
+    school_name: schoolInfo?.school_name || "Unknown School",
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
