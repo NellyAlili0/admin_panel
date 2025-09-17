@@ -70,7 +70,6 @@ const SchoolTrackingMap = ({
   // Build initial driver markers from props
   useEffect(() => {
     const driverMap = new Map<number, DriverMarkerData>();
-    console.log(active_rides);
 
     active_rides.forEach((ride) => {
       const driverId = ride.driverId;
@@ -93,14 +92,12 @@ const SchoolTrackingMap = ({
 
       // Add student to the driver's student list
       const driverData = driverMap.get(driverId);
-      console.log(driverData);
-      console.log(ride.studentName);
       if (driverData) {
         driverData.students.push(ride.studentName);
       }
     });
 
-    console.log(`🎯 Built driver markers for ${driverMap.size} drivers`);
+    // console.log(`🎯 Built driver markers for ${driverMap.size} drivers`);
     setDrivers(Array.from(driverMap.values()));
   }, [active_rides, locations]);
 
@@ -108,7 +105,7 @@ const SchoolTrackingMap = ({
 
   useEffect(() => {
     if (driverIds.length === 0) {
-      console.log("⚠️ No drivers to track");
+      // console.log("⚠️ No drivers to track");
       return;
     }
 
