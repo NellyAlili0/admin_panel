@@ -52,10 +52,13 @@ const SchoolTrackingMap = ({
   >("connecting");
   const [retryCount, setRetryCount] = useState(0);
 
+  // Loads Google Maps API before rendering the map.
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyA7dadlEnMc9mu1baJMBE0k-wUiZPCP1OA",
   });
 
+  // Default map center (Nairobi coords).
+  // Memoized so it doesn't recalc on every render.
   const center = useMemo(() => ({ lat: -1.2921, lng: 36.8219 }), []);
 
   // Determine ride kind by time
@@ -67,11 +70,13 @@ const SchoolTrackingMap = ({
   // Build initial driver markers from props
   useEffect(() => {
     const driverMap = new Map<number, DriverMarkerData>();
+    console.log(active_rides);
 
     active_rides.forEach((ride) => {
       const driverId = ride.driverId;
       const location = locations.find((loc) => loc.driverId === driverId);
 
+      // if the driver isn't already added and we have a location add them
       if (!driverMap.has(driverId) && location) {
         driverMap.set(driverId, {
           driverId,
@@ -82,11 +87,14 @@ const SchoolTrackingMap = ({
           lng: location.longitude,
           lastUpdate: location.timestamp,
           students: [],
-          status: "Ongoing", // Now this property exists
+          status: "Ongoing",
         });
       }
 
+      // Add student to the driver's student list
       const driverData = driverMap.get(driverId);
+      console.log(driverData);
+      console.log(ride.studentName);
       if (driverData) {
         driverData.students.push(ride.studentName);
       }
@@ -123,11 +131,7 @@ const SchoolTrackingMap = ({
         setConnectionStatus("connected");
         setRetryCount(0);
 
-        // Join school channel for ride status updates
-        newSocket.emit("joinSchool", schoolId);
-        console.log(`🏫 Joined school channel: ${schoolId}`);
-
-        // Join all driver channels for location updates
+        // Join all driver channels for location updates (this matches your backend)
         driverIds.forEach((driverId) => {
           const numericDriverId = Number(driverId);
           if (!isNaN(numericDriverId)) {
@@ -162,7 +166,7 @@ const SchoolTrackingMap = ({
         }
       });
 
-      // Location updates
+      // Location updates (this matches your backend's locationBroadcast event)
       newSocket.on("locationBroadcast", (payload: any) => {
         console.log("📡 Location update received:", payload);
 
@@ -178,18 +182,6 @@ const SchoolTrackingMap = ({
               : driver
           )
         );
-      });
-
-      // Ride status updates (if your backend supports this)
-      newSocket.on("rideStatusUpdate", (payload: any) => {
-        console.log("🚌 Ride status update:", payload);
-
-        // Remove driver if ride is no longer ongoing
-        if (payload.status !== "Ongoing") {
-          setDrivers((prev) =>
-            prev.filter((driver) => driver.driverId !== payload.driverId)
-          );
-        }
       });
 
       return newSocket;
@@ -221,7 +213,13 @@ const SchoolTrackingMap = ({
             );
             if (response.ok) {
               const locationData = await response.json();
-              return { driverId, ...locationData };
+              // Extract the needed data from the API response structure
+              return {
+                driverId: locationData.driver.id,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                timestamp: locationData.timestamp,
+              };
             }
             return null;
           });

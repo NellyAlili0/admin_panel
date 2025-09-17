@@ -5,9 +5,10 @@ import SchoolTrackingMap from "./SchoolTrackingMap";
 
 export default async function LiveTrackingPage() {
   const cookieStore = await cookies();
+
+  // read school_id from cookies and validate it
   const school_id = cookieStore.get("school_id")?.value;
   const schoolId = Number(school_id);
-
   if (!schoolId || isNaN(schoolId)) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -16,7 +17,7 @@ export default async function LiveTrackingPage() {
     );
   }
 
-  // Get school information
+  // Fetch school details
   const school = await database
     .selectFrom("school")
     .select(["school.id", "school.name"])
@@ -31,7 +32,7 @@ export default async function LiveTrackingPage() {
     );
   }
 
-  // Get students for this school
+  // Fetch all students in that school
   const students = await database
     .selectFrom("student")
     .select([
@@ -76,9 +77,10 @@ export default async function LiveTrackingPage() {
     .where("driver.kind", "=", "Driver")
     .execute();
 
-  // Get latest driver locations for active rides
+  // Extract unique driver IDs from active rides
   const driverIds = [...new Set(activeRides.map((ride) => ride.driverId))];
 
+  // Fetch the latest driver location for each active driver.
   const locations = await Promise.all(
     driverIds.map(async (driverId) => {
       const location = await database
@@ -102,6 +104,7 @@ export default async function LiveTrackingPage() {
     })
   );
 
+  // Filter out any undefined locations (in case a driver has no location data)
   const validLocations = locations.filter((loc) => loc !== undefined);
 
   return (

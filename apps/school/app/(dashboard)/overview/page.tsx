@@ -72,6 +72,7 @@ async function Overview() {
       "student.id",
       "student.name",
       "parent.phone_number",
+      "student.gender",
       "student.created_at",
       "student.parentId",
       "student.schoolId",
@@ -158,7 +159,7 @@ async function Overview() {
           <CardContent>
             <GenTable
               title="Recently Added Students"
-              cols={["id", "name", "phone_number"]}
+              cols={["name", "gender", "phone_number"]}
               data={latestStudents}
               baseLink="/records/students/"
               uniqueKey="id"

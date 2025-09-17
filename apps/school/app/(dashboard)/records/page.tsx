@@ -10,7 +10,7 @@ async function Records() {
   const schoolId = Number(school_id);
 
   // Get parents of students in this school (student-centric approach)
-  const parents = await database
+  const rawParents = await database
     .selectFrom("student")
     .innerJoin("user as parent", "student.parentId", "parent.id")
     .select([
@@ -27,8 +27,14 @@ async function Records() {
     .distinctOn("parent.id") // Ensure unique parents (in case parent has multiple students)
     .execute();
 
+  // Format the data - use email prefix if name is missing
+  const parents = rawParents.map((parent) => ({
+    ...parent,
+    name: parent.name || parent.email?.split("@")[0] || "Unknown",
+  }));
+
   const totalParents = parents.length;
-  console.log(totalParents);
+  console.log(parents);
 
   return (
     <div className="flex flex-col gap-2">
@@ -52,7 +58,7 @@ async function Records() {
 
       <GenTable
         title="Parents with Students in This School"
-        cols={["id", "name", "email", "phone_number"]}
+        cols={["name", "email", "phone_number"]}
         data={parents}
         baseLink="/records/"
         uniqueKey="id"
