@@ -5,7 +5,6 @@ import { database } from "@/database/config";
 
 export default async function Page() {
   // available drivers
-  // kyc requests
   let allDrivers = await database
     .selectFrom("user")
     .select([
