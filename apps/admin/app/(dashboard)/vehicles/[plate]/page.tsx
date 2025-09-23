@@ -22,7 +22,6 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
-import { use } from "react";
 
 const getCurrentDateInNairobi = () => {
   const today = new Date();

@@ -1,24 +1,7 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Phone,
-  MapPin,
-  UserIcon,
-  Plus,
-  Mail,
-  Calendar,
-  Banknote,
-  Clock,
-  Bell,
-} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { database, sql } from "@/database/config";
 

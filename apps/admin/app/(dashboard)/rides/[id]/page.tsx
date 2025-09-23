@@ -1,7 +1,6 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { database, sql } from "@/database/config";
 import { RideDetailsPage } from "./dets";
-import { Mapping } from "@repo/handlers/mapping";
 
 const getCurrentDateInNairobi = () => {
   const today = new Date();
