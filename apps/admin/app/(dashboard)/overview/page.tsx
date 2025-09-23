@@ -151,32 +151,13 @@ export default async function Page() {
       <div className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader>
-            <CardTitle>Requested Rides</CardTitle>
-            <CardDescription>Trips requested by parents</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <GenTable
-              title="Requested Rides"
-              cols={["id", "name", "phone_number"]}
-              data={requested.map((ride) => ({
-                ...ride,
-                name: ride.name ?? "Unknown",
-                phone_number: ride.phone_number ?? "Not provided",
-              }))}
-              baseLink="/rides/"
-              uniqueKey="id"
-            />
-          </CardContent>
-        </Card>
-        <Card className="md:col-span-3">
-          <CardHeader>
             <CardTitle>Driver KYC Requests</CardTitle>
             <CardDescription>KYC requests from drivers</CardDescription>
           </CardHeader>
           <CardContent>
             <GenTable
               title="Requests"
-              cols={["id", "name", "email", "is_verified"]}
+              cols={["name", "email", "is_verified"]}
               data={kycRequests.map((kyc) => ({
                 ...kyc,
                 name: kyc.name ?? "Unknown",
@@ -184,6 +165,25 @@ export default async function Page() {
                 is_verified: kyc.is_verified ? "Verified" : "Pending",
               }))}
               baseLink="/drivers/"
+              uniqueKey="id"
+            />
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle>Requested Rides</CardTitle>
+            <CardDescription>Trips requested by parents</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GenTable
+              title="Requested Rides"
+              cols={["name", "phone_number"]}
+              data={requested.map((ride) => ({
+                ...ride,
+                name: ride.name ?? "Unknown",
+                phone_number: ride.phone_number ?? "Not provided",
+              }))}
+              baseLink="/rides/"
               uniqueKey="id"
             />
           </CardContent>

@@ -22,6 +22,12 @@ export default async function Page() {
   const totalParents = parents.length;
   console.log(totalParents);
 
+  const formattedParents = parents.map((parent) => ({
+    ...parent,
+    is_kyc_verified: parent.is_kyc_verified ? "Yes" : "No",
+    name: parent.name || parent.email?.split("@")[0] || "N/A",
+  }));
+
   return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
@@ -46,14 +52,13 @@ export default async function Page() {
       <GenTable
         title="All Parents"
         cols={[
-          "id",
           "name",
           "email",
           "phone_number",
-          "wallet_balance",
           "is_kyc_verified",
+          "wallet_balance",
         ]}
-        data={parents}
+        data={formattedParents}
         baseLink="/parents/"
         uniqueKey="id"
       />

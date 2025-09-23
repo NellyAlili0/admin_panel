@@ -32,7 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { database } from "@/database/config";
+import { database, sql } from "@/database/config";
 import Link from "next/link";
 import GenTable from "@/components/tables";
 import {
@@ -43,6 +43,36 @@ import {
 } from "./forms";
 import { SendNotificationForm } from "../../parents/forms";
 import KYCForm from "./KYCForm";
+
+const getCurrentDateInNairobi = () => {
+  const today = new Date();
+  const nairobiDate = today.toLocaleDateString("en-CA", {
+    // YYYY-MM-DD format
+    timeZone: "Africa/Nairobi",
+  });
+  return new Date(nairobiDate);
+};
+
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return "Ride Missed";
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+    return date.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  } catch (error) {
+    return "Error formatting date";
+  }
+};
 
 export default async function Page({ params }: { params: any }) {
   const { driver_id } = await params;
@@ -65,15 +95,18 @@ export default async function Page({ params }: { params: any }) {
     .where("user.email", "=", driver_id.replace("%40", "@"))
     .where("user.kind", "=", "Driver")
     .executeTakeFirst();
+
   if (!driverInfo) {
     return <div>Driver not found</div>;
   }
+
   // vehicle information
   let vehicleInfo = await database
     .selectFrom("vehicle")
     .selectAll()
     .where("vehicle.userId", "=", driverInfo?.id!) // Changed from user_id to userId
     .executeTakeFirst();
+
   // kyc information
   let kycInfo = await database
     .selectFrom("kyc")
@@ -88,6 +121,7 @@ export default async function Page({ params }: { params: any }) {
     ])
     .where("kyc.userId", "=", driverInfo?.id) // Changed from user_id to userId
     .executeTakeFirst();
+
   // assigned rides
   let assignedRides = await database
     .selectFrom("ride")
@@ -95,23 +129,79 @@ export default async function Page({ params }: { params: any }) {
     .select(["ride.id", "student.name", "ride.status", "ride.schedule"])
     .where("driverId", "=", driverInfo.id) // Changed from driver_id to driverId
     .execute();
+
   // trip history
-  let tripHistory = await database
+  const nairobiNow = new Date().toLocaleString("en-US", {
+    timeZone: "Africa/Nairobi",
+  });
+
+  const todayInNairobi = getCurrentDateInNairobi();
+  const tripHistory = await database
     .selectFrom("daily_ride")
-    .leftJoin("ride", "ride.id", "daily_ride.rideId") // Changed from daily_ride.ride_id to daily_ride.rideId
-    .leftJoin("student", "student.id", "ride.studentId") // Changed from ride.student_id to ride.studentId
+    .leftJoin("ride", "ride.id", "daily_ride.rideId")
+    .leftJoin("student", "student.id", "ride.studentId")
+    .leftJoin("user as driver", "driver.id", "daily_ride.driverId")
     .select([
       "daily_ride.id",
-      "daily_ride.status",
-      "student.name as passenger",
-      "daily_ride.start_time",
-      "daily_ride.end_time",
       "daily_ride.kind",
+      "student.name as student",
+      "driver.name as driver",
+      sql`ride.schedule->'pickup'->>'start_time'`.as("pickup_scheduled_time"),
+      sql`ride.schedule->'dropoff'->>'start_time'`.as("dropoff_scheduled_time"),
+      // Convert timestamps to Nairobi time directly in the query
+      sql`daily_ride.embark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`.as(
+        "embark_time_nairobi"
+      ),
+      sql`daily_ride.disembark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`.as(
+        "disembark_time_nairobi"
+      ),
+      // Keep original timestamps for comparison/debugging
+      "daily_ride.embark_time",
+      "daily_ride.disembark_time",
+      sql`ride.schedule->'pickup'->>'location'`.as("pickup_location"),
+      sql`ride.schedule->'dropoff'->>'location'`.as("dropoff_location"),
+      "daily_ride.status",
+      "daily_ride.date",
     ])
-    .where("daily_ride.driverId", "=", driverInfo.id) // Changed from daily_ride.driver_id to daily_ride.driverId
-    .where("daily_ride.status", "!=", "Inactive")
-    .orderBy("daily_ride.date", "desc")
+    .where("daily_ride.driverId", "=", driverInfo.id)
+    .where(({ or, eb }) =>
+      or([
+        // Previous days
+        eb("daily_ride.date", "<", todayInNairobi),
+        // Today but before current time (convert UTC to Nairobi time for comparison)
+        eb(
+          sql`daily_ride.disembark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`,
+          "<",
+          sql`${nairobiNow}::timestamp`
+        ),
+      ])
+    )
+    .orderBy(
+      sql`COALESCE(daily_ride.disembark_time, daily_ride.embark_time, daily_ride.date)`,
+      "desc"
+    )
     .execute();
+
+  // Helper function to safely convert database timestamps
+
+  // Transform the data to include properly formatted Nairobi times
+  const formattedTripHistory = tripHistory.map((trip) => ({
+    id: trip.id,
+    status: trip.status,
+    student: trip.student || "Unknown Student",
+    driver: trip.driver || "Unknown Driver",
+    kind: trip.kind,
+    embark_time: formatTimestamp((trip as any).embark_time_nairobi),
+    disembark_time: formatTimestamp((trip as any).disembark_time_nairobi),
+    scheduled_time:
+      trip.kind === "Pickup"
+        ? trip.pickup_scheduled_time
+        : trip.dropoff_scheduled_time,
+    pickup_location: trip.pickup_location,
+    dropoff_location: trip.dropoff_location,
+    date: trip.date,
+  }));
+
   // transactions
   let transactions = await database
     .selectFrom("payment")
@@ -477,7 +567,6 @@ export default async function Page({ params }: { params: any }) {
                 <GenTable
                   title="Transactions"
                   cols={[
-                    "id",
                     "amount",
                     "kind",
                     "comments",
@@ -496,14 +585,17 @@ export default async function Page({ params }: { params: any }) {
                 <GenTable
                   title="Ride History"
                   cols={[
-                    "id",
-                    "passenger",
-                    "status",
-                    "start_time",
-                    "end_time",
+                    "student",
+                    "driver",
                     "kind",
+                    "scheduled_time",
+                    "embark_time",
+                    "disembark_time",
+                    "pickup_location",
+                    "dropoff_location",
+                    "status",
                   ]}
-                  data={tripHistory}
+                  data={formattedTripHistory}
                   baseLink="/rides/trip/"
                   uniqueKey="id"
                 />
@@ -514,7 +606,7 @@ export default async function Page({ params }: { params: any }) {
               <div className="rounded-md border">
                 <GenTable
                   title="Assigned Rides"
-                  cols={["id", "name", "status", "created_at"]}
+                  cols={["name", "status", "created_at"]}
                   data={assignedRides}
                   baseLink="/rides/"
                   uniqueKey="id"

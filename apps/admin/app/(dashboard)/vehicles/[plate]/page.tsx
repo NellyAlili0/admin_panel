@@ -1,6 +1,6 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { database } from "@/database/config";
+import { database, sql } from "@/database/config";
 import GenTable from "@/components/tables";
 import { MarkAsInspected } from "./forms";
 import { Badge } from "@/components/ui/badge";
@@ -24,46 +24,35 @@ import {
 import Link from "next/link";
 import { use } from "react";
 
-// Define interfaces for query results
-interface VehicleInfo {
-  id: number;
-  userId: number | null;
-  vehicle_name: string | null;
-  registration_number: string | null;
-  vehicle_type: string | null;
-  vehicle_model: string | null;
-  vehicle_year: number | null;
-  available_seats: number | null;
-  status: string | null;
-  vehicle_image_url: string | null;
-  vehicle_registration: string | null;
-  insurance_certificate: string | null;
-  is_inspected: boolean | null;
-}
+const getCurrentDateInNairobi = () => {
+  const today = new Date();
+  const nairobiDate = today.toLocaleDateString("en-CA", {
+    // YYYY-MM-DD format
+    timeZone: "Africa/Nairobi",
+  });
+  return new Date(nairobiDate);
+};
 
-interface DriverInfo {
-  id: number;
-  name: string | null;
-  phone_number: string | null;
-  email: string | null;
-  meta: { neighborhood?: string; county?: string } | null;
-}
-
-interface AssignedRide {
-  id: number;
-  name: string | null;
-  status: string | null;
-  schedule: string | null;
-}
-
-interface TripHistory {
-  id: number;
-  status: string | null;
-  passenger: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  kind: string | null;
-}
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return "Ride Missed";
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+    return date.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  } catch (error) {
+    return "Error formatting date";
+  }
+};
 
 export default async function Page(props: {
   params: Promise<{ plate: string }>;
@@ -108,23 +97,73 @@ export default async function Page(props: {
     .where("driverId", "=", driverInfo.id)
     .execute();
 
-  // Fetch trip history
+  const nairobiNow = new Date().toLocaleString("en-US", {
+    timeZone: "Africa/Nairobi",
+  });
+
+  const todayInNairobi = getCurrentDateInNairobi();
   const tripHistory = await database
     .selectFrom("daily_ride")
     .leftJoin("ride", "ride.id", "daily_ride.rideId")
     .leftJoin("student", "student.id", "ride.studentId")
+    .leftJoin("user as driver", "driver.id", "daily_ride.driverId")
     .select([
       "daily_ride.id",
-      "daily_ride.status",
-      "student.name as passenger",
-      "daily_ride.start_time",
-      "daily_ride.end_time",
       "daily_ride.kind",
+      "student.name as student",
+      "driver.name as driver",
+      sql`ride.schedule->'pickup'->>'start_time'`.as("pickup_scheduled_time"),
+      sql`ride.schedule->'dropoff'->>'start_time'`.as("dropoff_scheduled_time"),
+      // Convert timestamps to Nairobi time directly in the query
+      sql`daily_ride.embark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`.as(
+        "embark_time_nairobi"
+      ),
+      sql`daily_ride.disembark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`.as(
+        "disembark_time_nairobi"
+      ),
+      // Keep original timestamps for comparison/debugging
+      "daily_ride.embark_time",
+      "daily_ride.disembark_time",
+      sql`ride.schedule->'pickup'->>'location'`.as("pickup_location"),
+      sql`ride.schedule->'dropoff'->>'location'`.as("dropoff_location"),
+      "daily_ride.status",
+      "daily_ride.date",
     ])
     .where("daily_ride.vehicleId", "=", vehicleInfo.id)
-    .where("daily_ride.status", "!=", "Inactive")
-    .orderBy("daily_ride.date", "desc")
+    .where(({ or, eb }) =>
+      or([
+        // Previous days
+        eb("daily_ride.date", "<", todayInNairobi),
+        // Today but before current time (convert UTC to Nairobi time for comparison)
+        eb(
+          sql`daily_ride.disembark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`,
+          "<",
+          sql`${nairobiNow}::timestamp`
+        ),
+      ])
+    )
+    .orderBy(
+      sql`COALESCE(daily_ride.disembark_time, daily_ride.embark_time, daily_ride.date)`,
+      "desc"
+    )
     .execute();
+
+  const formattedTripHistory = tripHistory.map((trip) => ({
+    id: trip.id,
+    status: trip.status,
+    student: trip.student || "Unknown Student",
+    driver: trip.driver || "Unknown Driver",
+    kind: trip.kind,
+    embark_time: formatTimestamp((trip as any).embark_time_nairobi),
+    disembark_time: formatTimestamp((trip as any).disembark_time_nairobi),
+    scheduled_time:
+      trip.kind === "Pickup"
+        ? trip.pickup_scheduled_time
+        : trip.dropoff_scheduled_time,
+    pickup_location: trip.pickup_location,
+    dropoff_location: trip.dropoff_location,
+    date: trip.date,
+  }));
 
   return (
     <div className="flex flex-col gap-2">
@@ -287,15 +326,18 @@ export default async function Page(props: {
               <div className="rounded-md border">
                 <GenTable
                   title="Trip History"
-                  cols={["id", "passenger", "start_time", "end_time", "status"]}
-                  data={tripHistory.map((trip) => ({
-                    ...trip,
-                    passenger: trip.passenger ?? "Unknown Passenger",
-                    start_time: trip.start_time ?? "N/A",
-                    end_time: trip.end_time ?? "N/A",
-                    status: trip.status ?? "Unknown",
-                    kind: trip.kind ?? "Unknown",
-                  }))}
+                  cols={[
+                    "student",
+                    "driver",
+                    "kind",
+                    "scheduled_time",
+                    "embark_time",
+                    "disembark_time",
+                    "pickup_location",
+                    "dropoff_location",
+                    "status",
+                  ]}
+                  data={formattedTripHistory}
                   baseLink="/rides/trip/"
                   uniqueKey="id"
                 />

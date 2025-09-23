@@ -14,8 +14,14 @@ import {
   DriverLocationDTO,
   DriverMarkerData,
 } from "./types";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
-// Custom marker icon for vehicles
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+//Custom marker icon for vehicles
 // const createVehicleIcon = (isActive = true) => ({
 //   url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
 //     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${isActive ? "#DC2626" : "#9CA3AF"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -25,7 +31,6 @@ import {
 //   scaledSize: new window.google.maps.Size(32, 32),
 //   anchor: new window.google.maps.Point(16, 16),
 // });
-
 const createVehicleIcon = (isActive = true) => ({
   url: "/car-marker.svg",
   scaledSize: new window.google.maps.Size(50, 50),
@@ -33,19 +38,12 @@ const createVehicleIcon = (isActive = true) => ({
 });
 
 interface Props {
-  schoolId: number;
   students: StudentDTO[];
   active_rides: DailyRideDTO[];
   locations: DriverLocationDTO[];
-  schoolName?: string;
 }
 
-const SchoolTrackingMap = ({
-  schoolId,
-  active_rides,
-  locations,
-  schoolName,
-}: Props) => {
+const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
   const [drivers, setDrivers] = useState<DriverMarkerData[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<DriverMarkerData | null>(
     null
@@ -198,7 +196,7 @@ const SchoolTrackingMap = ({
       console.log("🔌 Disconnecting school tracking socket");
       newSocket.disconnect();
     };
-  }, [driverIds, schoolId]);
+  }, [driverIds]);
 
   // Fallback polling when socket is disconnected
   useEffect(() => {
@@ -267,11 +265,12 @@ const SchoolTrackingMap = ({
     return () => clearInterval(refreshInterval);
   }, []);
 
-  const formatLastUpdate = (timestamp: Date) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
+  const formatLastUpdate = (timestamp: string | Date) => {
+    // Create a dayjs object with timezone conversion
+    const date = dayjs.utc(timestamp).tz("Africa/Nairobi");
+
+    const now = dayjs(); // also a dayjs object
+    const diffMins = now.diff(date, "minute");
 
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} min ago`;
@@ -324,7 +323,10 @@ const SchoolTrackingMap = ({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-800">
-                Live Student Tracking - School {schoolName}
+                Live Student Tracking -{" "}
+                {rideKind === "morning"
+                  ? "Morning Drop-off"
+                  : "Evening Pick-up"}
               </h1>
               <p className="text-sm text-gray-600">
                 Tracking {drivers.length} ongoing {rideKind} rides

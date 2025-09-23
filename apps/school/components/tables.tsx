@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import DataTable from "react-data-table-component";
+import DataTable, { TableStyles } from "react-data-table-component";
 import { useRouter } from "next/navigation";
 
 export default function GenTable({ title, cols, data, baseLink, uniqueKey }) {
@@ -23,14 +23,14 @@ export default function GenTable({ title, cols, data, baseLink, uniqueKey }) {
 
   for (let index = 0; index < cols.length; index++) {
     const element = cols[index];
-    const temp = {
+    const temp: any = {
       name: element.charAt(0).toUpperCase() + element.slice(1),
-      selector: (row) => row[element],
+      selector: (row: any) => row[element],
     };
     if (element == "tx_id" || element == "_id") {
       temp["sortable"] = false;
-      temp["cell"] = (row) => (
-        <span className="text-primary underline"> {row["id"]} </span>
+      temp["cell"] = (row: any) => (
+        <span className="text-primary underline">{row[element]}</span>
       );
     }
     if (
@@ -40,28 +40,36 @@ export default function GenTable({ title, cols, data, baseLink, uniqueKey }) {
       element == "end_time"
     ) {
       try {
-        temp["cell"] = (row) => (
-          <span> {(row[element] as Date).toLocaleString()} </span>
+        temp["cell"] = (row: any) => (
+          <span>{(row[element] as Date).toLocaleString()}</span>
         );
       } catch (error) {
-        temp["cell"] = (row) => <span> {row[element]} </span>;
+        temp["cell"] = (row: any) => <span>{row[element]}</span>;
       }
       temp["hide"] = "sm";
       temp["sortable"] = true;
     }
     columns.push(temp);
   }
-  // const [filterText, setFilterText] = React.useState('');
+
   const [resetPaginationToggle, setResetPaginationToggle] =
     React.useState(false);
-  const customStyles = {
+
+  // ✅ Proper TableStyles typing
+  const customStyles: TableStyles = {
     rows: {
       style: {
-        minHeight: "72px", // override the row height
+        minHeight: "72px",
+      },
+    },
+    cells: {
+      style: {
+        whiteSpace: "normal",
+        wordBreak: "break-all", // valid union value
+        overflowWrap: "anywhere", // ensures long text wraps (like break-word)
       },
     },
   };
-  // const actionsMemo = React.useMemo(() => <Export onExport={() => downloadCSV(data)} />, []);
 
   return (
     <DataTable
@@ -79,16 +87,13 @@ export default function GenTable({ title, cols, data, baseLink, uniqueKey }) {
       customStyles={customStyles}
       paginationResetDefaultPage={resetPaginationToggle}
       subHeader
-      // subHeaderComponent={subHeaderComponentMemo}
-      // selectableRows
       persistTableHead
       progressPending={pending}
-      // actions={actionsMemo}
     />
   );
 }
 
-function convertArrayOfObjectsToCSV(data) {
+function convertArrayOfObjectsToCSV(data: any[]) {
   let result;
   const array = data;
 
@@ -104,9 +109,7 @@ function convertArrayOfObjectsToCSV(data) {
     let ctr = 0;
     keys.forEach((key) => {
       if (ctr > 0) result += columnDelimiter;
-
       result += item[key];
-
       ctr++;
     });
     result += lineDelimiter;
@@ -115,7 +118,7 @@ function convertArrayOfObjectsToCSV(data) {
   return result;
 }
 
-function downloadCSV(array) {
+function downloadCSV(array: any[]) {
   const link = document.createElement("a");
   let csv = convertArrayOfObjectsToCSV(array);
   if (csv == null) return;

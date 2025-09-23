@@ -66,6 +66,20 @@ export function Navbar() {
       active: pathname === "/schools" || pathname.startsWith("/schools/"),
     },
     {
+      href: "/system-logs",
+      label: "System Logs",
+      icon: HardDriveDownload,
+      active:
+        pathname === "/system-logs" || pathname.startsWith("/system-logs/"),
+    },
+    // {
+    //   href: "/batch-rides",
+    //   label: "Batch Rides Creation",
+    //   icon: BusFrontIcon,
+    //   active:
+    //     pathname === "/batch-rides" || pathname.startsWith("/batch-rides/"),
+    // },
+    {
       href: "/onboarding",
       label: "Onboarding",
       icon: HardDriveDownload,

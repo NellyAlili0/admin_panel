@@ -171,6 +171,8 @@ export interface DailyRideTable {
   meta: DailyRideMeta | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
+  embark_time: Date | null;
+  disembark_time: Date | null;
   status: DailyRideStatus;
 }
 

@@ -37,6 +37,7 @@ export function Navbar() {
       icon: User2Icon,
       active: pathname === "/records" || pathname.startsWith("/records/"),
     },
+
     // {
     //   href: "/rides",
     //   label: "Rides",
@@ -48,6 +49,13 @@ export function Navbar() {
       label: "School",
       icon: SchoolIcon,
       active: pathname === "/school" || pathname.startsWith("/school/"),
+    },
+    {
+      href: "/rides-report",
+      label: "Rides Report",
+      icon: User2Icon,
+      active:
+        pathname === "/rides-report" || pathname.startsWith("/rides-report/"),
     },
   ];
 

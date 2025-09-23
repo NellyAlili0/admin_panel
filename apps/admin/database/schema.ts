@@ -172,6 +172,8 @@ export interface DailyRideTable {
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
   status: DailyRideStatus;
+  embark_time: Date | null;
+  disembark_time: Date | null;
 }
 
 export interface RideTable {

@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { database } from "@/database/config";
+import { database, sql } from "@/database/config";
 import {
   ArrowRight,
   Building,
@@ -152,25 +152,49 @@ export default async function Page({
     return <div>Parent not found</div>;
   }
 
-  // Fetch ride history
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const tripHistory = await database
     .selectFrom("daily_ride")
     .leftJoin("ride", "ride.id", "daily_ride.rideId")
     .leftJoin("student", "student.id", "ride.studentId")
-    .leftJoin("user", "user.id", "ride.driverId")
+    .leftJoin("user as driver", "driver.id", "daily_ride.driverId")
     .select([
       "daily_ride.id",
+      "daily_ride.kind", // This will help you distinguish pickup vs dropoff
+      "student.name as student",
+      "driver.name as driver",
+      sql`ride.schedule->'pickup'->>'start_time'`.as("pickup_scheduled_time"),
+      sql`ride.schedule->'dropoff'->>'start_time'`.as("dropoff_scheduled_time"),
+      "daily_ride.embark_time",
+      "daily_ride.disembark_time",
+      sql`ride.schedule->'pickup'->>'location'`.as("pickup_location"),
+      sql`ride.schedule->'dropoff'->>'location'`.as("dropoff_location"),
       "daily_ride.status",
-      "user.name as driver",
-      "daily_ride.start_time",
-      "daily_ride.end_time",
-      "daily_ride.kind",
     ])
     .where("ride.parentId", "=", parent.id)
     .where("student.id", "=", studentId)
-    .where("daily_ride.status", "!=", "Inactive")
+    .where("daily_ride.date", "<", today)
     .orderBy("daily_ride.date", "desc")
     .execute();
+
+  const tripHistoryFormatted = tripHistory.map((ride) => ({
+    ...ride,
+    scheduled_time: ride.pickup_scheduled_time,
+    embark_time: ride.embark_time
+      ? ride.embark_time.toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "Ride Cancelled",
+    disembark_time: ride.disembark_time
+      ? ride.disembark_time.toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "Ride Cancelled",
+  }));
 
   // Check for active ride
   const activeRide = await database
@@ -537,27 +561,16 @@ export default async function Page({
             <GenTable
               title="Ride History"
               cols={[
-                "id",
+                "student",
                 "driver",
-                "start_time",
-                "end_time",
-                "kind",
+                "scheduled_time",
+                "embark_time",
+                "disembark_time",
+                "pickup_location",
+                "dropoff_location",
                 "status",
               ]}
-              data={tripHistory.map((ride) => ({
-                ...ride,
-                driver: ride.driver ?? "Not assigned",
-                start_time:
-                  ride.start_time?.toLocaleString("en-US", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }) ?? "Not started",
-                end_time:
-                  ride.end_time?.toLocaleString("en-US", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }) ?? "Not ended",
-              }))}
+              data={tripHistoryFormatted}
               baseLink="/rides/trip/"
               uniqueKey="id"
             />

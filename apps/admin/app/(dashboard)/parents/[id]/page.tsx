@@ -23,54 +23,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddStudentForm, SendNotificationForm } from "../forms";
-import { database } from "@/database/config";
+import { database, sql } from "@/database/config";
+import { ChangePasswordForm, EditParentForm } from "./forms";
 
 // Define interfaces based on database schema
-interface ParentInfo {
-  id: number;
-  name: string | null;
-  email: string | null;
-  phone_number: string | null;
-  kind: "Parent" | "Driver" | "Admin" | null;
-  meta: any | null;
-  is_kyc_verified: boolean;
-  created_at: Date;
-  updated_at: Date;
-  statusName: string | null;
-}
-
-interface Student {
-  id: number;
-  name: string;
-  profile_picture: string | null;
-  comments: string | null;
-  address: string | null;
-  gender: "Male" | "Female";
-}
-
-interface Ride {
-  id: number;
-  passenger: string | null;
-  comments: string | null;
-  admin_comments: string | null;
-  status: "Requested" | "Cancelled" | "Ongoing" | "Pending" | "Completed";
-}
-
-interface DailyRide {
-  id: number;
-  status: "Active" | "Inactive" | "Started" | "Finished";
-  passenger: string | null;
-  start_time: Date | null;
-  end_time: Date | null;
-  kind: "Pickup" | "Dropoff";
-}
-
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  created_at: Date;
-}
+const getCurrentDateInNairobi = () => {
+  const today = new Date();
+  const nairobiDate = today.toLocaleDateString("en-CA", {
+    // YYYY-MM-DD format
+    timeZone: "Africa/Nairobi",
+  });
+  return new Date(nairobiDate);
+};
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params; // ✅ await params
@@ -136,23 +100,61 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     .where("ride.parentId", "=", parentInfo.id)
     .execute();
 
-  // Fetch trip history
+  const nairobiNow = new Date().toLocaleString("en-US", {
+    timeZone: "Africa/Nairobi",
+  });
+  const todayInNairobi = getCurrentDateInNairobi();
+
   const tripHistory = await database
     .selectFrom("daily_ride")
     .leftJoin("ride", "ride.id", "daily_ride.rideId")
     .leftJoin("student", "student.id", "ride.studentId")
+    .leftJoin("user as driver", "driver.id", "daily_ride.driverId")
     .select([
       "daily_ride.id",
+      "daily_ride.kind", // This will help you distinguish pickup vs dropoff
+      "student.name as student",
+      "driver.name as driver",
+      sql`ride.schedule->'pickup'->>'start_time'`.as("pickup_scheduled_time"),
+      sql`ride.schedule->'dropoff'->>'start_time'`.as("dropoff_scheduled_time"),
+      "daily_ride.embark_time",
+      "daily_ride.disembark_time",
+      sql`ride.schedule->'pickup'->>'location'`.as("pickup_location"),
+      sql`ride.schedule->'dropoff'->>'location'`.as("dropoff_location"),
       "daily_ride.status",
-      "student.name as passenger",
-      "daily_ride.start_time",
-      "daily_ride.end_time",
-      "daily_ride.kind",
     ])
     .where("ride.parentId", "=", parentInfo.id)
-    .where("daily_ride.status", "!=", "Inactive")
+    .where(({ or, eb }) =>
+      or([
+        // Previous days
+        eb("daily_ride.date", "<", todayInNairobi),
+        // Today but before current time (convert UTC to Nairobi time for comparison)
+        eb(
+          sql`daily_ride.disembark_time AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi'`,
+          "<",
+          sql`${nairobiNow}::timestamp`
+        ),
+      ])
+    )
     .orderBy("daily_ride.date", "desc")
     .execute();
+
+  const tripHistoryFormatted = tripHistory.map((ride) => ({
+    ...ride,
+    scheduled_time: ride.pickup_scheduled_time,
+    embark_time: ride.embark_time
+      ? ride.embark_time.toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "Ride Missed",
+    disembark_time: ride.disembark_time
+      ? ride.disembark_time.toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "Ride Missed",
+  }));
 
   // Fetch notifications
   const notifications = await database
@@ -187,6 +189,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <div className="flex gap-2 items-center">
           <SendNotificationForm parentId={parentInfo.id.toString()} />
           <AddStudentForm parentId={parentInfo.id.toString()} />
+          <EditParentForm parent={parentInfo} />
+          <ChangePasswordForm parent={parentInfo} />
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -307,27 +311,16 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                 <GenTable
                   title="Ride History"
                   cols={[
-                    "id",
-                    "passenger",
+                    "student",
+                    "driver",
+                    "scheduled_time",
+                    "embark_time",
+                    "disembark_time",
+                    "pickup_location",
+                    "dropoff_location",
                     "status",
-                    "start_time",
-                    "end_time",
-                    "kind",
                   ]}
-                  data={tripHistory.map((ride) => ({
-                    ...ride,
-                    start_time:
-                      ride.start_time?.toLocaleString("en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }) ?? "Not started",
-                    end_time:
-                      ride.end_time?.toLocaleString("en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }) ?? "Not ended",
-                    passenger: ride.passenger ?? "Unknown",
-                  }))}
+                  data={tripHistoryFormatted}
                   baseLink="/rides/trip/"
                   uniqueKey="id"
                 />
