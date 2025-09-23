@@ -144,7 +144,7 @@ export async function assignRide(formData: FormData) {
     }
 
     // Get parent info
-    let parent = null;
+    let parent: any = null;
     if (student.parentId) {
       parent = await database
         .selectFrom("user")
@@ -201,7 +201,7 @@ export async function assignRide(formData: FormData) {
       };
     }
 
-    if (driver.available_seats <= 0) {
+    if (driver.available_seats && driver.available_seats <= 0) {
       return {
         success: false,
         message: `No available seats in ${driver.name}'s vehicle (${driver.available_seats}/${driver.seat_count})`,
@@ -341,7 +341,9 @@ export async function assignRide(formData: FormData) {
       await trx
         .updateTable("vehicle")
         .set({
-          available_seats: driver.available_seats - 1,
+          available_seats: driver.available_seats
+            ? driver.available_seats - 1
+            : 0,
         })
         .where("id", "=", driver.vehicle_id)
         .executeTakeFirst();
