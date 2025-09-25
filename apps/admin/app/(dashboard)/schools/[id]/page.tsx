@@ -1,3 +1,4 @@
+"use server";
 import { database } from "@/database/config";
 import {
   Card,
@@ -13,6 +14,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
 import { use } from "react";
 import { CreateSchoolCredentials } from "../credentials";
+import UploadExcel from "./form";
 
 // Define interfaces based on database schema
 interface SchoolInfo {
@@ -109,80 +111,102 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           <Plus className="h-4 w-4" />
           Import Students
         </Button> */}
-        <CreateSchoolCredentials data={data} />
+        <section className="flex items-center gap-2 flex-wrap">
+          <CreateSchoolCredentials data={data} />
+          <UploadExcel schoolId={schoolId} />
+        </section>
       </div>
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>School Information</CardTitle>
         </CardHeader>
-        <CardContent>
-          <section className="flex flex-col md:flex-row gap-6 items-center flex-wrap w-full">
-            <div className="flex items-center gap-4">
+        <CardContent className="space-y-6">
+          {/* Info Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+              <MapPin className="h-5 w-5 text-muted-foreground" />
               <div>
-                <h3 className="text-xl font-medium">{schoolInfo.name}</h3>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <div>
-                <p>
-                  School Location:
-                  <span className="text-muted-foreground ml-1">
-                    {schoolInfo.location ?? "Not provided"}
-                  </span>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Location
+                </p>
+                <p className="font-semibold">
+                  {schoolInfo.location ?? "Not provided"}
                 </p>
               </div>
             </div>
 
-            {schoolInfo.meta && (
-              <div className="flex gap-5">
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {schoolInfo.meta.administrator_phone ?? "Not provided"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {schoolInfo.meta.administrator_name ?? "Not provided"}
-                  </span>
-                </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+              <Phone className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Admin Phone
+                </p>
+                <p className="font-semibold">
+                  {schoolInfo.meta?.administrator_phone ?? "Not provided"}
+                </p>
               </div>
-            )}
+            </div>
 
-            <section className="flex gap-6 flex-wrap">
-              {schoolInfo.meta?.latitude && schoolInfo.meta?.longitude ? (
-                <Link
-                  href={`https://www.google.com/maps/search/?api=1&query=${schoolInfo.meta.latitude},${schoolInfo.meta.longitude}`}
-                  target="_blank"
-                  className="flex items-center gap-2"
-                >
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    View on Google Maps
-                  </span>
-                </Link>
-              ) : (
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  No map coordinates available
-                </span>
-              )}
-              {schoolInfo.url && (
-                <a
-                  href={schoolInfo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2"
-                >
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {schoolInfo.url}
-                  </span>
-                </a>
-              )}
-            </section>
-          </section>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+              <UserIcon className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Admin Name
+                </p>
+                <p className="font-semibold">
+                  {schoolInfo.meta?.administrator_name ?? "Not provided"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+              <Globe className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Website
+                </p>
+                <p className="font-semibold break-all">
+                  {schoolInfo.url ? (
+                    <a
+                      href={schoolInfo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {schoolInfo.url}
+                    </a>
+                  ) : (
+                    "Not provided"
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 ">
+              <MapPin className="h-5 w-5 text-muted-foreground" />
+              <section>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Google Map
+                </p>
+                <div>
+                  {schoolInfo.meta?.latitude && schoolInfo.meta?.longitude ? (
+                    <Link
+                      href={`https://www.google.com/maps/search/?api=1&query=${schoolInfo.meta.latitude},${schoolInfo.meta.longitude}`}
+                      target="_blank"
+                      className="flex items-center gap-2 font-semibold text-blue-600 hover:underline"
+                    >
+                      view on google maps
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      No map coordinates available
+                    </span>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
         </CardContent>
       </Card>
       <Card className="mb-8">

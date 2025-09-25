@@ -14,7 +14,6 @@ import { SubmitButton } from "@/components/submit-button";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { createCredentials } from "./actions_credentials";
 
 interface SchoolCredentials {
@@ -24,8 +23,6 @@ interface SchoolCredentials {
 }
 
 export function CreateSchoolCredentials({ data }: { data: SchoolCredentials }) {
-  const router = useRouter();
-
   const [state, formAction] = useActionState(createCredentials, initialState);
   useEffect(() => {
     if (state.id) {
@@ -37,7 +34,9 @@ export function CreateSchoolCredentials({ data }: { data: SchoolCredentials }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="default">Create School Credentials</Button>
+        <button className="flex bg-gray-800 hover:bg-gray-700 text-white text-base font-medium px-4 py-2.5 outline-none rounded w-max cursor-pointer mx-auto">
+          Create School Credentials
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

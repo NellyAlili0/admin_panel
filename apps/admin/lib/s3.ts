@@ -17,7 +17,7 @@ export const uploadToS3 = async (file: File) => {
   const arrayBuffer = await file.arrayBuffer();
 
   const uploadCommand = new PutObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME!,
+    Bucket: "zidallie-kyc",
     Key: fileName,
     Body: Buffer.from(arrayBuffer),
     ContentType: file.type,
@@ -29,4 +29,35 @@ export const uploadToS3 = async (file: File) => {
 
   const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
   return fileUrl;
+};
+
+// ✅ Excel-only upload
+export const uploadExcelToS3 = async (file: File) => {
+  // Only allow Excel files
+  const allowedTypes = [
+    "application/vnd.ms-excel", // .xls
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+    "text/csv", // .csv
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error(
+      "Invalid file type. Only Excel (.xls, .xlsx, .csv) files are allowed."
+    );
+  }
+
+  const fileExtension = file.name.split(".").pop();
+  const fileName = `${uuidv4()}.${fileExtension}`;
+  const arrayBuffer = await file.arrayBuffer();
+
+  const uploadCommand = new PutObjectCommand({
+    Bucket: "zidallie-school-excel-files",
+    Key: fileName,
+    Body: Buffer.from(arrayBuffer),
+    ContentType: file.type,
+  });
+
+  await s3.send(uploadCommand);
+
+  return `https://zidallie-school-excel-files.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 };

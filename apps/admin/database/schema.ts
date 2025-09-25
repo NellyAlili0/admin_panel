@@ -203,6 +203,7 @@ export interface SchoolTable {
   location: string | null;
   comments: string | null;
   url: string | null;
+  smart_card_url: string | null;
   meta: SchoolMeta | null;
   created_at: Generated<Date>;
 }
