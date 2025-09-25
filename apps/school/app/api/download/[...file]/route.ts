@@ -23,9 +23,11 @@ const BUCKET_NAME = "zidallie-school-excel-files";
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { file: string[] } }
+  context: { params: Promise<{ file: string[] }> }
 ) {
   try {
+    // Await the params promise
+    const params = await context.params;
     console.log("Download API called with params:", params);
 
     // Validate params
