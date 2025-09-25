@@ -49,6 +49,7 @@ export async function GET(
         { status: 500 }
       );
     }
+
     let extension = "xlsx"; // default
 
     // Check if file exists first
@@ -57,8 +58,6 @@ export async function GET(
         Bucket: BUCKET_NAME,
         Key: key,
       });
-      await s3.send(headCommand);
-      console.log("File exists in S3");
       const headResponse = await s3.send(headCommand);
       console.log("File exists in S3");
 
@@ -83,9 +82,10 @@ export async function GET(
     }
 
     // Generate signed URL
-    // Determine appropriate extension based on content type or original key
+    const customFilename = `smart_card_reports_${
+      new Date().toISOString().split("T")[0]
+    }.${extension}`;
 
-    const customFilename = `smart_card_reports_${new Date().toISOString().split("T")[0]}.${extension}`;
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
