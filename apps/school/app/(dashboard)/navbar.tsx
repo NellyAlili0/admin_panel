@@ -10,6 +10,7 @@ import {
   SchoolIcon,
   SignalIcon,
   User2Icon,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -60,28 +61,36 @@ export function Navbar() {
     },
     {
       href: "/smart-cards",
-      label: "Smart Cards Reports",
+      label: "Smart Card Downloads",
       icon: HardDriveDownload,
       active:
         pathname === "/smart-cards" || pathname.startsWith("/smart-cards/"),
     },
+    {
+      href: "/smartcard-reports",
+      label: "Smart Card Live",
+      icon: Radio,
+      active:
+        pathname === "/smartcard-reports" ||
+        pathname.startsWith("/smartcard-reports/"),
+    },
   ];
 
   return (
-    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-screen border-r-2">
-      <div className="container flex flex-col gap-2 items-start h-full justify-between px-4 py-8">
+    <div className="border-b w-fit bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-screen border-r-2">
+      <div className="container w-full flex flex-col gap-2 items-start h-full justify-between  md:px-1 lg:px-2 xl:px-4 py-8">
         <nav className="flex flex-col gap-2 items-start justify-start w-full">
           <div className="flex gap-2 font-bold text-xl">
             <span>School Admin </span>
           </div>
-          <ul className="flex flex-col gap-2 w-full items-start">
+          <ul className="flex flex-col gap-3 w-full items-start flex-wrap">
             {routes.map((route) => (
-              <li key={route.href} className="w-full">
+              <li key={route.href} className="w-full px-1 flex flex-wrap">
                 <Button
                   asChild
                   variant={route.active ? "default" : "ghost"}
                   className={cn(
-                    "h-9 px-4 w-full justify-start",
+                    "h-9 px-4 w-fit justify-start",
                     route.active && "bg-primary text-white"
                   )}
                 >

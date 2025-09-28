@@ -15,6 +15,7 @@ import GenTable from "@/components/tables";
 import { use } from "react";
 import { CreateSchoolCredentials } from "../credentials";
 import UploadExcel from "./form";
+import { UpdateSchool } from "../edit_school";
 
 // Define interfaces based on database schema
 interface SchoolInfo {
@@ -114,6 +115,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <section className="flex items-center gap-2 flex-wrap">
           <CreateSchoolCredentials data={data} />
           <UploadExcel schoolId={schoolId} />
+          <UpdateSchool school_id={schoolId} />
         </section>
       </div>
       <Card className="mb-8">

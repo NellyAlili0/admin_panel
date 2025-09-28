@@ -1,4 +1,3 @@
-// app/(dashboard)/live/page.tsx (Server Component)
 import { database, sql } from "../../../database/config";
 import SchoolTrackingMapWrapper from "./SchoolTrackingMapWrapper";
 

@@ -26,13 +26,10 @@ const formatTimestampToNairobi = (timestamp: any): string => {
   if (!timestamp) return "Not Available";
 
   try {
-    // Convert UTC timestamp to Nairobi timezone
     const nairobiTime = dayjs.utc(timestamp).tz("Africa/Nairobi");
-
     if (!nairobiTime.isValid()) {
       return "Invalid Date";
     }
-
     return nairobiTime.format("DD/MM/YYYY HH:mm:ss");
   } catch (error) {
     console.error("Error formatting timestamp:", error);
@@ -45,10 +42,8 @@ const getTimeDifference = (timestamp: any): string => {
   if (!timestamp) return "Unknown";
 
   try {
-    // Convert UTC timestamp to Nairobi timezone
     const timestampInNairobi = dayjs.utc(timestamp).tz("Africa/Nairobi");
     const nowInNairobi = dayjs().tz("Africa/Nairobi");
-
     const diffMins = nowInNairobi.diff(timestampInNairobi, "minute");
 
     if (diffMins < 1) return "Just now";
@@ -71,7 +66,7 @@ const getTimeDifference = (timestamp: any): string => {
 const createVehicleIcon = (isActive = true) => {
   if (typeof window === "undefined") return undefined;
 
-  // Check if Google Maps API is loaded before using constructors
+  // Check if Google Maps API is loaded before using constructors.
   if (!window.google?.maps) return undefined;
 
   return {
@@ -85,9 +80,14 @@ interface Props {
   students: StudentDTO[];
   active_rides: DailyRideDTO[];
   locations: DriverLocationDTO[];
+  googleMapsLibraries?: ("places" | "geometry" | "drawing" | "visualization")[];
 }
 
-const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
+const SchoolTrackingMap = ({
+  active_rides,
+  locations,
+  googleMapsLibraries = [],
+}: Props) => {
   const [drivers, setDrivers] = useState<DriverMarkerData[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<DriverMarkerData | null>(
     null
@@ -98,20 +98,24 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
     "connecting" | "connected" | "disconnected"
   >("connecting");
   const [retryCount, setRetryCount] = useState(0);
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   // Client-side check to prevent SSR issues
   const [isClient, setIsClient] = useState(false);
+
+  // const BACKEND_URL = "https://zidallie-backend.onrender.com";
+  const BACKEND_URL = "http://localhost:3000";
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Load Google Maps API
+  // Load Google Maps API with fixed libraries prop
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
       "AIzaSyA7dadlEnMc9mu1baJMBE0k-wUiZPCP1OA",
-    libraries: [],
+    libraries: googleMapsLibraries,
   });
 
   // Default map center (Nairobi coords)
@@ -145,7 +149,7 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
           vehicleReg: ride.vehicleReg,
           lat: location.latitude,
           lng: location.longitude,
-          lastUpdate: location.timestamp, // This is already a UTC timestamp from DB
+          lastUpdate: location.timestamp,
           students: [],
           status: "Ongoing",
         });
@@ -164,9 +168,15 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
 
   const driverIds = useMemo(() => drivers.map((d) => d.driverId), [drivers]);
 
-  // Socket connection for real-time updates
+  // Enhanced Socket connection for real-time updates
   useEffect(() => {
     if (!isClient || driverIds.length === 0) {
+      console.log(
+        "❌ Early return - isClient:",
+        isClient,
+        "driverIds:",
+        driverIds
+      );
       return;
     }
 
@@ -175,71 +185,140 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
     );
 
     const connectSocket = () => {
-      const newSocket = io("https://zidallie-backend.onrender.com", {
+      const newSocket = io(BACKEND_URL, {
         transports: ["websocket"],
         autoConnect: true,
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
+        timeout: 20000,
+      });
+
+      // Enhanced debugging - log ALL socket events
+      newSocket.onAny((eventName, ...args) => {
+        console.log(`🔍 Socket Event: ${eventName}`, args);
+        setDebugInfo(
+          (prev) =>
+            `${prev}\n[${new Date().toLocaleTimeString()}] ${eventName}: ${JSON.stringify(args).substring(0, 100)}`
+        );
       });
 
       // Connection successful
       newSocket.on("connect", () => {
-        console.log("✅ School tracking socket connected:", newSocket.id);
+        console.log("✅ Admin tracking socket connected:", newSocket.id);
         setConnectionStatus("connected");
         setRetryCount(0);
+        setDebugInfo(
+          (prev) =>
+            `${prev}\n[${new Date().toLocaleTimeString()}] Connected: ${newSocket.id}`
+        );
 
-        // Join all driver channels for location updates
-        driverIds.forEach((driverId) => {
+        // Join driver channels with enhanced logging
+        driverIds.forEach((driverId, index) => {
           const numericDriverId = Number(driverId);
           if (!isNaN(numericDriverId)) {
+            console.log(
+              `📡 [${index + 1}/${driverIds.length}] Joining driver channel: ${numericDriverId}`
+            );
             newSocket.emit("joinDriver", numericDriverId);
-            console.log(`📡 Joined driver channel: ${numericDriverId}`);
+
+            // Add acknowledgment callback
+            newSocket.emit("joinDriver", numericDriverId, (response: any) => {
+              console.log(`✅ Joined driver ${numericDriverId}:`, response);
+            });
+          } else {
+            console.error("❌ Invalid driver ID:", driverId);
           }
         });
+
+        // Test connection by emitting a test event
+        setTimeout(() => {
+          console.log("🧪 Testing socket connection...");
+          newSocket.emit("ping", { test: true });
+        }, 2000);
       });
 
       // Connection errors
       newSocket.on("connect_error", (err) => {
-        console.error(
-          "❌ School tracking socket connection error:",
-          err.message
-        );
+        console.error("❌ Socket connection error:", err.message);
         setConnectionStatus("disconnected");
         setRetryCount((prev) => prev + 1);
+        setDebugInfo(
+          (prev) =>
+            `${prev}\n[${new Date().toLocaleTimeString()}] Connection Error: ${err.message}`
+        );
       });
 
       // Server errors
       newSocket.on("error", (err) => {
         console.error("⚠️ Socket server error:", err);
+        setDebugInfo(
+          (prev) =>
+            `${prev}\n[${new Date().toLocaleTimeString()}] Server Error: ${JSON.stringify(err)}`
+        );
       });
 
       // Disconnection
       newSocket.on("disconnect", (reason) => {
-        console.warn("⚠️ School tracking socket disconnected:", reason);
+        console.warn("⚠️ Socket disconnected:", reason);
         setConnectionStatus("disconnected");
+        setDebugInfo(
+          (prev) =>
+            `${prev}\n[${new Date().toLocaleTimeString()}] Disconnected: ${reason}`
+        );
 
         if (reason === "io server disconnect") {
           setTimeout(() => newSocket.connect(), 1000);
         }
       });
 
-      // Location updates - timestamps from backend should be UTC
+      // Enhanced location updates handler
       newSocket.on("locationBroadcast", (payload: any) => {
-        console.log("📡 Location update received:", payload);
+        console.log("location update");
+        console.log("📡 Location update received:", {
+          driverId: payload.driverId,
+          latitude: payload.latitude,
+          longitude: payload.longitude,
+          timestamp: payload.timestamp,
+          fullPayload: payload,
+        });
 
-        setDrivers((prev) =>
-          prev.map((driver) =>
+        setDebugInfo(
+          (prev) =>
+            `${prev}\n[${new Date().toLocaleTimeString()}] Location Update: Driver ${payload.driverId} at ${payload.latitude}, ${payload.longitude}`
+        );
+
+        setDrivers((prev) => {
+          const driverExists = prev.find(
+            (d) => d.driverId === payload.driverId
+          );
+          if (!driverExists) {
+            console.warn(
+              `❌ Driver ${payload.driverId} not found in current drivers list`
+            );
+            console.log(
+              "Current drivers:",
+              prev.map((d) => d.driverId)
+            );
+            return prev;
+          }
+
+          return prev.map((driver) =>
             driver.driverId === payload.driverId
               ? {
                   ...driver,
                   lat: parseFloat(payload.latitude),
                   lng: parseFloat(payload.longitude),
-                  lastUpdate: payload.timestamp, // Keep as UTC timestamp
+                  lastUpdate: payload.timestamp,
                 }
               : driver
-          )
-        );
+          );
+        });
+      });
+
+      // Add more event listeners for debugging
+      newSocket.on("pong", (data: any) => {
+        console.log("🏓 Pong received:", data);
       });
 
       return newSocket;
@@ -250,7 +329,7 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
 
     // Cleanup
     return () => {
-      console.log("🔌 Disconnecting school tracking socket");
+      console.log("🔌 Disconnecting socket");
       newSocket.disconnect();
     };
   }, [driverIds, isClient]);
@@ -271,10 +350,9 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
       console.log("📡 Polling driver locations (fallback)");
 
       try {
-        // Poll each driver's latest location
         const locationPromises = driverIds.map(async (driverId) => {
           const response = await fetch(
-            `https://zidallie-backend.onrender.com/api/v1/locations/driver/${driverId}/latest`
+            `${BACKEND_URL}/api/v1/locations/driver/${driverId}/latest`
           );
           if (response.ok) {
             const locationData = await response.json();
@@ -282,7 +360,7 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
               driverId: locationData.driver.id,
               latitude: locationData.latitude,
               longitude: locationData.longitude,
-              timestamp: locationData.timestamp, // Should be UTC from backend
+              timestamp: locationData.timestamp,
             };
           }
           return null;
@@ -324,7 +402,7 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
         window.location.reload();
       },
       5 * 60 * 1000
-    ); // 5 minutes
+    );
 
     return () => clearInterval(refreshInterval);
   }, [isClient]);
@@ -408,12 +486,25 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
               </p>
             </div>
             {/* Connection debug info */}
-            <div className="text-xs text-gray-500">
-              Drivers: {driverIds.length > 0 ? driverIds.join(", ") : "None"}
+            <div className="text-xs text-gray-500 max-w-xs">
+              <div>Socket ID: {socket?.id || "Not connected"}</div>
+              <div>
+                Drivers: {driverIds.length > 0 ? driverIds.join(", ") : "None"}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Debug Panel - Development Only */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="absolute top-32 left-4 z-10 bg-black text-green-400 p-2 rounded text-xs max-w-md max-h-40 overflow-y-auto font-mono">
+          <div className="font-bold mb-1">Debug Info:</div>
+          <pre className="whitespace-pre-wrap">
+            {debugInfo.split("\n").slice(-10).join("\n")}
+          </pre>
+        </div>
+      )}
 
       {/* Map */}
       <GoogleMap
@@ -438,10 +529,7 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
 
         {selectedDriver && (
           <InfoWindow
-            position={{
-              lat: selectedDriver.lat,
-              lng: selectedDriver.lng,
-            }}
+            position={{ lat: selectedDriver.lat, lng: selectedDriver.lng }}
             onCloseClick={() => setSelectedDriver(null)}
           >
             <div className="p-2 max-w-xs">
@@ -509,6 +597,11 @@ const SchoolTrackingMap = ({ active_rides, locations }: Props) => {
           {retryCount > 0 && (
             <div className="text-xs text-gray-500 mt-1">
               Fallback polling active
+            </div>
+          )}
+          {socket && (
+            <div className="text-xs text-gray-400 mt-1">
+              Socket: {socket.connected ? "Connected" : "Disconnected"}
             </div>
           )}
         </div>
