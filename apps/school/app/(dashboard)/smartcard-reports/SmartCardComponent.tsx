@@ -354,7 +354,7 @@ export default function SmartCardComponent({
                       ]}
                       data={transformRecords(records[zone])}
                       baseLink=""
-                      uniqueKey="id"
+                      uniqueKey=""
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={handlePageChange}
