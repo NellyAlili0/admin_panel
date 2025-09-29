@@ -224,7 +224,7 @@ export default function SmartCardComponent({
     };
   }, []);
 
-  if (loading) return <Loading />;
+  // if (loading) return <Loading />;
   if (error && Object.keys(records).length === 0 && loading === false)
     return <NoData />;
 
