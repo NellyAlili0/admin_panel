@@ -344,14 +344,7 @@ export default function SmartCardComponent({
                   <div className="rounded-md border">
                     <GenTable
                       title={`${zone} Records`}
-                      cols={[
-                        "zone",
-                        "user",
-                        "time_in",
-                        "time_out",
-                        "code",
-                        "status",
-                      ]}
+                      cols={["zone", "user", "time_in", "time_out", "status"]}
                       data={transformRecords(records[zone])}
                       baseLink=""
                       uniqueKey=""
