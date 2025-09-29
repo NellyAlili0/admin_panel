@@ -224,13 +224,16 @@ export default function SmartCardComponent({
     };
   }, []);
 
-  // if (loading) return <Loading />;
-  if (error && Object.keys(records).length === 0 && loading === false)
-    return <NoData />;
+  // Loading state
+  if (loading && Object.keys(records).length === 0) {
+    return <Loading />;
+  }
 
   const zoneNames = Object.keys(records);
 
-  return (
+  return Object.keys(records).length === 0 ? (
+    <NoData />
+  ) : (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
         items={[

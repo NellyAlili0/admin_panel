@@ -59,6 +59,7 @@ export default function GenTable({
         <span className="text-primary underline">{row[element]}</span>
       );
     }
+
     if (
       element == "created_at" ||
       element == "date" ||
@@ -67,16 +68,21 @@ export default function GenTable({
       element == "time_in" ||
       element == "time_out"
     ) {
-      try {
-        temp["cell"] = (row: any) => (
-          <span>{new Date(row[element]).toLocaleString()}</span>
-        );
-      } catch (error) {
-        temp["cell"] = (row: any) => <span>{row[element]}</span>;
-      }
+      temp["cell"] = (row: any) => {
+        const value = row[element];
+        if (!value) {
+          return <span className=" text-gray-400">N/A</span>;
+        }
+        try {
+          return <span>{new Date(value).toLocaleString()}</span>;
+        } catch (error) {
+          return <span>{value}</span>;
+        }
+      };
       temp["hide"] = "sm";
       temp["sortable"] = true;
     }
+
     columns.push(temp);
   }
 
