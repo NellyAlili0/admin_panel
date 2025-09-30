@@ -103,8 +103,8 @@ const SchoolTrackingMap = ({
   // Client-side check to prevent SSR issues
   const [isClient, setIsClient] = useState(false);
 
-  // const BACKEND_URL = "https://zidallie-backend.onrender.com";
-  const BACKEND_URL = "http://localhost:3000";
+  const BACKEND_URL = "https://zidallie-backend.onrender.com";
+  // const BACKEND_URL = "http://localhost:3000";
 
   useEffect(() => {
     setIsClient(true);
