@@ -24,7 +24,7 @@ const LoadingComponent = () => (
   </div>
 );
 
-// Fix: Move libraries array outside component to prevent reloading
+// Move libraries array outside component to prevent reloading
 const GOOGLE_MAPS_LIBRARIES: (
   | "places"
   | "geometry"

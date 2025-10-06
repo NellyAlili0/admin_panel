@@ -92,9 +92,9 @@ export default async function Page() {
     .execute();
 
   // Debug: Log a sample record to see what we're getting from the database
-  if (tripHistory.length > 0) {
-    console.log("Sample trip record:", tripHistory[0]);
-  }
+  // if (tripHistory.length > 0) {
+  //   console.log("Sample trip record:", tripHistory[0]);
+  // }
 
   // Filter and transform data for pickup rides
   const pickupRides = tripHistory

@@ -144,7 +144,7 @@ const SchoolTrackingMap = ({
           vehicleReg: ride.vehicleReg,
           lat: location.latitude,
           lng: location.longitude,
-          lastUpdate: new Date(),
+          lastUpdate: location.timestamp,
           students: [],
           status: "Ongoing",
         });
@@ -159,8 +159,6 @@ const SchoolTrackingMap = ({
     const newDrivers = Array.from(driverMap.values());
     console.log(`🎯 Built driver markers for ${newDrivers.length} drivers`);
     setDrivers(newDrivers);
-    console.log("data updated");
-    console.log("🚗 Driver Data:", newDrivers);
   }, [active_rides, locations, isClient]);
 
   const driverIds = useMemo(() => drivers.map((d) => d.driverId), [drivers]);
@@ -200,16 +198,13 @@ const SchoolTrackingMap = ({
         (prev) =>
           `${prev}\n[${new Date().toLocaleTimeString()}] Connected: ${newSocket.id}`
       );
-      console.log(`📡 Monitoring drivers: ${driverIds.join(", ")}`);
 
-      newSocket.emit("joinAdmin");
-
-      // driverIds.forEach((driverId, index) => {
-      //   console.log(
-      //     `📡 [${index + 1}/${driverIds.length}] Joining driver channel: ${driverId}`
-      //   );
-      //   newSocket.emit("joinDriver", Number(driverId));
-      // });
+      driverIds.forEach((driverId, index) => {
+        console.log(
+          `📡 [${index + 1}/${driverIds.length}] Joining driver channel: ${driverId}`
+        );
+        newSocket.emit("joinDriver", Number(driverId));
+      });
     });
 
     newSocket.on("connect_error", (err) => {
@@ -247,7 +242,7 @@ const SchoolTrackingMap = ({
                 ...driver,
                 lat: parseFloat(payload.latitude),
                 lng: parseFloat(payload.longitude),
-                lastUpdate: new Date(),
+                lastUpdate: payload.timestamp,
               }
             : driver
         );
@@ -347,7 +342,7 @@ const SchoolTrackingMap = ({
           </div>
         </div>
       </div>
-      {/* 
+
       {process.env.NODE_ENV === "development" && (
         <div className="absolute top-32 left-4 z-10 bg-black text-green-400 p-2 rounded text-xs max-w-md max-h-40 overflow-y-auto font-mono">
           <div className="font-bold mb-1">Debug Info:</div>
@@ -355,7 +350,7 @@ const SchoolTrackingMap = ({
             {debugInfo.split("\n").slice(-10).join("\n")}
           </pre>
         </div>
-      )} */}
+      )}
 
       <GoogleMap
         zoom={12}
