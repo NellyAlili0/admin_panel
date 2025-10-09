@@ -8,7 +8,10 @@ export default async function SmartCardReportsPage() {
   const id = cookieStore.get("school_id")?.value;
   const school_id = Number(id);
 
-  if (!school_id) return <NoData />;
+  if (!school_id) {
+    console.log("No school_id found in cookies");
+    return <NoData />;
+  }
 
   const schoolInfo = await database
     .selectFrom("school")
@@ -29,6 +32,7 @@ export default async function SmartCardReportsPage() {
       schoolInfo.terra_tag_id
     )
   ) {
+    console.log("Missing Terra credentials: email, password, or tag ID");
     return <NoData />;
   }
   return (

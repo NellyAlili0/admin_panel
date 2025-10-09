@@ -29,6 +29,9 @@ async function authenticateAndGetToken(
   password: string
 ): Promise<TokenData> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // Increased to 30s
+
     const loginRes = await fetch(
       "https://api.terrasofthq.com/api/auth/access-token",
       {
@@ -38,8 +41,11 @@ async function authenticateAndGetToken(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       }
     );
+
+    clearTimeout(timeout);
 
     if (!loginRes.ok) {
       const text = await loginRes.text();
@@ -59,8 +65,11 @@ async function authenticateAndGetToken(
       access_token: token,
       expires_at: expiresAt,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Authentication failed:", error);
+    if (error.name === "AbortError") {
+      throw new Error("Authentication request timed out after 30 seconds");
+    }
     throw error;
   }
 }
@@ -68,10 +77,7 @@ async function authenticateAndGetToken(
 function isTokenExpired(expiresAt: string): boolean {
   const expiration = new Date(expiresAt);
   const now = new Date();
-
-  // Add a 5-minute buffer to avoid using tokens that are about to expire
-  const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-
+  const bufferTime = 5 * 60 * 1000; // 5 minutes
   return now.getTime() >= expiration.getTime() - bufferTime;
 }
 
@@ -85,7 +91,6 @@ async function getTokenFromCookies(): Promise<TokenData | null> {
       return null;
     }
 
-    // Decrypt/decode if you've encrypted the cookie values
     return {
       access_token: tokenCookie.value,
       expires_at: expiresCookie.value,
@@ -97,14 +102,11 @@ async function getTokenFromCookies(): Promise<TokenData | null> {
 }
 
 function setTokenCookies(response: NextResponse, tokenData: TokenData): void {
-  // Set token cookie
   response.cookies.set(
     "terrasoft_token",
     tokenData.access_token,
     COOKIE_OPTIONS
   );
-
-  // Set expiration cookie
   response.cookies.set(
     "terrasoft_expires",
     tokenData.expires_at,
@@ -121,7 +123,6 @@ async function getValidToken(
   email: string,
   password: string
 ): Promise<{ token: string; tokenData: TokenData }> {
-  // Check if we have a valid token in cookies
   const existingToken = await getTokenFromCookies();
 
   if (existingToken && !isTokenExpired(existingToken.expires_at)) {
@@ -132,7 +133,6 @@ async function getValidToken(
     };
   }
 
-  // Token is expired or doesn't exist, get a new one
   console.log("Token expired or missing, getting new token");
   const tokenData = await authenticateAndGetToken(email, password);
 
@@ -142,27 +142,12 @@ async function getValidToken(
   };
 }
 
-// async function makeAuthenticatedRequest(
-//   url: string,
-//   token: string,
-//   options: RequestInit = {},
-// ): Promise<Response> {
-//   return fetch(url, {
-//     ...options,
-//     headers: {
-//       Accept: "application/json",
-//       Authorization: `Bearer ${token}`,
-//       ...options.headers,
-//     },
-//   });
-// }
-
 async function makeAuthenticatedRequest(
   url: string,
   token: string,
   options: RequestInit = {},
-  retries = 2,
-  timeoutMs = 10000
+  retries = 4,
+  timeoutMs = 60000
 ): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
@@ -180,9 +165,11 @@ async function makeAuthenticatedRequest(
       });
 
       clearTimeout(timeout);
+
       if (!res.ok && res.status >= 500 && attempt < retries) {
-        // Retry on 5xx errors
-        console.warn(`Retrying ${url}, attempt ${attempt + 1}`);
+        console.warn(
+          `Retrying ${url}, attempt ${attempt + 1} due to ${res.status}`
+        );
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
         continue;
       }
@@ -192,12 +179,14 @@ async function makeAuthenticatedRequest(
       clearTimeout(timeout);
       if (
         attempt < retries &&
-        (err.name === "AbortError" || err.code === "ECONNRESET")
+        (err.name === "AbortError" ||
+          err.code === "ECONNRESET" ||
+          err.code === "ETIMEDOUT")
       ) {
         console.warn(
-          `Retrying ${url} after ${err.message}, attempt ${attempt + 1}`
+          `Retrying ${url} after ${err.message || err.code}, attempt ${attempt + 1}`
         );
-        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1))); // Exponential backoff
         continue;
       }
       throw err;
@@ -211,8 +200,26 @@ export async function POST(req: NextRequest) {
   const response = new NextResponse();
 
   try {
-    const body = await req.json();
-    const { email, password, page = 3, tag } = body;
+    // Add error handling for empty body
+    let body;
+    try {
+      const text = await req.text();
+      if (!text || text.trim() === "") {
+        return NextResponse.json(
+          { error: "Request body is empty" },
+          { status: 400 }
+        );
+      }
+      body = JSON.parse(text);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      );
+    }
+
+    const { email, password, page = 1, tag } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -236,8 +243,7 @@ export async function POST(req: NextRequest) {
 
     // Make the API request
     const logRes = await makeAuthenticatedRequest(
-      // `https://api.terrasofthq.com/api/access-log?page=${page}`,
-      `https://api.terrasofthq.com/api/access-log?page=${page}&&tags[]=${tag}`,
+      `https://api.terrasofthq.com/api/access-log?page=${page}&tags[]=${tag}`,
       token
     );
 
@@ -246,17 +252,13 @@ export async function POST(req: NextRequest) {
       if (logRes.status === 401) {
         console.log("Got 401, token might be invalid, trying to refresh");
 
-        // Clear the cookies and get a new token
         clearTokenCookies(response);
-
         const newTokenData = await authenticateAndGetToken(email, password);
-
-        // Set new token cookies
         setTokenCookies(response, newTokenData);
 
         // Retry the request with new token
         const retryRes = await makeAuthenticatedRequest(
-          `https://api.terrasofthq.com/api/access-log?page=${page}`,
+          `https://api.terrasofthq.com/api/access-log?page=${page}&tags[]=${tag}`,
           newTokenData.access_token
         );
 
@@ -272,10 +274,7 @@ export async function POST(req: NextRequest) {
 
         const retryData = await retryRes.json();
         const retryResponse = NextResponse.json(retryData);
-
-        // Ensure cookies are set on the retry response
         setTokenCookies(retryResponse, newTokenData);
-
         return retryResponse;
       }
 
@@ -288,30 +287,23 @@ export async function POST(req: NextRequest) {
 
     const logData = await logRes.json();
     const successResponse = NextResponse.json(logData);
-
-    // Ensure cookies are set on successful response
     setTokenCookies(successResponse, tokenData);
 
     return successResponse;
   } catch (err: any) {
     console.error("API smartcards error:", err);
-
-    // Clear cookies on error
     clearTokenCookies(response);
 
     const errorResponse = NextResponse.json(
-      { error: err.message },
+      { error: err.message || "Internal server error" },
       { status: 500 }
     );
 
-    // Ensure cookies are cleared on error response
     clearTokenCookies(errorResponse);
-
     return errorResponse;
   }
 }
 
-// GET endpoint to check token status
 export async function GET(req: NextRequest) {
   try {
     const existingToken = await getTokenFromCookies();
@@ -344,7 +336,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// DELETE endpoint to logout/clear tokens
 export async function DELETE(req: NextRequest) {
   const response = NextResponse.json({ message: "Logged out successfully" });
   clearTokenCookies(response);

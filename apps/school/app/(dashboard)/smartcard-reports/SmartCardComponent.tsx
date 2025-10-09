@@ -50,7 +50,7 @@ export function transformRecords(raw: RawRecord[]): CleanRecord[] {
 function groupByZone(records: any[]) {
   return records.reduce(
     (acc, record) => {
-      const zoneName = record.zone.name;
+      const zoneName = record.zone?.name || "Unknown Zone";
       if (!acc[zoneName]) {
         acc[zoneName] = [];
       }
@@ -75,7 +75,6 @@ export default function SmartCardComponent({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Get page from URL or default to 1
   const [currentPage, setCurrentPage] = useState(() => {
     const pageParam = searchParams.get("page");
     return pageParam ? parseInt(pageParam, 10) : 1;
@@ -83,6 +82,7 @@ export default function SmartCardComponent({
 
   const [records, setRecords] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<string>("");
@@ -96,29 +96,40 @@ export default function SmartCardComponent({
   // Refs for cleanup
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
   // Update URL when page changes
-  const updateURL = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", page.toString());
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
+  const updateURL = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", page.toString());
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router]
+  );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    updateURL(page);
-  };
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setCurrentPage(page);
+      updateURL(page);
+    },
+    [updateURL]
+  );
 
-  // Fetch
+  // Fetch smart card data
   const fetchData = useCallback(
     async (page: number, isAutoRefresh = false) => {
+      // Cancel any ongoing requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
       abortControllerRef.current = new AbortController();
 
-      if (!isAutoRefresh) setLoading(true);
-      else setIsRefreshing(true);
+      if (!isAutoRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
 
       try {
         const res = await fetch("/api/smartcards", {
@@ -133,45 +144,72 @@ export default function SmartCardComponent({
           signal: abortControllerRef.current.signal,
         });
 
+        if (!isMountedRef.current) return;
+
         if (!res.ok) {
           const errJson = await res.json();
-          setError(errJson.error);
+          setError(errJson.error || "Failed to fetch data");
           setIsOnline(false);
+
+          // On initial load failure, still mark as complete so NoData shows
+          if (!initialLoadComplete) {
+            setInitialLoadComplete(true);
+          }
         } else {
           const response = await res.json();
-          const grouped = groupByZone(response.data.data);
-          setRecords(grouped);
 
-          if (response.data.last_page) setTotalPages(response.data.last_page);
+          // Check if data exists
+          if (response.data && Array.isArray(response.data.data)) {
+            const grouped = groupByZone(response.data.data);
+            setRecords(grouped);
 
-          const zoneNames = Object.keys(grouped);
-          if (zoneNames.length > 0 && !activeTab) {
-            setActiveTab(zoneNames[0]);
+            if (response.data.last_page) {
+              setTotalPages(response.data.last_page);
+            }
+
+            const zoneNames = Object.keys(grouped);
+            if (zoneNames.length > 0 && !activeTab) {
+              setActiveTab(zoneNames[0]);
+            }
+
+            setError(null);
+          } else {
+            setRecords({});
+            setError("No data available");
           }
 
-          setError(null);
           setIsOnline(true);
           setLastUpdated(new Date());
+          setInitialLoadComplete(true);
         }
       } catch (e: any) {
-        if (e.name !== "AbortError") {
+        if (e.name !== "AbortError" && isMountedRef.current) {
           console.error("Fetch error:", e);
-          setError(e.message);
+          setError(e.message || "Network error");
           setIsOnline(false);
+
+          if (!initialLoadComplete) {
+            setInitialLoadComplete(true);
+          }
         }
       } finally {
-        setLoading(false);
-        setIsRefreshing(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
-    [activeTab, email, password, tag]
+    [activeTab, email, password, tag, initialLoadComplete]
   );
 
-  const handleManualRefresh = () => fetchData(currentPage, false);
+  // Manual refresh handler
+  const handleManualRefresh = useCallback(() => {
+    fetchData(currentPage, false);
+  }, [currentPage, fetchData]);
 
   // Auto-refresh
   useEffect(() => {
-    if (autoRefresh && isOnline) {
+    if (autoRefresh && isOnline && initialLoadComplete) {
       intervalRef.current = setInterval(
         () => {
           fetchData(currentPage, true);
@@ -180,66 +218,109 @@ export default function SmartCardComponent({
       );
 
       return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
       };
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-  }, [autoRefresh, isOnline, currentPage, fetchData]);
+  }, [autoRefresh, isOnline, currentPage, fetchData, initialLoadComplete]);
 
+  // Initial fetch - only run once on mount
   useEffect(() => {
     fetchData(currentPage);
-  }, [currentPage, fetchData]);
+  }, []); // Empty deps - only run on mount
 
+  // Refetch when page changes (but not on initial mount)
   useEffect(() => {
-    const pageParam = searchParams.get("page");
-    const urlPage = pageParam ? parseInt(pageParam, 10) : 1;
-    if (urlPage !== currentPage) setCurrentPage(urlPage);
-  }, [searchParams, currentPage]);
+    if (initialLoadComplete) {
+      fetchData(currentPage);
+    }
+  }, [currentPage]);
 
+  // Sync activeTab with available zones
   useEffect(() => {
     const zoneNames = Object.keys(records);
-    if (zoneNames.length > 0) {
-      if (!activeTab || !zoneNames.includes(activeTab)) {
-        setActiveTab(zoneNames[0]);
-      }
-    } else {
-      setActiveTab("");
+    if (
+      zoneNames.length > 0 &&
+      (!activeTab || !zoneNames.includes(activeTab))
+    ) {
+      setActiveTab(zoneNames[0]);
     }
-  }, [records, activeTab]);
+  }, [records]);
 
+  // Online/offline detection
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (autoRefresh) fetchData(currentPage, true);
+      if (autoRefresh && initialLoadComplete) {
+        fetchData(currentPage, true);
+      }
     };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [currentPage, autoRefresh, fetchData]);
+  }, [currentPage, autoRefresh, fetchData, initialLoadComplete]);
 
+  // Cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (abortControllerRef.current) abortControllerRef.current.abort();
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, []);
 
-  // Loading state
-  if (loading && Object.keys(records).length === 0) {
+  // Show loading only during initial load
+  if (loading && !initialLoadComplete) {
     return <Loading />;
+  }
+
+  // Show NoData only after initial load completes and no data exists
+  if (initialLoadComplete && Object.keys(records).length === 0) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Breadcrumbs
+          items={[
+            {
+              href: "/smartcard-reports",
+              label: "Smart Card Reports",
+            },
+          ]}
+        />
+        {error ? (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-700">Error: {error}</p>
+            <button
+              onClick={handleManualRefresh}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <NoData />
+        )}
+      </div>
+    );
   }
 
   const zoneNames = Object.keys(records);
 
-  return Object.keys(records).length === 0 ? (
-    <NoData />
-  ) : (
+  return (
     <div className="flex flex-col gap-2">
       <Breadcrumbs
         items={[
@@ -274,9 +355,7 @@ export default function SmartCardComponent({
           </div>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-2">
-          {/* Auto-refresh toggle */}
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -287,7 +366,6 @@ export default function SmartCardComponent({
             Auto-refresh (2 min)
           </label>
 
-          {/* Manual refresh */}
           <button
             onClick={handleManualRefresh}
             disabled={isRefreshing}
@@ -299,7 +377,6 @@ export default function SmartCardComponent({
             />
           </button>
 
-          {/* Pagination Controls */}
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage <= 1}
@@ -324,48 +401,41 @@ export default function SmartCardComponent({
 
       <Card>
         <CardContent>
-          {zoneNames.length === 0 ? (
-            <NoData />
-          ) : (
-            <Tabs
-              value={activeTab || zoneNames[0]}
-              onValueChange={setActiveTab}
-              className="w-full"
-              defaultValue={activeTab || zoneNames[0]}
-            >
-              {/* Tabs Header */}
-              <TabsList className="flex mb-4 items-center gap-2 flex-wrap">
-                {zoneNames.map((zone) => (
-                  <TabsTrigger
-                    key={zone}
-                    value={zone}
-                    className="flex items-center gap-2 "
-                  >
-                    <Database className="h-4 w-4" />
-                    <span>{zone}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {/* Tabs Content */}
+          <Tabs
+            value={activeTab || zoneNames[0]}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="flex mb-4 items-center gap-2 flex-wrap">
               {zoneNames.map((zone) => (
-                <TabsContent key={zone} value={zone} className="space-y-4">
-                  <div className="rounded-md border">
-                    <GenTable
-                      title={`${zone} Records`}
-                      cols={["zone", "user", "time_in", "time_out", "status"]}
-                      data={transformRecords(records[zone])}
-                      baseLink=""
-                      uniqueKey=""
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </TabsContent>
+                <TabsTrigger
+                  key={zone}
+                  value={zone}
+                  className="flex items-center gap-2"
+                >
+                  <Database className="h-4 w-4" />
+                  <span>{zone}</span>
+                </TabsTrigger>
               ))}
-            </Tabs>
-          )}
+            </TabsList>
+
+            {zoneNames.map((zone) => (
+              <TabsContent key={zone} value={zone} className="space-y-4">
+                <div className="rounded-md border">
+                  <GenTable
+                    title={`${zone} Records`}
+                    cols={["zone", "user", "time_in", "time_out", "status"]}
+                    data={transformRecords(records[zone])}
+                    baseLink=""
+                    uniqueKey=""
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
     </div>
