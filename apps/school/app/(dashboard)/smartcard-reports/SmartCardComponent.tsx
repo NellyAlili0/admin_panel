@@ -64,11 +64,13 @@ function groupByZone(records: any[]) {
 interface SmartCardDashboardProps {
   email: string;
   password: string;
+  tag: string;
 }
 
 export default function SmartCardComponent({
   email,
   password,
+  tag,
 }: SmartCardDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -126,6 +128,7 @@ export default function SmartCardComponent({
             email,
             password,
             page,
+            tag,
           }),
           signal: abortControllerRef.current.signal,
         });
@@ -161,7 +164,7 @@ export default function SmartCardComponent({
         setIsRefreshing(false);
       }
     },
-    [activeTab, email, password]
+    [activeTab, email, password, tag]
   );
 
   const handleManualRefresh = () => fetchData(currentPage, false);
@@ -169,9 +172,12 @@ export default function SmartCardComponent({
   // Auto-refresh
   useEffect(() => {
     if (autoRefresh && isOnline) {
-      intervalRef.current = setInterval(() => {
-        fetchData(currentPage, true);
-      }, 30000);
+      intervalRef.current = setInterval(
+        () => {
+          fetchData(currentPage, true);
+        },
+        2 * 60 * 1000
+      );
 
       return () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -278,7 +284,7 @@ export default function SmartCardComponent({
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="rounded"
             />
-            Auto-refresh (30s)
+            Auto-refresh (2 min)
           </label>
 
           {/* Manual refresh */}
@@ -328,12 +334,12 @@ export default function SmartCardComponent({
               defaultValue={activeTab || zoneNames[0]}
             >
               {/* Tabs Header */}
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-4">
+              <TabsList className="flex mb-4 items-center gap-2 flex-wrap">
                 {zoneNames.map((zone) => (
                   <TabsTrigger
                     key={zone}
                     value={zone}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 "
                   >
                     <Database className="h-4 w-4" />
                     <span>{zone}</span>

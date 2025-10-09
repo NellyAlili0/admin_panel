@@ -206,6 +206,7 @@ export interface SchoolTable {
   smart_card_url: string | null;
   terra_email: string | null;
   terra_password: string | null;
+  terra_tag_id: string | null;
   meta: SchoolMeta | null;
   created_at: Generated<Date>;
 }

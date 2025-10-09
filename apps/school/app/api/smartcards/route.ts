@@ -142,19 +142,69 @@ async function getValidToken(
   };
 }
 
+// async function makeAuthenticatedRequest(
+//   url: string,
+//   token: string,
+//   options: RequestInit = {},
+// ): Promise<Response> {
+//   return fetch(url, {
+//     ...options,
+//     headers: {
+//       Accept: "application/json",
+//       Authorization: `Bearer ${token}`,
+//       ...options.headers,
+//     },
+//   });
+// }
+
 async function makeAuthenticatedRequest(
   url: string,
   token: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retries = 2,
+  timeoutMs = 10000
 ): Promise<Response> {
-  return fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          ...options.headers,
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+      if (!res.ok && res.status >= 500 && attempt < retries) {
+        // Retry on 5xx errors
+        console.warn(`Retrying ${url}, attempt ${attempt + 1}`);
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+
+      return res;
+    } catch (err: any) {
+      clearTimeout(timeout);
+      if (
+        attempt < retries &&
+        (err.name === "AbortError" || err.code === "ECONNRESET")
+      ) {
+        console.warn(
+          `Retrying ${url} after ${err.message}, attempt ${attempt + 1}`
+        );
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw new Error(`Failed to fetch ${url} after ${retries + 1} attempts`);
 }
 
 export async function POST(req: NextRequest) {
@@ -162,11 +212,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { email, password, page = 3 } = body;
+    const { email, password, page = 3, tag } = body;
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!tag) {
+      return NextResponse.json(
+        { error: "Tag ID is required" },
         { status: 400 }
       );
     }
@@ -179,7 +236,8 @@ export async function POST(req: NextRequest) {
 
     // Make the API request
     const logRes = await makeAuthenticatedRequest(
-      `https://api.terrasofthq.com/api/access-log?page=${page}`,
+      // `https://api.terrasofthq.com/api/access-log?page=${page}`,
+      `https://api.terrasofthq.com/api/access-log?page=${page}&&tags[]=${tag}`,
       token
     );
 

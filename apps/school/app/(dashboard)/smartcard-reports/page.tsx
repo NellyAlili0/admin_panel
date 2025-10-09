@@ -17,17 +17,25 @@ export default async function SmartCardReportsPage() {
       "school.name",
       "school.terra_email",
       "school.terra_password",
+      "school.terra_tag_id",
     ])
     .where("school.id", "=", school_id)
     .executeTakeFirst();
 
-  if (!(schoolInfo?.terra_email && schoolInfo.terra_password)) {
+  if (
+    !(
+      schoolInfo?.terra_email &&
+      schoolInfo.terra_password &&
+      schoolInfo.terra_tag_id
+    )
+  ) {
     return <NoData />;
   }
   return (
     <SmartCardComponent
       email={schoolInfo.terra_email}
       password={schoolInfo.terra_password}
+      tag={schoolInfo.terra_tag_id}
     />
   );
 }
