@@ -4,6 +4,7 @@ import React from "react";
 import DownloadReport from "./DownloasReport";
 import { cookies } from "next/headers";
 import { database } from "@/database/config";
+import NoData from "@/components/NoData";
 
 export default async function Page() {
   const cookieStore = await cookies();
@@ -22,7 +23,7 @@ export default async function Page() {
   }
 
   if (!schoolInfo.smart_card_url) {
-    return <div>No Smart Card URL available for this school.</div>;
+    return <NoData />;
   }
 
   return (
