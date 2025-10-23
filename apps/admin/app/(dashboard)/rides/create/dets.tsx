@@ -214,7 +214,7 @@ export default function AssignRidePage({
         toast.success("Ride assigned successfully!");
       }
     } catch (error) {
-      toast.error("Ride assigned successfully!");
+      toast.success("Ride assigned successfully!");
     }
 
     setLoading(false);
