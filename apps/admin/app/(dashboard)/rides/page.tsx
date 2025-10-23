@@ -21,7 +21,8 @@ export default async function Page() {
       "ride.id",
       "ride.status",
       "ride.created_at",
-      "user.name as parent",
+      "user.name as parent_name",
+      "user.email as parent",
       "student.name as student",
       "ride.admin_comments",
     ])
@@ -36,7 +37,8 @@ export default async function Page() {
       "ride.id",
       "ride.status",
       "ride.created_at",
-      "user.name as parent",
+      "user.name as parent_name",
+      "user.email as parent",
       "student.name as student",
       "ride.admin_comments",
     ])
@@ -44,19 +46,20 @@ export default async function Page() {
     .execute();
 
   // Requested rides
-  let requested_rides = await database
-    .selectFrom("ride")
-    .leftJoin("user", "user.id", "ride.parentId")
-    .leftJoin("student", "student.id", "ride.studentId")
-    .select([
-      "ride.id",
-      "ride.status",
-      "ride.created_at",
-      "user.name as parent",
-      "student.name as student",
-    ])
-    .where("ride.status", "=", "Requested")
-    .execute();
+  // let requested_rides = await database
+  //   .selectFrom("ride")
+  //   .leftJoin("user", "user.id", "ride.parentId")
+  //   .leftJoin("student", "student.id", "ride.studentId")
+  //   .select([
+  //     "ride.id",
+  //     "ride.status",
+  //     "ride.created_at",
+  //     "user.name as parent_name",
+  //     "user.email as parent",
+  //     "student.name as student",
+  //   ])
+  //   .where("ride.status", "=", "Requested")
+  //   .execute();
 
   return (
     <div className="flex flex-col gap-2">
@@ -83,8 +86,8 @@ export default async function Page() {
         baseLink="/rides/"
         uniqueKey="id"
       />
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-4">
+        {/* <Card>
           <CardHeader>
             <CardTitle>Requested Rides</CardTitle>
             <CardDescription>Trips requested by parents</CardDescription>
@@ -98,7 +101,7 @@ export default async function Page() {
               uniqueKey="id"
             />
           </CardContent>
-        </Card>
+        </Card> */}
         <Card>
           <CardHeader>
             <CardTitle>Ongoing Rides</CardTitle>

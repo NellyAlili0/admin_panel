@@ -16,6 +16,7 @@ export default async function Page() {
       "user.is_kyc_verified as verified",
     ])
     .where("user.kind", "=", "Driver")
+    .orderBy("user.email", "asc")
     .execute();
 
   let kycRequests = await database
@@ -70,8 +71,8 @@ export default async function Page() {
         title="KYC Requests"
         cols={["name", "email", "verified"]}
         data={kycs}
-        baseLink="/drivers/kyc/"
-        uniqueKey="id"
+        baseLink="/drivers/"
+        uniqueKey="email"
       />
     </div>
   );

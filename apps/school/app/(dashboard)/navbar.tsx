@@ -11,6 +11,8 @@ import {
   SignalIcon,
   User2Icon,
   Radio,
+  BadgePlus,
+  Map,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -60,13 +62,6 @@ export function Navbar() {
         pathname === "/rides-report" || pathname.startsWith("/rides-report/"),
     },
     {
-      href: "/smart-cards",
-      label: "Smart Card Downloads",
-      icon: HardDriveDownload,
-      active:
-        pathname === "/smart-cards" || pathname.startsWith("/smart-cards/"),
-    },
-    {
       href: "/smartcard-reports",
       label: "Smart Card Live",
       icon: Radio,
@@ -74,6 +69,34 @@ export function Navbar() {
         pathname === "/smartcard-reports" ||
         pathname.startsWith("/smartcard-reports/"),
     },
+    // {
+    //   href: "/onboarding",
+    //   label: "SmartCards Onboarding",
+    //   icon: BadgePlus,
+    //   active: pathname === "/onboarding" || pathname.startsWith("/onboarding/"),
+    // },
+    // {
+    //   href: "/zones",
+    //   label: "SmartCards Zones",
+    //   icon: Map,
+    //   active: pathname === "/zones" || pathname.startsWith("/zones/"),
+    // },
+    // {
+    //   href: "/smart-cards",
+    //   label: "Smart Card Downloads",
+    //   icon: HardDriveDownload,
+    //   active:
+    //     pathname === "/smart-cards" || pathname.startsWith("/smart-cards/"),
+    // },
+
+    // {
+    //   href: "/smartcards-overview",
+    //   label: "Smart Cards Overview",
+    //   icon: Radio,
+    //   active:
+    //     pathname === "/smartcards-overview" ||
+    //     pathname.startsWith("/smartcard-overview/"),
+    // },
   ];
 
   return (

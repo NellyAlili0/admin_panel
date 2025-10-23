@@ -17,6 +17,7 @@ export default async function Page() {
       "user.created_at",
     ])
     .where("user.kind", "=", "Parent")
+    .orderBy("user.email", "asc")
     .execute();
 
   const totalParents = parents.length;

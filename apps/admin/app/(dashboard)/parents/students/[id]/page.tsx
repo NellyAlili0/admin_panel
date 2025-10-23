@@ -376,9 +376,7 @@ export default async function Page({
                 </div>
 
                 <div className="pt-2">
-                  <Link
-                    href={`/parents/${parent.email?.replace("@", "%40") ?? "#"}`}
-                  >
+                  <Link href={`/parents/${parent.id}`}>
                     View Guardian Details
                   </Link>
                 </div>

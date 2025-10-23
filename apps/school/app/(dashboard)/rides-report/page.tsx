@@ -41,6 +41,34 @@ const formatTimestamp = (timestamp: any) => {
   }
 };
 
+// Helper: check if scheduled time has passed
+const hasScheduledTimePassed = (scheduledTime: string) => {
+  if (!scheduledTime) return false;
+  const scheduled = new Date(
+    new Date(scheduledTime).toLocaleString("en-US", {
+      timeZone: "Africa/Nairobi",
+    })
+  );
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Africa/Nairobi" })
+  );
+  return scheduled < now;
+};
+
+// Helper: check if scheduled time is in the future
+const isScheduledInFuture = (scheduledTime: string) => {
+  if (!scheduledTime) return false;
+  const scheduled = new Date(
+    new Date(scheduledTime).toLocaleString("en-US", {
+      timeZone: "Africa/Nairobi",
+    })
+  );
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Africa/Nairobi" })
+  );
+  return scheduled > now;
+};
+
 export default async function Page() {
   const cookieStore = await cookies();
   const id = cookieStore.get("school_id")?.value;
@@ -106,24 +134,64 @@ export default async function Page() {
   // Filter and transform data for pickup rides
   const pickupRides = tripHistory
     .filter((ride) => ride.kind === "Pickup")
-    .map((ride) => ({
-      ...ride,
-      scheduled_time: ride.pickup_scheduled_time,
-      // Use type assertion to access the custom fields
-      embark_time: formatTimestamp((ride as any).embark_time_nairobi),
-      disembark_time: formatTimestamp((ride as any).disembark_time_nairobi),
-    }));
+    .map((ride) => {
+      const scheduledTime = ride.pickup_scheduled_time;
+      const scheduledPassed = hasScheduledTimePassed(
+        String(scheduledTime || "")
+      );
+      const scheduledFuture = isScheduledInFuture(String(scheduledTime || ""));
+
+      let embark_time, disembark_time;
+
+      if (scheduledPassed && ride.status === "Inactive") {
+        embark_time = "Ride Cancelled";
+        disembark_time = "Ride Cancelled";
+      } else if (scheduledFuture) {
+        embark_time = "N/A";
+        disembark_time = "N/A";
+      } else {
+        embark_time = formatTimestamp((ride as any).embark_time_nairobi);
+        disembark_time = formatTimestamp((ride as any).disembark_time_nairobi);
+      }
+
+      return {
+        ...ride,
+        scheduled_time: scheduledTime,
+        embark_time,
+        disembark_time,
+      };
+    });
 
   // Filter and transform data for dropoff rides
   const dropoffRides = tripHistory
     .filter((ride) => ride.kind === "Dropoff")
-    .map((ride) => ({
-      ...ride,
-      scheduled_time: ride.dropoff_scheduled_time,
-      // Use type assertion to access the custom fields
-      embark_time: formatTimestamp((ride as any).embark_time_nairobi),
-      disembark_time: formatTimestamp((ride as any).disembark_time_nairobi),
-    }));
+    .map((ride) => {
+      const scheduledTime = ride.dropoff_scheduled_time;
+      const scheduledPassed = hasScheduledTimePassed(
+        String(scheduledTime || "")
+      );
+      const scheduledFuture = isScheduledInFuture(String(scheduledTime || ""));
+
+      let embark_time, disembark_time;
+
+      if (scheduledPassed && ride.status === "Inactive") {
+        embark_time = "Ride Cancelled";
+        disembark_time = "Ride Cancelled";
+      } else if (scheduledFuture) {
+        embark_time = "N/A";
+        disembark_time = "N/A";
+      } else {
+        embark_time = formatTimestamp((ride as any).embark_time_nairobi);
+        disembark_time = formatTimestamp((ride as any).disembark_time_nairobi);
+      }
+
+      return {
+        ...ride,
+        scheduled_time: scheduledTime,
+        embark_time,
+        disembark_time,
+      };
+    });
 
   return (
     <div className="flex flex-col gap-2">

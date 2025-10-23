@@ -165,7 +165,7 @@ export default async function Page() {
                 is_verified: kyc.is_verified ? "Verified" : "Pending",
               }))}
               baseLink="/drivers/"
-              uniqueKey="id"
+              uniqueKey="email"
             />
           </CardContent>
         </Card>
