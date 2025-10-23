@@ -2,10 +2,10 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "@/components/tables";
 import { AddDriverForm } from "./forms";
 import { database } from "@/database/config";
+import SearchBar from "./search-bar"; // 👈 new component
 
 export default async function Page() {
-  // available drivers
-  let allDrivers = await database
+  const allDrivers = await database
     .selectFrom("user")
     .select([
       "user.id",
@@ -19,48 +19,38 @@ export default async function Page() {
     .orderBy("user.email", "asc")
     .execute();
 
-  let kycRequests = await database
+  const kycRequests = await database
     .selectFrom("kyc")
-    .leftJoin("user", "kyc.userId", "user.id") // Changed from kyc.user_id to kyc.userId
+    .leftJoin("user", "kyc.userId", "user.id")
     .select(["kyc.id", "user.name", "user.email", "kyc.is_verified"])
     .where("kyc.is_verified", "=", false)
+    .orderBy("user.email", "asc")
     .execute();
 
-  let drivers = allDrivers.map((driver) => ({
+  const drivers = allDrivers.map((driver) => ({
     ...driver,
     verified: driver.verified ? "Yes" : "No",
   }));
 
-  let kycs = kycRequests.map((request) => ({
+  const kycs = kycRequests.map((request) => ({
     ...request,
     verified: request.is_verified ? "Yes" : "No",
   }));
 
   return (
     <div className="flex flex-col gap-2">
-      <Breadcrumbs
-        items={[
-          {
-            href: "/drivers",
-            label: "Drivers",
-          },
-        ]}
-      />
+      <Breadcrumbs items={[{ href: "/drivers", label: "Drivers" }]} />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
         </div>
         <AddDriverForm />
       </div>
-      <GenTable
-        title="All Drivers"
-        cols={["name", "email", "phone", "verified", "balance"]}
-        data={drivers}
-        baseLink="/drivers/"
-        uniqueKey="email"
-      />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* 🔍 Search bar client component */}
+      <SearchBar data={drivers} />
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Unverified KYC Requests

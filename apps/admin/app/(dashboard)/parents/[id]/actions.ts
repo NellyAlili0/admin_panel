@@ -34,9 +34,9 @@ export async function editParent(prevState: any, formData: FormData) {
       .executeTakeFirst();
 
     // Revalidate both old and new email paths in case email changed
-    revalidatePath("/drivers/" + email);
+    revalidatePath("/parents/" + email);
 
-    return { message: "Driver updated successfully", success: true };
+    return { message: "Parent updated successfully", success: true };
   } catch (error) {
     console.error("Error updating driver:", error);
     return { message: "Failed to update driver", success: false };

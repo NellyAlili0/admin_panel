@@ -2,6 +2,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { database } from "@/database/config";
 import GenTable from "@/components/tables";
 import { CreateParent } from "./forms";
+import SearchBar from "./search-bar"; // 👈 new component
 
 export default async function Page() {
   // Fetch all parents from the `user` table
@@ -21,7 +22,6 @@ export default async function Page() {
     .execute();
 
   const totalParents = parents.length;
-  console.log(totalParents);
 
   const formattedParents = parents.map((parent) => ({
     ...parent,
@@ -31,38 +31,20 @@ export default async function Page() {
 
   return (
     <div className="flex flex-col gap-2">
-      <Breadcrumbs
-        items={[
-          {
-            href: "/parents",
-            label: "Parents",
-          },
-        ]}
-      />
+      <Breadcrumbs items={[{ href: "/parents", label: "Parents" }]} />
 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Parents</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground my-3">
             Total of {totalParents} parents
           </p>
         </div>
         <CreateParent />
       </div>
 
-      <GenTable
-        title="All Parents"
-        cols={[
-          "name",
-          "email",
-          "phone_number",
-          "is_kyc_verified",
-          "wallet_balance",
-        ]}
-        data={formattedParents}
-        baseLink="/parents/"
-        uniqueKey="id"
-      />
+      {/* 🔍 Search bar + table */}
+      <SearchBar data={formattedParents} />
     </div>
   );
 }

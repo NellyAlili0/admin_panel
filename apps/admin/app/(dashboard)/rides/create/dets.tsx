@@ -209,12 +209,12 @@ export default function AssignRidePage({
     try {
       const result = await assignRide(formData);
       if (result?.message) {
-        toast(result.message);
+        toast.success("Ride assigned successfully!");
       } else {
         toast.success("Ride assigned successfully!");
       }
     } catch (error) {
-      toast.error("Ride assigned successfully!");
+      toast.error("Failed to assign ride. Please try again.");
     }
 
     setLoading(false);
