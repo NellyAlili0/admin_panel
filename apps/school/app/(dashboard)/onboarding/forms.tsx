@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,129 +8,79 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { addDriver } from "./actions";
+import { addParent } from "./actions";
 import { initialState } from "@/lib/utils";
 import { toast } from "sonner";
 
-export const AddDriverForm = () => {
-  const [state, action] = useActionState(addDriver, initialState);
+interface AddParentFormProps {
+  onParentAdded?: () => void;
+}
+
+export const AddParentForm = ({ onParentAdded }: AddParentFormProps) => {
+  const [state, action, isPending] = useActionState(addParent, initialState);
+  const [open, setOpen] = useState(false);
+  const [lastProcessedState, setLastProcessedState] = useState<any>(null);
+
   useEffect(() => {
-    if (state.message) {
+    // Don't process the same state twice
+    if (state === lastProcessedState) return;
+
+    // Don't process initial state
+    if (state === initialState) return;
+
+    // ❌ Handle error
+    if (state?.message && !state?.success) {
       toast.error(state.message);
+      setLastProcessedState(state);
     }
-  }, [state]);
+
+    // ✅ Handle success
+    if (state?.success) {
+      toast.success("Parent created successfully!");
+      setOpen(false);
+      setLastProcessedState(state);
+
+      // ✅ Refresh parent list without reload
+      onParentAdded?.();
+    }
+  }, [state, lastProcessedState, onParentAdded]);
+
+  // Reset processed state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setLastProcessedState(null);
+    }
+  }, [open]);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex bg-[#efb100] hover:bg-[#efaf008f] text-white text-base font-medium px-6 py-2 outline-none rounded w-max cursor-pointer mx-auto">
+        <button className="flex bg-[#efb100] hover:bg-[#efaf008f] text-white text-base font-medium px-6 py-2 rounded cursor-pointer mx-auto">
           Add Parent
         </button>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center mb-2 text-gray-800">
-            Create Your Parent
+            Create Parent
           </DialogTitle>
         </DialogHeader>
 
         <form action={action} className="flex flex-col gap-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* First Name */}
-            <div>
-              <label
-                htmlFor="first_name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                First Name
-              </label>
-              <input
-                type="text"
-                id="first_name"
-                name="first_name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="Rajesh"
-              />
-            </div>
-            {/* Last Name */}
-            <div>
-              <label
-                htmlFor="last_name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Last Name
-              </label>
-              <input
-                type="text"
-                id="last_name"
-                name="last_name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="Maheshwari"
-              />
-            </div>
-            {/* Email */}
-            <div className="md:col-span-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="rajesh@example.com"
-              />
-            </div>
-            {/* Phone Number */}
-            <div className="">
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Phone Number
-              </label>
-              <input
-                type="text"
-                id="phone"
-                name="phone"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="+25412345678"
-              />
-            </div>
-            {/* National ID */}
-            <div className="">
-              <label
-                htmlFor="national_id"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                National ID
-              </label>
-              <input
-                type="text"
-                id="national_id"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="322345678"
-                name="national_id"
-              />
-            </div>
-            {/* Date of Birth */}
-            <div>
-              <label
-                htmlFor="dob"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                id="dob"
-                name="dob"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-              />
-            </div>
-            {/* Gender */}
+            <FormInput name="first_name" label="First Name" required />
+            <FormInput name="last_name" label="Last Name" required />
+            <FormInput
+              name="email"
+              label="Email Address"
+              type="email"
+              required
+              fullWidth
+            />
+            <FormInput name="phone" label="Phone Number" required />
+            <FormInput name="national_id" label="National ID" required />
+            <FormInput name="dob" label="Date of Birth" type="date" required />
             <div>
               <label
                 htmlFor="gender"
@@ -139,23 +89,25 @@ export const AddDriverForm = () => {
                 Gender
               </label>
               <select
+                required
                 id="gender"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
                 name="gender"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300"
               >
-                <option value="">Select your gender</option>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
+                <option value="">Select gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
               </select>
             </div>
           </div>
-          {/* Submit Button */}
+
           <div className="mt-8">
             <button
               type="submit"
-              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              disabled={isPending}
+              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition disabled:opacity-70"
             >
-              Create Parent
+              {isPending ? "Submitting..." : "Create Parent"}
             </button>
           </div>
         </form>
@@ -163,3 +115,39 @@ export const AddDriverForm = () => {
     </Dialog>
   );
 };
+
+// ✅ Helper input component
+function FormInput({
+  name,
+  label,
+  type = "text",
+  required,
+  placeholder,
+  fullWidth,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={fullWidth ? "md:col-span-2" : ""}>
+      <label
+        htmlFor={name}
+        className="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {label}
+      </label>
+      <input
+        required={required}
+        type={type}
+        id={name}
+        name={name}
+        placeholder={placeholder}
+        className="w-full px-4 py-3 rounded-lg border border-gray-300"
+      />
+    </div>
+  );
+}

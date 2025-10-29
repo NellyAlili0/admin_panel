@@ -132,7 +132,7 @@ export default function SmartCardComponent({
       }
 
       try {
-        const res = await fetch("/api/smartcards", {
+        const res = await fetch("/api/smartcards/access-log", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -292,7 +292,7 @@ export default function SmartCardComponent({
   // Show NoData only after initial load completes and no data exists
   if (initialLoadComplete && Object.keys(records).length === 0) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2  ">
         <Breadcrumbs
           items={[
             {
@@ -321,7 +321,7 @@ export default function SmartCardComponent({
   const zoneNames = Object.keys(records);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2  ">
       <Breadcrumbs
         items={[
           {
@@ -335,7 +335,7 @@ export default function SmartCardComponent({
           <h1 className="text-3xl font-bold tracking-tight my-4">
             Smart Card Records
           </h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground my-3">
             <span>
               Page {currentPage} of {totalPages}
             </span>

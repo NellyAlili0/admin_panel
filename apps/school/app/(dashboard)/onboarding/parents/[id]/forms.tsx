@@ -8,10 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useActionState } from "react";
-import { SubmitButton } from "@/components/submit-button";
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { editParent, addStudent } from "./actions";
@@ -23,21 +20,34 @@ export const initialState = {
 };
 
 export const EditParentForm = ({ parent }: { parent: any }) => {
-  const [state, action] = useActionState(editParent, initialState);
+  const [state, action, isPending] = useActionState(editParent, initialState);
   const [open, setOpen] = useState(false);
+  const [lastProcessedState, setLastProcessedState] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (state.message) {
+    // Don't process the same state twice
+    if (state === lastProcessedState || state === initialState) return;
+
+    if (state?.message) {
       if (state.success) {
         toast.success(state.message);
         setOpen(false);
+        setLastProcessedState(state);
         router.refresh();
       } else {
         toast.error(state.message);
+        setLastProcessedState(state);
       }
     }
-  }, [state, router]);
+  }, [state, lastProcessedState, router]);
+
+  // Reset processed state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setLastProcessedState(null);
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -52,7 +62,6 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
         </DialogHeader>
         <form action={action} className="flex flex-col gap-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* First Name */}
             <div>
               <label
                 htmlFor="first_name"
@@ -64,11 +73,11 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
                 type="text"
                 id="first_name"
                 name="first_name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
                 placeholder="Rajesh"
+                disabled={isPending}
               />
             </div>
-            {/* Last Name */}
             <div>
               <label
                 htmlFor="last_name"
@@ -80,28 +89,21 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
                 type="text"
                 id="last_name"
                 name="last_name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
                 placeholder="Maheshwari"
+                disabled={isPending}
               />
             </div>
-            {/* Email */}
-            <div className="md:col-span-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email Address
-              </label>
+            <div className="md:col-span-2 hidden">
               <input
-                type="email"
-                id="email"
-                name="email"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="rajesh@example.com"
+                type="text"
+                id="customer_id"
+                name="customer_id"
+                value={parent}
+                readOnly
               />
             </div>
-            {/* Phone Number */}
-            <div className="">
+            <div>
               <label
                 htmlFor="phone"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -112,12 +114,12 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
                 type="text"
                 id="phone"
                 name="phone"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
                 placeholder="+25412345678"
+                disabled={isPending}
               />
             </div>
-            {/* National ID */}
-            <div className="">
+            <div>
               <label
                 htmlFor="national_id"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -127,12 +129,12 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
               <input
                 type="text"
                 id="national_id"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="322345678"
                 name="national_id"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
+                placeholder="322345678"
+                disabled={isPending}
               />
             </div>
-            {/* Date of Birth */}
             <div>
               <label
                 htmlFor="dob"
@@ -144,10 +146,10 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
                 type="date"
                 id="dob"
                 name="dob"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
+                disabled={isPending}
               />
             </div>
-            {/* Gender */}
             <div>
               <label
                 htmlFor="gender"
@@ -157,8 +159,9 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
               </label>
               <select
                 id="gender"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
                 name="gender"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
+                disabled={isPending}
               >
                 <option value="">Select your gender</option>
                 <option value="female">Female</option>
@@ -166,13 +169,13 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
               </select>
             </div>
           </div>
-          {/* Submit Button */}
           <div className="mt-8">
             <button
               type="submit"
-              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              disabled={isPending}
+              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70"
             >
-              Update Parent
+              {isPending ? "Updating..." : "Update Parent"}
             </button>
           </div>
         </form>
@@ -181,21 +184,52 @@ export const EditParentForm = ({ parent }: { parent: any }) => {
   );
 };
 
-export function AddStudentForm({ parentId }: { parentId: string }) {
-  const [state, formAction] = useActionState(addStudent, initialState);
+interface AddStudentFormProps {
+  parent: string;
+  wallet_id: string;
+  onStudentAdded?: () => void;
+}
+
+export function AddStudentForm({
+  parent,
+  wallet_id,
+  onStudentAdded,
+}: AddStudentFormProps) {
+  const [state, formAction, isPending] = useActionState(
+    addStudent,
+    initialState
+  );
+  const [open, setOpen] = useState(false);
+  const [lastProcessedState, setLastProcessedState] = useState<any>(null);
 
   useEffect(() => {
-    if (state.message) {
-      if (state.message.includes("successfully")) {
+    // Don't process the same state twice
+    if (state === lastProcessedState || state === initialState) return;
+
+    if (state?.message) {
+      if (state.success) {
         toast.success(state.message);
+        setOpen(false);
+        setLastProcessedState(state);
+
+        // Refresh student list
+        onStudentAdded?.();
       } else {
         toast.error(state.message);
+        setLastProcessedState(state);
       }
     }
-  }, [state]);
+  }, [state, lastProcessedState, onStudentAdded]);
+
+  // Reset processed state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setLastProcessedState(null);
+    }
+  }, [open]);
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button className="flex bg-[#efb100] hover:bg-[#efaf008f] text-white text-base font-medium px-6 py-2 outline-none rounded w-max cursor-pointer mx-auto">
           Add Student
@@ -205,12 +239,11 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center mb-2 text-gray-800">
             Create Student
-          </DialogTitle>{" "}
+          </DialogTitle>
         </DialogHeader>
 
         <form action={formAction} className="flex flex-col gap-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* First Name */}
             <div>
               <label
                 htmlFor="first_name"
@@ -219,14 +252,15 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
                 First Name
               </label>
               <input
+                required
                 type="text"
                 id="first_name"
                 name="first_name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
                 placeholder="Rajesh"
+                disabled={isPending}
               />
             </div>
-            {/* Last Name */}
             <div>
               <label
                 htmlFor="last_name"
@@ -235,66 +269,20 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
                 Last Name
               </label>
               <input
+                required
                 type="text"
                 id="last_name"
                 name="last_name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
                 placeholder="Maheshwari"
+                disabled={isPending}
               />
             </div>
 
-            {/* Phone Number */}
-            <div className="">
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Phone Number
-              </label>
-              <input
-                type="text"
-                id="phone"
-                name="phone"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="+25412345678"
-              />
-            </div>
+            <input type="hidden" name="customer_id" value={parent} />
 
-            {/* Customer ID  */}
-            <div className="hidden">
-              <label
-                htmlFor="customer_id"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Customer ID
-              </label>
-              <input
-                type="text"
-                id="customer_id"
-                name="customer_id"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="56412345678"
-              />
-            </div>
+            <input type="hidden" name="wallet_id" value={wallet_id} />
 
-            {/* Wallet ID */}
-            <div className="hidden">
-              <label
-                htmlFor="wallet_id"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Wallet ID
-              </label>
-              <input
-                type="text"
-                id="wallet_id"
-                name="wallet_id"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
-                placeholder="45412345678"
-              />
-            </div>
-
-            {/* Date of Birth */}
             <div>
               <label
                 htmlFor="dob"
@@ -303,13 +291,14 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
                 Date of Birth
               </label>
               <input
+                required
                 type="date"
                 id="dob"
                 name="dob"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
+                disabled={isPending}
               />
             </div>
-            {/* Gender */}
             <div>
               <label
                 htmlFor="gender"
@@ -318,23 +307,25 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
                 Gender
               </label>
               <select
+                required
                 id="gender"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300  transition duration-150 ease-in-out"
                 name="gender"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out"
+                disabled={isPending}
               >
-                <option value="">Select your gender</option>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
+                <option value="">Select gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
               </select>
             </div>
           </div>
-          {/* Submit Button */}
           <div className="mt-8">
             <button
               type="submit"
-              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              disabled={isPending}
+              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70"
             >
-              Create Student
+              {isPending ? "Creating Student..." : "Create Student"}
             </button>
           </div>
         </form>

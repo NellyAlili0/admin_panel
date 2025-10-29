@@ -358,7 +358,7 @@ const SchoolTrackingMap = ({
       )} */}
 
       <GoogleMap
-        zoom={12}
+        zoom={14}
         center={center}
         mapContainerClassName="w-full h-full"
         options={{

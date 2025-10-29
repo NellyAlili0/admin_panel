@@ -27,7 +27,7 @@ export default async function Layout({
       <div className="col-span-2">
         <Navbar />
       </div>
-      <div className="col-span-10 overflow-y-auto flex flex-col gap-2 p-4 md:p-6 pt-4">
+      <div className="col-span-10 overflow-y-auto flex flex-col gap-2 p-4 md:p-6 pt-4 ml-5">
         {children}
       </div>
     </section>

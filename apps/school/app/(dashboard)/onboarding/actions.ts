@@ -3,71 +3,100 @@
 import { database } from "@/database/config";
 import { revalidatePath } from "next/cache";
 import { zfd } from "zod-form-data";
-import { redirect } from "next/navigation";
-import { Auth } from "@/Authentication/index";
-import { UserMeta } from "@/database/schema";
+import { cookies } from "next/headers";
 
-// add driver
-// add driver
-const addDriverSchema = zfd.formData({
-  name: zfd.text(),
+const addParentSchema = zfd.formData({
+  first_name: zfd.text(),
+  last_name: zfd.text(),
   email: zfd.text(),
-  phone_number: zfd.text(),
-  password: zfd.text(),
-  neighborhood: zfd.text(),
-  county: zfd.text(),
+  phone: zfd.text(),
+  national_id: zfd.text(),
+  dob: zfd.text(),
+  gender: zfd.text(),
 });
-export async function addDriver(prevState: any, formData: FormData) {
-  const data = addDriverSchema.safeParse(formData);
+
+export async function addParent(prevState: any, formData: FormData) {
+  const data = addParentSchema.safeParse(formData);
   if (!data.success) {
-    return { message: "Invalid data" };
+    return { success: false, message: "Invalid or missing fields." };
   }
-  const { name, email, phone_number, password, neighborhood, county } =
+
+  const { first_name, last_name, email, phone, national_id, dob, gender } =
     data.data;
-  const auth = new Auth();
-  const hash = await auth.hash({ password: password });
-  // make sure email does not exist
-  const user = await database
-    .selectFrom("user")
-    .select(["id"])
-    .where("email", "=", email)
-    .executeTakeFirst();
-  if (user) {
-    return { message: "Email already exists" };
+
+  const cookieStore = await cookies();
+  const id = cookieStore.get("school_id")?.value;
+  const school_id = Number(id);
+
+  if (!school_id) {
+    return { success: false, message: "Missing school ID in cookies." };
   }
-  await database
-    .insertInto("user")
-    .values({
-      name,
-      email,
-      phone_number,
-      password: hash,
-      kind: "Driver",
-      provider: "email",
-      statusId: 1,
-      wallet_balance: 0,
-      is_kyc_verified: false,
-      roleId: 3,
-      meta: {
-        neighborhood: neighborhood || "",
-        county: county || "",
-        payments: {
-          kind: "M-Pesa" as any,
-          bank: null,
-          account_number: null,
-          account_name: null,
-        },
-        notifications: {
-          when_bus_leaves: true,
-          when_bus_makes_home_drop_off: true,
-          when_bus_make_home_pickup: true,
-          when_bus_arrives: true,
-          when_bus_is_1km_away: true,
-          when_bus_is_0_5km_away: true,
-        },
-      } as UserMeta,
-    })
+
+  const schoolInfo = await database
+    .selectFrom("school")
+    .select([
+      "school.id",
+      "school.name",
+      "school.terra_email",
+      "school.terra_password",
+      "school.terra_tag_id",
+    ])
+    .where("school.id", "=", school_id)
     .executeTakeFirst();
-  revalidatePath("/drivers");
-  return redirect("/drivers");
+
+  if (
+    !(
+      schoolInfo?.terra_email &&
+      schoolInfo.terra_password &&
+      schoolInfo.terra_tag_id
+    )
+  ) {
+    return {
+      success: false,
+      message: "Terra credentials missing (email, password, tag).",
+    };
+  }
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+
+    const res = await fetch(`${baseUrl}/api/smartcards/accounts/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: schoolInfo.terra_email,
+        password: schoolInfo.terra_password,
+        body: {
+          first_name,
+          last_name,
+          email,
+          phone,
+          national_id,
+          dob,
+          gender,
+          group_id: "a4d08acb-8395-413f-ab5d-7d35e111c039",
+          tags: ["985f584c-0c10-482f-ac6e-46ce3c376930"],
+        },
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("Parent creation failed:", result);
+      return {
+        success: false,
+        message: result.error || "Failed to create parent.",
+      };
+    }
+
+    await revalidatePath("/parents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error creating parent:", error);
+    return {
+      success: false,
+      message: error.message || "Unexpected error occurred.",
+    };
+  }
 }
