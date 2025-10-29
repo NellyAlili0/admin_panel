@@ -37,10 +37,10 @@ export default function LiveTrackingPage() {
     }
   };
 
-  // Fetch initially + every 2 minutes
+  // Fetch initially + every 30seconds
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // 2 minutes
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 

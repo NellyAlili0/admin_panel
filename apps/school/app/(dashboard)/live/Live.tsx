@@ -38,10 +38,10 @@ export default function Live({ schoolId }: { schoolId: number }) {
     }
   };
 
-  // Fetch initially + every 2 minutes
+  // Fetch initially + every 30 seconds
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // 2 minutes
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 
