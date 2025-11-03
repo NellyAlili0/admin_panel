@@ -4,12 +4,12 @@ import { makeAuthenticatedRequest } from "../../utils/requests";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, account_id } = await req.json();
+    const { email, password, account_id, page = 1 } = await req.json();
     const { token } = await getValidToken(email, password);
-    console.log(account_id);
+    console.log(account_id, page);
+
     const res = await makeAuthenticatedRequest(
-      `https://api.terrasofthq.com/api/accounts/${account_id}`,
-      //   `https://api.terrasofthq.com/api/dependants?tags[]=8b308c54-24a2-45fa-9460-f3fec457bd30`,
+      `https://api.terrasofthq.com/api/accounts/${account_id}?page=${page}`,
       token
     );
     return NextResponse.json(await res.json(), { status: res.status });

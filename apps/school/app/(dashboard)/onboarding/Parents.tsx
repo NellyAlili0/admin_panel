@@ -14,48 +14,65 @@ interface Props {
 function Parents({ email, password, tag }: Props) {
   const [parents, setParents] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [totalRows, setTotalRows] = useState<number>(0);
+  const [perPage, setPerPage] = useState<number>(15);
 
-  const getParentsByTags = useCallback(async () => {
-    try {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
-      const res = await fetch(
-        `${baseUrl}/api/smartcards/accounts/parentsByTags`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            password,
-            tags: ["985f584c-0c10-482f-ac6e-46ce3c376930"],
-          }),
-          cache: "no-store",
+  const getParentsByTags = useCallback(
+    async (page: number = 1) => {
+      setLoading(true);
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+        const res = await fetch(
+          `${baseUrl}/api/smartcards/accounts/parentsByTags`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              password,
+              tags: ["1b8d5703-b389-4d55-bc53-466ed165f294"],
+              page, // Pass the page number to API
+            }),
+            cache: "no-store",
+          }
+        );
+
+        if (!res.ok) {
+          console.error("Error fetching parents:", await res.text());
+          setParents([]);
+          return;
         }
-      );
 
-      if (!res.ok) {
-        console.error("Error fetching parents:", await res.text());
+        const data = await res.json();
+        setParents(data.data || []);
+
+        // Extract pagination info from meta object
+        if (data.meta) {
+          setTotalRows(data.meta.total);
+          setPerPage(data.meta.per_page);
+        }
+      } catch (error) {
+        console.error("Network error:", error);
         setParents([]);
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      const data = await res.json();
-      setParents(data.data);
-    } catch (error) {
-      console.error("Network error:", error);
-      setParents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [email, password, tag]);
+    },
+    [email, password, tag]
+  );
 
   useEffect(() => {
-    getParentsByTags();
+    getParentsByTags(1);
   }, [getParentsByTags]);
 
-  // ✅ When a parent is added, re-fetch just the list
+  // When a parent is added, refresh the current page
   const handleParentAdded = async () => {
-    await getParentsByTags();
+    await getParentsByTags(1); // Refresh to page 1
+  };
+
+  // Handle page change from the table
+  const handlePageChange = (page: number) => {
+    getParentsByTags(page);
   };
 
   return (
@@ -70,7 +87,7 @@ function Parents({ email, password, tag }: Props) {
           <AddParentForm onParentAdded={handleParentAdded} />
         </div>
 
-        {loading ? (
+        {loading && parents.length === 0 ? (
           <section className="w-full h-full flex items-center justify-center mt-24">
             <p className="text-gray-500">Loading Parents...</p>
           </section>
@@ -88,6 +105,12 @@ function Parents({ email, password, tag }: Props) {
             data={parents}
             baseLink="onboarding/parents/"
             uniqueKey="id"
+            pagination
+            paginationServer
+            paginationTotalRows={totalRows}
+            paginationPerPage={perPage}
+            onChangePage={handlePageChange}
+            progressPending={loading}
           />
         )}
       </div>

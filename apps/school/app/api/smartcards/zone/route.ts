@@ -12,8 +12,7 @@ export async function POST(req: NextRequest) {
 
     const { token } = await getValidToken(email, password);
     const res = await makeAuthenticatedRequest(
-      // `https://api.terrasofthq.com/api/accounts?${params.toString()}`,
-      `https://api.terrasofthq.com/api/zone?tags[]=084b14ea-fdc0-4535-833c-70c2bc43ec52`,
+      `https://api.terrasofthq.com/api/zone?${params.toString()}`,
       token
     );
     return NextResponse.json(await res.json(), { status: res.status });

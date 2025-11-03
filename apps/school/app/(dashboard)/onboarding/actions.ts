@@ -58,7 +58,7 @@ export async function addParent(prevState: any, formData: FormData) {
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
     const res = await fetch(`${baseUrl}/api/smartcards/accounts/create`, {
       method: "POST",
@@ -75,7 +75,7 @@ export async function addParent(prevState: any, formData: FormData) {
           dob,
           gender,
           group_id: "a4d08acb-8395-413f-ab5d-7d35e111c039",
-          tags: ["985f584c-0c10-482f-ac6e-46ce3c376930"],
+          tags: ["bb9b19ba-4152-4ce9-8092-6abd901528eb"],
         },
       }),
     });

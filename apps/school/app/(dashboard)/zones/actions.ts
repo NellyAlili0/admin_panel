@@ -80,7 +80,7 @@ export async function addZone(prevState: any, formData: FormData) {
     }
 
     // Create zone via API
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
     const res = await fetch(`${baseUrl}/api/smartcards/zone/create`, {
       method: "POST",
@@ -88,7 +88,7 @@ export async function addZone(prevState: any, formData: FormData) {
       body: JSON.stringify({
         email: schoolInfo.terra_email,
         password: schoolInfo.terra_password,
-        tags: ["084b14ea-fdc0-4535-833c-70c2bc43ec52"],
+        tags: ["0f8545ae-305b-4f20-875f-6fb005534e48"],
         body: {
           name,
           note: note || "",
