@@ -69,18 +69,18 @@ export function Navbar() {
         pathname === "/smartcard-reports" ||
         pathname.startsWith("/smartcard-reports/"),
     },
-    {
-      href: "/onboarding",
-      label: "SmartCards Onboarding",
-      icon: BadgePlus,
-      active: pathname === "/onboarding" || pathname.startsWith("/onboarding/"),
-    },
-    {
-      href: "/zones",
-      label: "SmartCards Zones",
-      icon: Map,
-      active: pathname === "/zones" || pathname.startsWith("/zones/"),
-    },
+    // {
+    //   href: "/onboarding",
+    //   label: "SmartCards Onboarding",
+    //   icon: BadgePlus,
+    //   active: pathname === "/onboarding" || pathname.startsWith("/onboarding/"),
+    // },
+    // {
+    //   href: "/zones",
+    //   label: "SmartCards Zones",
+    //   icon: Map,
+    //   active: pathname === "/zones" || pathname.startsWith("/zones/"),
+    // },
     // {
     //   href: "/smart-cards",
     //   label: "Smart Card Downloads",
