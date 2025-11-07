@@ -6,8 +6,10 @@ import Link from "next/link";
 export default async function PlanDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+
   const plan = await database
     .selectFrom("subscription_plans")
     .innerJoin("school", "school.id", "subscription_plans.school_id")
@@ -27,7 +29,7 @@ export default async function PlanDetailPage({
       "school.bank_paybill_number as school_paybill_number",
       "school.bank_account_number as school_account_number",
     ])
-    .where("subscription_plans.id", "=", Number(params.id))
+    .where("subscription_plans.id", "=", Number(id))
     .executeTakeFirst();
 
   if (!plan) {
@@ -57,7 +59,7 @@ export default async function PlanDetailPage({
           Subscription Plan Details
         </h1>
         <Link
-          href={`${params.id}/edit`}
+          href={`${id}/edit`}
           className="flex bg-gray-800 hover:bg-gray-700 text-white text-base font-medium px-4 py-2.5 outline-none rounded w-max cursor-pointer "
         >
           Edit School Subcription

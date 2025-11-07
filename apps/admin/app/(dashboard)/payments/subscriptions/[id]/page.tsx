@@ -5,8 +5,10 @@ import { format } from "date-fns";
 export default async function SubscriptionDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+
   const sub = await database
     .selectFrom("subscriptions")
     .innerJoin("student", "student.id", "subscriptions.student_id")
@@ -37,7 +39,7 @@ export default async function SubscriptionDetailPage({
       "school.id as school_id",
       "school.name as school_name",
     ])
-    .where("subscriptions.id", "=", Number(params.id))
+    .where("subscriptions.id", "=", Number(id))
     .executeTakeFirst();
 
   if (!sub) {

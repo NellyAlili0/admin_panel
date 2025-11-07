@@ -5,8 +5,14 @@ import { SubscriptionPlanEditForm } from "./form";
 import { notFound } from "next/navigation";
 
 // Server component - receives planId from params
-export default async function Page({ params }: { params: { id: string } }) {
-  const planId = parseInt(params.id, 10);
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const planId = parseInt(id, 10);
 
   if (isNaN(planId)) {
     notFound();

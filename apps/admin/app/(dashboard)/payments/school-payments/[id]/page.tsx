@@ -6,10 +6,10 @@ import { notFound } from "next/navigation";
 export default async function B2cTransactionDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  // Parse and validate the ID
-  const transactionId = parseInt(params.id, 10);
+  const { id } = await params;
+  const transactionId = parseInt(id, 10);
 
   if (isNaN(transactionId)) {
     notFound();
