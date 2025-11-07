@@ -92,7 +92,7 @@ export async function createSubscriptionPlan(formData: FormData) {
       duration_days,
       price,
       is_active, // Now properly transformed to boolean
-      commission_amount: commission_amount ?? null,
+      commission_amount: commission_amount ?? 0,
       created_at: new Date(),
       updated_at: new Date(),
     })
