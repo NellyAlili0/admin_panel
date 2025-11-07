@@ -5,8 +5,10 @@ import { format } from "date-fns";
 export default async function PaymentDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+
   const payment = await database
     .selectFrom("payment")
     .innerJoin("student", "student.id", "payment.userId")
@@ -28,7 +30,7 @@ export default async function PaymentDetailPage({
       "school.name as school_name",
       "school.id as school_id",
     ])
-    .where("payment.id", "=", Number(params.id))
+    .where("payment.id", "=", Number(id))
     .executeTakeFirst();
 
   if (!payment) {
