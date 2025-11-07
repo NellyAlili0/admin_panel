@@ -104,7 +104,7 @@ export default async function Page() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground my-2">
             Welcome to your Zidallie fleet management dashboard.
           </p>
         </div>
@@ -149,7 +149,7 @@ export default async function Page() {
         </Card>
       </div>
       <div className="grid gap-4 md:grid-cols-7">
-        <Card className="md:col-span-4">
+        <Card className="md:col-span-12">
           <CardHeader>
             <CardTitle>Driver KYC Requests</CardTitle>
             <CardDescription>KYC requests from drivers</CardDescription>
@@ -169,7 +169,7 @@ export default async function Page() {
             />
           </CardContent>
         </Card>
-        <Card className="md:col-span-3">
+        {/* <Card className="md:col-span-3">
           <CardHeader>
             <CardTitle>Requested Rides</CardTitle>
             <CardDescription>Trips requested by parents</CardDescription>
@@ -187,7 +187,7 @@ export default async function Page() {
               uniqueKey="id"
             />
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

@@ -72,6 +72,12 @@ export function Navbar() {
       active:
         pathname === "/system-logs" || pathname.startsWith("/system-logs/"),
     },
+    {
+      href: "/payments",
+      label: "Payments",
+      icon: WalletIcon,
+      active: pathname === "/payments" || pathname.startsWith("/payments/"),
+    },
     // {
     //   href: "/batch-rides",
     //   label: "Batch Rides Creation",

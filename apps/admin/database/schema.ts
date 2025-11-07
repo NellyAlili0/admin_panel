@@ -208,6 +208,8 @@ export interface SchoolTable {
   terra_password: string | null;
   terra_tag_id: string | null;
   meta: SchoolMeta | null;
+  bank_paybill_number: string | null;
+  bank_account_number: string | null;
   created_at: Generated<Date>;
 }
 
@@ -285,6 +287,54 @@ export interface OnboardingFormTable {
   created_at: Generated<Date>;
 }
 
+export interface SubscriptionPlanTable {
+  id: Generated<number>;
+  school_id: number; // Foreign key to school table
+  name: string;
+  description: string | null;
+  duration_days: number;
+  price: number;
+  is_active: boolean;
+  commission_amount: number;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface SubscriptionTable {
+  id: Generated<number>;
+  student_id: number; // Foreign key to student table
+  plan_id: number | null; // Foreign key to subscription_plan table
+  start_date: Date;
+  expiry_date: Date;
+  amount: number | null;
+  status: string; // You might want to use SubscriptionStatus enum here
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface B2cMpesaTransactionTable {
+  id: Generated<number>;
+
+  transaction_id: string | null;
+  conversation_id: string | null;
+  originator_conversation_id: string | null;
+
+  result_type: number | null;
+  result_code: number | null;
+  result_desc: string | null;
+
+  transaction_amount: string | null; // decimal should always be string in kysely/pg
+
+  receiver_party_public_name: string | null;
+
+  transaction_completed_at: Date | null;
+
+  raw_result: Record<string, any> | null;
+
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 // Database interface
 export interface Database {
   user: UserTable;
@@ -302,6 +352,9 @@ export interface Database {
   vehicle: VehicleTable;
   file: FileTable;
   onboarding_form: OnboardingFormTable;
+  subscription_plans: SubscriptionPlanTable;
+  subscriptions: SubscriptionTable;
+  b2cmpesa_transactions: B2cMpesaTransactionTable;
 }
 
 // Helper types for insert, select, and update operations
@@ -356,3 +409,11 @@ export type StudentUpdate = Updateable<StudentTable>;
 export type Vehicle = Selectable<VehicleTable>;
 export type NewVehicle = Insertable<VehicleTable>;
 export type VehicleUpdate = Updateable<VehicleTable>;
+
+export type SubscriptionPlan = Selectable<SubscriptionPlanTable>;
+export type NewSubscriptionPlan = Insertable<SubscriptionPlanTable>;
+export type SubscriptionPlanUpdate = Updateable<SubscriptionPlanTable>;
+
+export type Subscription = Selectable<SubscriptionTable>;
+export type NewSubscription = Insertable<SubscriptionTable>;
+export type SubscriptionUpdate = Updateable<SubscriptionTable>;
