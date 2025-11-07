@@ -106,7 +106,7 @@ export async function updateSubscriptionPlan(formData: FormData) {
       duration_days,
       price,
       is_active,
-      commission_amount: commission_amount ?? null,
+      commission_amount: commission_amount ?? 0,
       updated_at: new Date(),
     })
     .where("id", "=", id)
