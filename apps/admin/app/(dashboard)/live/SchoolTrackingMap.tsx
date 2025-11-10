@@ -104,8 +104,8 @@ const SchoolTrackingMap = ({
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey:
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-      "AIzaSyA7dadlEnMc9mu1baJMBE0k-wUiZPCP1OA",
+      // process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+      "AIzaSyCSmmBwrPkYacuOtfp6Wtlg7QGbnq2aUFE",
     libraries: googleMapsLibraries,
   });
 
