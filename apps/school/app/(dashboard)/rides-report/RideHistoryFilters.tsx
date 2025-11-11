@@ -12,18 +12,31 @@ import {
 import { Search, Filter } from "lucide-react";
 import GenTable from "@/components/tables";
 
-interface RideData {
+// interface RideData {
+//   id: number;
+//   student: string;
+//   driver: string;
+//   scheduled_time: string;
+//   embark_time: string;
+//   disembark_time: string;
+//   pickup_location: string;
+//   dropoff_location: string;
+//   status: string;
+//   vehicle_registration_number: string;
+//   kind: string; // "Pickup" or "Dropoff"
+// }
+export interface RideData {
   id: number;
   student: string;
   driver: string;
+  vehicle_registration_number: string;
   scheduled_time: string;
   embark_time: string;
   disembark_time: string;
-  pickup_location: string;
-  dropoff_location: string;
+  kind: string;
   status: string;
-  vehicle_registration_number: string;
-  kind: string; // "Pickup" or "Dropoff"
+  pickup_location?: string | null;
+  dropoff_location?: string | null;
 }
 
 interface RideHistoryFiltersProps {

@@ -5,6 +5,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { database, sql } from "@/database/config";
 import { cookies } from "next/headers";
 import RideHistoryFilters from "./RideHistoryFilters";
+interface RideRecord {
+  id: number;
+  kind: string;
+  vehicle_registration_number: string | null;
+  student: string | null;
+  driver: string | null;
+  pickup_scheduled_time: string | null;
+  dropoff_scheduled_time: string | null;
+  embark_time_nairobi: string | null;
+  disembark_time_nairobi: string | null;
+  embark_time: Date | null;
+  disembark_time: Date | null;
+  pickup_location: string | null;
+  dropoff_location: string | null;
+  status: string;
+  date: Date | string;
+}
 
 const getCurrentDateInNairobi = () => {
   const today = new Date();
@@ -75,7 +92,7 @@ export default async function Page() {
 
   const todayInNairobi = getCurrentDateInNairobi();
 
-  const tripHistory = await database
+  const tripHistory = (await database
     .selectFrom("daily_ride")
     .leftJoin("ride", "ride.id", "daily_ride.rideId")
     .leftJoin("student", "student.id", "ride.studentId")
@@ -117,22 +134,37 @@ export default async function Page() {
       sql`COALESCE(daily_ride.disembark_time, daily_ride.embark_time, daily_ride.date)`,
       "desc"
     )
-    .execute();
+    .execute()) as RideRecord[];
 
   if (tripHistory.length > 0) {
     console.log("Sample trip record:", tripHistory[0]);
   }
 
-  // Transform all rides with their kind
-  const allRides = tripHistory.map((ride) => {
+  interface RideData {
+    id: number;
+    student: string;
+    driver: string;
+    vehicle_registration_number: string;
+    scheduled_time: string;
+    embark_time: string;
+    disembark_time: string;
+    kind: string;
+    status: string;
+    pickup_location?: string | null;
+    dropoff_location?: string | null;
+  }
+
+  const allRides: RideData[] = tripHistory.map((ride) => {
     const scheduledTime =
       ride.kind === "Pickup"
         ? ride.pickup_scheduled_time
         : ride.dropoff_scheduled_time;
+
     const scheduledPassed = hasScheduledTimePassed(String(scheduledTime || ""));
     const scheduledFuture = isScheduledInFuture(String(scheduledTime || ""));
 
-    let embark_time, disembark_time;
+    let embark_time: string;
+    let disembark_time: string;
 
     if (scheduledPassed && ride.status === "Inactive") {
       embark_time = "Ride Cancelled";
@@ -141,34 +173,33 @@ export default async function Page() {
       embark_time = "N/A";
       disembark_time = "N/A";
     } else {
-      embark_time = formatTimestamp((ride as any).embark_time_nairobi);
-      disembark_time = formatTimestamp((ride as any).disembark_time_nairobi);
+      embark_time = formatTimestamp(ride.embark_time_nairobi);
+      disembark_time = formatTimestamp(ride.disembark_time_nairobi);
     }
 
     return {
-      ...ride,
+      id: ride.id,
       student: ride.student ?? "",
       driver: ride.driver ?? "",
       vehicle_registration_number:
         ride.vehicle_registration_number ?? "Unknown Vehicle",
-      scheduled_time: scheduledTime,
+      scheduled_time: String(scheduledTime ?? ""),
       embark_time,
       disembark_time,
-      kind: ride.kind, // Include the kind (Pickup/Dropoff)
+      kind: ride.kind,
+      status: ride.status,
     };
   });
 
   // Group rides by vehicle
-  const vehicleGroups = allRides.reduce(
+  const vehicleGroups: Record<string, RideData[]> = allRides.reduce(
     (acc, ride) => {
-      const vehicle = ride.vehicle_registration_number;
-      if (!acc[vehicle]) {
-        acc[vehicle] = [];
-      }
+      const vehicle = ride.vehicle_registration_number ?? "Unknown Vehicle";
+      if (!acc[vehicle]) acc[vehicle] = [];
       acc[vehicle].push(ride);
       return acc;
     },
-    {} as Record<string, typeof allRides>
+    {} as Record<string, RideData[]>
   );
 
   const vehicles = Object.keys(vehicleGroups).sort();
