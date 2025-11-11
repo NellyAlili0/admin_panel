@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   HardDriveDownload,
+  FileBarChart,
   // BusFrontIcon,
   Home,
   LogOutIcon,
@@ -37,7 +38,7 @@ export function Navbar() {
     },
     {
       href: "/records",
-      label: "Records",
+      label: "Parents and Students",
       icon: User2Icon,
       active: pathname === "/records" || pathname.startsWith("/records/"),
     },
@@ -70,8 +71,16 @@ export function Navbar() {
         pathname.startsWith("/smartcard-reports/"),
     },
     {
+      href: "/all-smartcards-reports",
+      label: "All SmartCard Reports",
+      icon: FileBarChart,
+      active:
+        pathname === "/all-smartcards-reports" ||
+        pathname.startsWith("/all-smartcards-reports/"),
+    },
+    {
       href: "/onboarding",
-      label: "SmartCards Onboarding",
+      label: "SmartCards Accounts",
       icon: BadgePlus,
       active: pathname === "/onboarding" || pathname.startsWith("/onboarding/"),
     },

@@ -84,7 +84,7 @@ function Parents({ email, password, tag }: Props) {
       <div className="flex flex-col gap-2">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight">Parents</h1>
-          <AddParentForm onParentAdded={handleParentAdded} />
+          {/* <AddParentForm onParentAdded={handleParentAdded} /> */}
         </div>
 
         {loading && parents.length === 0 ? (

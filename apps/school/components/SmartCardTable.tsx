@@ -19,6 +19,7 @@ interface GenTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  progressPending?: boolean;
 }
 
 export default function GenTable({
