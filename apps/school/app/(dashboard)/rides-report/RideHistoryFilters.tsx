@@ -145,8 +145,8 @@ export default function RideHistoryFilters({ data }: RideHistoryFiltersProps) {
             "scheduled_time",
             "embark_time",
             "disembark_time",
-            "pickup_location",
-            "dropoff_location",
+            // "pickup_location",
+            // "dropoff_location",
             "status",
           ]}
           data={filteredData}

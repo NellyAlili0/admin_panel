@@ -185,8 +185,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                     "scheduled_time",
                     "embark_time",
                     "disembark_time",
-                    "pickup_location",
-                    "dropoff_location",
+                    // "pickup_location",
+                    // "dropoff_location",
                     "status",
                   ]}
                   data={dropoffRides}
