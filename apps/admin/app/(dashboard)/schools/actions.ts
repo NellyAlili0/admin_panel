@@ -84,6 +84,7 @@ export async function create(
         name: school_name,
         location: location ?? null,
         url: url,
+        has_commission: false,
         meta: JSON.stringify({
           administrator_name: administratorName,
           administrator_phone: administratorPhone,
