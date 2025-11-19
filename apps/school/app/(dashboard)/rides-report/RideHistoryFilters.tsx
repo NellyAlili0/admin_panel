@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
-import GenTable from "@/components/tables";
+import GenTable from "../RidesReportTable";
 
 // interface RideData {
 //   id: number;
@@ -130,7 +130,7 @@ export default function RideHistoryFilters({ data }: RideHistoryFiltersProps) {
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground mt-2 mb-3">
         Showing {filteredData.length} of {data.length} rides
       </div>
 

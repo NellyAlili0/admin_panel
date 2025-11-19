@@ -136,9 +136,9 @@ export default async function Page() {
     )
     .execute()) as RideRecord[];
 
-  if (tripHistory.length > 0) {
-    console.log("Sample trip record:", tripHistory[0]);
-  }
+  // if (tripHistory.length > 0) {
+  //   console.log("Sample trip record:", tripHistory[0]);
+  // }
 
   interface RideData {
     id: number;

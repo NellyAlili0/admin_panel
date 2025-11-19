@@ -21,28 +21,52 @@ type RawRecord = {
   user_type: string;
 };
 
-type CleanRecord = {
+type StudentOverview = {
   id: string;
-  code: string;
-  zone: string;
   user: string;
   phone: string;
+  zone: string;
   time_in: string;
   time_out: string;
   status: string;
 };
 
-export function transformRecords(raw: RawRecord[]): CleanRecord[] {
-  return raw.map((item) => ({
-    id: item.id,
-    code: item.code,
+// Get latest check-in per student and remove duplicates
+export function getStudentOverview(raw: RawRecord[]): StudentOverview[] {
+  // Group records by user
+  const userMap = new Map<string, RawRecord>();
+
+  raw.forEach((record) => {
+    const userId = record.user?.id;
+    const userName = record.user?.name;
+
+    if (!userId || !userName) return;
+
+    // Check if we already have a record for this user
+    const existing = userMap.get(userId);
+
+    // Keep the record with the latest check-in time
+    if (
+      !existing ||
+      new Date(record.checkin_at) > new Date(existing.checkin_at)
+    ) {
+      userMap.set(userId, record);
+    }
+  });
+
+  // Convert to array and transform
+  const overview = Array.from(userMap.values()).map((item) => ({
+    id: item.user.id,
+    user: item.user.name || "",
+    phone: item.user.phone || "",
     zone: item.zone?.name || "",
-    user: item.user?.name || "",
-    phone: item.user?.phone || "",
     time_in: item.checkin_at,
     time_out: item.checkout_at,
     status: item.status,
   }));
+
+  // Sort alphabetically by user name
+  return overview.sort((a, b) => a.user.localeCompare(b.user));
 }
 
 interface SmartCardDashboardProps {
@@ -68,12 +92,8 @@ export default function SmartCards({
   const [isOnline, setIsOnline] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Search/filter states
-  const [searchZone, setSearchZone] = useState("");
+  // Simplified search - only user name
   const [searchUser, setSearchUser] = useState("");
-  const [searchStatus, setSearchStatus] = useState("");
-  const [searchTimeFrom, setSearchTimeFrom] = useState("");
-  const [searchTimeTo, setSearchTimeTo] = useState("");
 
   // Refs for cleanup
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,7 +125,7 @@ export default function SmartCards({
             email,
             password,
             tag,
-            fetchAll: true, // Tell the backend to fetch all pages
+            fetchAll: true,
           }),
           signal: abortControllerRef.current.signal,
         });
@@ -121,7 +141,6 @@ export default function SmartCards({
             console.log(`Retry attempt ${currentRetry + 1} of ${maxRetries}`);
             setRetryCount(currentRetry + 1);
 
-            // Wait before retrying (exponential backoff: 1s, 2s, 4s, 8s, 16s)
             await new Promise((resolve) =>
               setTimeout(resolve, Math.pow(2, currentRetry) * 1000)
             );
@@ -130,7 +149,6 @@ export default function SmartCards({
               return fetchAllData(isAutoRefresh, currentRetry + 1);
             }
           } else {
-            // All retries exhausted
             setError(errorMessage);
             setIsOnline(false);
             setRetryCount(0);
@@ -142,12 +160,11 @@ export default function SmartCards({
         } else {
           const response = await res.json();
 
-          // Check if data exists
           if (response.data && Array.isArray(response.data.data)) {
             setRecords(response.data.data);
             setTotalRecords(response.data.total || 0);
             setError(null);
-            setRetryCount(0); // Reset retry count on success
+            setRetryCount(0);
           } else {
             setRecords([]);
             setError("No data available");
@@ -161,14 +178,12 @@ export default function SmartCards({
         if (e.name !== "AbortError" && isMountedRef.current) {
           console.error("Fetch error:", e);
 
-          // Retry logic for network errors
           if (currentRetry < maxRetries) {
             console.log(
               `Retry attempt ${currentRetry + 1} of ${maxRetries} after error`
             );
             setRetryCount(currentRetry + 1);
 
-            // Wait before retrying (exponential backoff)
             await new Promise((resolve) =>
               setTimeout(resolve, Math.pow(2, currentRetry) * 1000)
             );
@@ -177,7 +192,6 @@ export default function SmartCards({
               return fetchAllData(isAutoRefresh, currentRetry + 1);
             }
           } else {
-            // All retries exhausted
             setError(e.message || "Network error");
             setIsOnline(false);
             setRetryCount(0);
@@ -202,54 +216,19 @@ export default function SmartCards({
     fetchAllData(false);
   }, [fetchAllData]);
 
-  // Filter records based on search criteria
-  const filteredRecords = records.filter((record) => {
-    const zone = record.zone?.name?.toLowerCase() || "";
-    const user = record.user?.name?.toLowerCase() || "";
-    const status = record.status?.toLowerCase() || "";
-    const checkinTime = record.checkin_at ? new Date(record.checkin_at) : null;
+  // Get student overview (deduplicated, latest check-in, sorted)
+  const studentOverview = getStudentOverview(records);
 
-    // Zone filter
-    if (searchZone && !zone.includes(searchZone.toLowerCase())) {
+  // Filter by user name only
+  const filteredStudents = studentOverview.filter((student) => {
+    if (
+      searchUser &&
+      !student.user.toLowerCase().includes(searchUser.toLowerCase())
+    ) {
       return false;
     }
-
-    // User filter
-    if (searchUser && !user.includes(searchUser.toLowerCase())) {
-      return false;
-    }
-
-    // Status filter
-    if (searchStatus && !status.includes(searchStatus.toLowerCase())) {
-      return false;
-    }
-
-    // Time range filter
-    if (searchTimeFrom && checkinTime) {
-      const fromDate = new Date(searchTimeFrom);
-      if (checkinTime < fromDate) {
-        return false;
-      }
-    }
-
-    if (searchTimeTo && checkinTime) {
-      const toDate = new Date(searchTimeTo);
-      if (checkinTime > toDate) {
-        return false;
-      }
-    }
-
     return true;
   });
-
-  // Reset all filters
-  const handleResetFilters = () => {
-    setSearchZone("");
-    setSearchUser("");
-    setSearchStatus("");
-    setSearchTimeFrom("");
-    setSearchTimeTo("");
-  };
 
   // Auto-refresh every 2 minutes
   useEffect(() => {
@@ -271,7 +250,7 @@ export default function SmartCards({
     }
   }, [autoRefresh, isOnline, fetchAllData, initialLoadComplete]);
 
-  // Initial fetch - only run once on mount
+  // Initial fetch
   useEffect(() => {
     fetchAllData();
   }, []);
@@ -316,7 +295,7 @@ export default function SmartCards({
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <Loading />
         <p className="text-sm text-muted-foreground">
-          Loading all smart card records...
+          Loading student overview...
         </p>
         {retryCount > 0 && (
           <p className="text-sm text-orange-600">
@@ -369,10 +348,12 @@ export default function SmartCards({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight my-4">
-            Smart Card Records
+            Student Location Overview
           </h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground my-3">
-            <span className="font-medium">Total Records: {totalRecords}</span>
+            <span className="font-medium">
+              Total Students: {studentOverview.length}
+            </span>
             {lastUpdated && (
               <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
             )}
@@ -415,7 +396,7 @@ export default function SmartCards({
 
       {isRefreshing && (
         <div className="text-sm text-muted-foreground mb-2">
-          Refreshing all records...
+          Refreshing student data...
           {retryCount > 0 && (
             <span className="ml-2 text-orange-600">
               (Retry {retryCount}/{maxRetries})
@@ -424,83 +405,42 @@ export default function SmartCards({
         </div>
       )}
 
-      {/* Search/Filter Section */}
+      {/* Simplified Search Section - User Name Only */}
       <Card className="mb-4">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Search className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">Search & Filter</h2>
+            <h2 className="text-lg font-semibold">Search Student</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Zone</label>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-1">
+                Student Name
+              </label>
               <input
                 type="text"
-                placeholder="Search by zone..."
-                value={searchZone}
-                onChange={(e) => setSearchZone(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">User</label>
-              <input
-                type="text"
-                placeholder="Search by user name..."
+                placeholder="Search by student name..."
                 value={searchUser}
                 onChange={(e) => setSearchUser(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <input
-                type="text"
-                placeholder="Search by status..."
-                value={searchStatus}
-                onChange={(e) => setSearchStatus(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Time From
-              </label>
-              <input
-                type="datetime-local"
-                value={searchTimeFrom}
-                onChange={(e) => setSearchTimeFrom(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Time To</label>
-              <input
-                type="datetime-local"
-                value={searchTimeTo}
-                onChange={(e) => setSearchTimeTo(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="flex items-end">
+            {searchUser && (
               <button
-                onClick={handleResetFilters}
-                className="w-full px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                onClick={() => setSearchUser("")}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
                 <X className="h-4 w-4" />
-                Clear Filters
+                Clear
               </button>
-            </div>
+            )}
           </div>
 
           <div className="mt-4 text-sm text-muted-foreground">
-            Showing {filteredRecords.length} of {records.length} records
+            Showing {filteredStudents.length} of {studentOverview.length}{" "}
+            students
           </div>
         </CardContent>
       </Card>
@@ -509,9 +449,9 @@ export default function SmartCards({
         <CardContent className="pt-6">
           <div className="rounded-md border">
             <GenTable
-              title={`All Smart Card Records (${filteredRecords.length} total)`}
-              cols={["zone", "user", "phone", "time_in", "time_out", "status"]}
-              data={transformRecords(filteredRecords)}
+              title={`Current Student Locations (${filteredStudents.length} students)`}
+              cols={["user", "zone", "time_in", "time_out", "status"]}
+              data={filteredStudents}
               baseLink=""
               uniqueKey=""
             />

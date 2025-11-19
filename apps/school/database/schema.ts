@@ -30,6 +30,17 @@ export type Gender = "Female" | "Male";
 export type VehicleStatus = "Active" | "Inactive";
 export type VehicleType = "Bus" | "Van" | "Car";
 export type RideType = "dropoff" | "pickup" | "pickup & dropoff";
+export type PaymentModel = "daily" | "term" | "zidallie";
+export type PaymentType =
+  | "initial"
+  | "installment"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "termly";
+export type DisbursementType = "B2C" | "B2B";
+export type DisbursementStatus = "pending" | "completed" | "failed";
+export type ServiceType = "school" | "carpool" | "private";
 
 // Meta types
 export type UserMeta = {
@@ -57,6 +68,7 @@ export type DailyRideMeta = JSONColumnType<{
     one_km: boolean;
   };
 }> | null;
+
 export type RideSchedule = JSONColumnType<{
   cost: number | null;
   paid: number | null;
@@ -76,6 +88,7 @@ export type RideSchedule = JSONColumnType<{
   dates?: string[];
   kind?: "Private" | "Carpool" | "Bus";
 }> | null;
+
 export type SchoolMeta = JSONColumnType<{
   administrator_name: string | null;
   administrator_phone: string | null;
@@ -101,13 +114,13 @@ export interface UserTable {
   meta: UserMeta | null;
   wallet_balance: number;
   is_kyc_verified: boolean;
-  photo: string | null; // Foreign key to files table
-  roleId: number | null; // Foreign key to role table
-  statusId: number | null; // Foreign key to status table
+  photo: string | null;
+  roleId: number | null;
+  statusId: number | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
   deleted_at: Date | null;
-  school_id: number | null; // Foreign key to school table
+  school_id: number | null;
 }
 
 export interface KycTable {
@@ -121,13 +134,13 @@ export interface KycTable {
   updated_at: Generated<Date>;
   comments: string | null;
   is_verified: boolean;
-  userId: number | null; // Foreign key to user table
+  userId: number | null;
 }
 
 export interface LocationTable {
   id: Generated<number>;
-  daily_rideId: number; // Foreign key to daily_ride table
-  driverId: number; // Foreign key to user table
+  daily_rideId: number;
+  driverId: number;
   latitude: number;
   longitude: number;
   timestamp: Date;
@@ -136,7 +149,7 @@ export interface LocationTable {
 
 export interface NotificationTable {
   id: Generated<number>;
-  userId: number; // Foreign key to user table
+  userId: number;
   title: string;
   message: string;
   meta: any | null;
@@ -148,7 +161,7 @@ export interface NotificationTable {
 
 export interface PaymentTable {
   id: Generated<number>;
-  userId: number; // Foreign key to user table
+  userId: number;
   amount: number;
   kind: PaymentKind;
   transaction_type: TransactionType;
@@ -160,9 +173,9 @@ export interface PaymentTable {
 
 export interface DailyRideTable {
   id: Generated<number>;
-  rideId: number; // Foreign key to ride table
-  vehicleId: number; // Foreign key to vehicle table
-  driverId: number | null; // Foreign key to user table
+  rideId: number;
+  vehicleId: number;
+  driverId: number | null;
   kind: DailyRideKind;
   date: Date;
   start_time: Date | null;
@@ -178,11 +191,11 @@ export interface DailyRideTable {
 
 export interface RideTable {
   id: Generated<number>;
-  vehicleId: number | null; // Foreign key to vehicle table
-  driverId: number | null; // Foreign key to user table
-  schoolId: number | null; // Foreign key to school table
-  studentId: number | null; // Foreign key to student table
-  parentId: number | null; // Foreign key to user table
+  vehicleId: number | null;
+  driverId: number | null;
+  schoolId: number | null;
+  studentId: number | null;
+  parentId: number | null;
   schedule: RideSchedule | null;
   comments: string | null;
   admin_comments: string | null;
@@ -193,7 +206,7 @@ export interface RideTable {
 }
 
 export interface RoleTable {
-  id: number; // Primary key, not generated
+  id: number;
   name: string | null;
 }
 
@@ -201,24 +214,35 @@ export interface SchoolTable {
   id: Generated<number>;
   name: string;
   location: string | null;
+  disbursement_phone_number: string | null;
+  bank_paybill_number: string | null;
+  bank_account_number: string | null;
   comments: string | null;
   url: string | null;
   smart_card_url: string | null;
   terra_email: string | null;
   terra_password: string | null;
   terra_tag_id: string | null;
+  terra_zone_tag: string | null;
+  terra_parents_tag: string | null;
+  terra_student_tag: string | null;
+  terra_school_tag: string | null;
   meta: SchoolMeta | null;
+  has_commission: boolean;
+  commission_amount: number | null;
+  paybill: string | null;
+  service_type: ServiceType | null;
   created_at: Generated<Date>;
 }
 
 export interface StatusTable {
-  id: number; // Primary key, not generated
+  id: number;
   name: string | null;
 }
 
 export interface SessionTable {
   id: Generated<number>;
-  userId: number; // Foreign key to user table
+  userId: number;
   hash: string;
   createdAt: Generated<Date>;
   updatedAt: Generated<Date>;
@@ -227,20 +251,24 @@ export interface SessionTable {
 
 export interface StudentTable {
   id: Generated<number>;
-  schoolId: number | null; // Foreign key to school table
-  parentId: number | null; // Foreign key to user table
+  schoolId: number | null;
+  parentId: number | null;
   name: string;
   profile_picture: string | null;
   gender: Gender;
   address: string | null;
   comments: string | null;
   meta: any | null;
+  account_number: string | null;
+  daily_fee: number | null;
+  transport_term_fee: number | null;
+  service_type: ServiceType | null;
   created_at: Generated<Date>;
 }
 
 export interface VehicleTable {
   id: Generated<number>;
-  userId: number | null; // Foreign key to user table
+  userId: number | null;
   vehicle_name: string | null;
   registration_number: string;
   vehicle_type: VehicleType;
@@ -263,8 +291,6 @@ export interface VehicleTable {
 export interface FileTable {
   id: Generated<number>;
   path: string;
-  // Add file table properties based on your FileEntity
-  // This is referenced by UserTable.photoId
 }
 
 export interface OnboardingFormTable {
@@ -275,13 +301,121 @@ export interface OnboardingFormTable {
   address: string | null;
   student_name: string;
   student_gender: Gender;
-  schoolId: number; // Foreign key to school table
+  schoolId: number;
   ride_type: RideType;
   pickup: string | null;
   dropoff: string | null;
   start_date: Date | null;
   mid_term: Date | null;
   end_date: Date | null;
+  created_at: Generated<Date>;
+}
+
+export interface B2cMpesaTransactionTable {
+  id: Generated<number>;
+  transaction_id: string | null;
+  conversation_id: string | null;
+  originator_conversation_id: string | null;
+  result_type: number | null;
+  result_code: number | null;
+  result_desc: string | null;
+  transaction_amount: number | null;
+  receiver_party_public_name: string | null;
+  transaction_completed_at: Date | null;
+  raw_result: JSONColumnType<Record<string, any>> | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PaymentTermTable {
+  id: Generated<number>;
+  school_id: number | null;
+  name: string;
+  start_date: Date;
+  end_date: Date;
+  is_active: boolean;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PendingPaymentTable {
+  id: Generated<number>;
+  studentId: number | null;
+  termId: number | null;
+  subscriptionPlanId: number | null;
+  amount: number;
+  checkoutId: string | null;
+  phoneNumber: string | null;
+  paymentType: PaymentType | null;
+  paymentModel: PaymentModel | null;
+  schoolId: number | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface SchoolDisbursementTable {
+  id: Generated<number>;
+  student_id: number;
+  term_id: number | null;
+  payment_id: number;
+  bank_paybill: string | null;
+  account_number: string | null;
+  amount_disbursed: number;
+  disbursement_type: DisbursementType;
+  transaction_id: string | null;
+  status: DisbursementStatus;
+  created_at: Generated<Date>;
+}
+
+export interface StudentPaymentTable {
+  id: Generated<number>;
+  student_id: number;
+  term_id: number | null;
+  transaction_id: string;
+  phone_number: string;
+  amount_paid: number;
+  payment_type: PaymentType;
+  created_at: Generated<Date>;
+}
+
+export interface SubscriptionPlanTable {
+  id: Generated<number>;
+  school_id: number;
+  name: string;
+  description: string | null;
+  duration_days: number;
+  price: number;
+  commission_amount: number;
+  is_active: boolean;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface SubscriptionTable {
+  id: Generated<number>;
+  student_id: number;
+  plan_id: number | null;
+  term_id: number | null;
+  start_date: Date;
+  expiry_date: Date;
+  amount: number | null;
+  status: string;
+  total_paid: number;
+  balance: number;
+  is_commission_paid: boolean;
+  days_access: number | null;
+  last_payment_date: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface TermCommissionTable {
+  id: Generated<number>;
+  student_id: number;
+  term_id: number;
+  commission_amount: number;
+  is_paid: boolean;
+  paid_at: Date | null;
   created_at: Generated<Date>;
 }
 
@@ -302,9 +436,17 @@ export interface Database {
   vehicle: VehicleTable;
   file: FileTable;
   onboarding_form: OnboardingFormTable;
+  b2cmpesa_transactions: B2cMpesaTransactionTable;
+  payment_terms: PaymentTermTable;
+  pending_payments: PendingPaymentTable;
+  school_disbursements: SchoolDisbursementTable;
+  student_payments: StudentPaymentTable;
+  subscription_plans: SubscriptionPlanTable;
+  subscriptions: SubscriptionTable;
+  term_commissions: TermCommissionTable;
 }
 
-// Helper types for insert, select, and update operations
+// Helper types for existing tables
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
 export type UserUpdate = Updateable<UserTable>;
@@ -356,3 +498,36 @@ export type StudentUpdate = Updateable<StudentTable>;
 export type Vehicle = Selectable<VehicleTable>;
 export type NewVehicle = Insertable<VehicleTable>;
 export type VehicleUpdate = Updateable<VehicleTable>;
+
+// Helper types for new tables
+export type B2cMpesaTransaction = Selectable<B2cMpesaTransactionTable>;
+export type NewB2cMpesaTransaction = Insertable<B2cMpesaTransactionTable>;
+export type B2cMpesaTransactionUpdate = Updateable<B2cMpesaTransactionTable>;
+
+export type PaymentTerm = Selectable<PaymentTermTable>;
+export type NewPaymentTerm = Insertable<PaymentTermTable>;
+export type PaymentTermUpdate = Updateable<PaymentTermTable>;
+
+export type PendingPayment = Selectable<PendingPaymentTable>;
+export type NewPendingPayment = Insertable<PendingPaymentTable>;
+export type PendingPaymentUpdate = Updateable<PendingPaymentTable>;
+
+export type SchoolDisbursement = Selectable<SchoolDisbursementTable>;
+export type NewSchoolDisbursement = Insertable<SchoolDisbursementTable>;
+export type SchoolDisbursementUpdate = Updateable<SchoolDisbursementTable>;
+
+export type StudentPayment = Selectable<StudentPaymentTable>;
+export type NewStudentPayment = Insertable<StudentPaymentTable>;
+export type StudentPaymentUpdate = Updateable<StudentPaymentTable>;
+
+export type SubscriptionPlan = Selectable<SubscriptionPlanTable>;
+export type NewSubscriptionPlan = Insertable<SubscriptionPlanTable>;
+export type SubscriptionPlanUpdate = Updateable<SubscriptionPlanTable>;
+
+export type Subscription = Selectable<SubscriptionTable>;
+export type NewSubscription = Insertable<SubscriptionTable>;
+export type SubscriptionUpdate = Updateable<SubscriptionTable>;
+
+export type TermCommission = Selectable<TermCommissionTable>;
+export type NewTermCommission = Insertable<TermCommissionTable>;
+export type TermCommissionUpdate = Updateable<TermCommissionTable>;
