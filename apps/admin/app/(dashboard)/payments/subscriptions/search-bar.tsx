@@ -10,7 +10,7 @@ interface Subscription {
   school_name: string | null;
   parent_name: string | null;
   status_label: string; // derived mapped “PAID | UNPAID”
-  amount: number;
+  total_paid: number;
 }
 
 export function SubscriptionSearch({ data }: { data: Subscription[] }) {
@@ -24,7 +24,7 @@ export function SubscriptionSearch({ data }: { data: Subscription[] }) {
         s.school_name?.toLowerCase().includes(lower) ||
         s.parent_name?.toLowerCase().includes(lower) ||
         s.status_label?.toLowerCase().includes(lower) ||
-        s.amount.toString().includes(lower)
+        s.total_paid.toString().includes(lower)
     );
   }, [query, data]);
 
@@ -58,14 +58,8 @@ export function SubscriptionSearch({ data }: { data: Subscription[] }) {
       </div>
 
       <GenTable
-        title=""
-        cols={[
-          "student_name",
-          "parent_name",
-          "amount",
-          "school_name",
-          "status_label",
-        ]}
+        title="All Subscriptions"
+        cols={["student_name", "parent_name", "total_paid", "school_name"]}
         data={filteredData}
         baseLink="subscriptions/"
         uniqueKey="id"

@@ -13,22 +13,22 @@ export default function PaymentsPage() {
       icon: School,
     },
     {
-      title: "School Subscriptions",
-      desc: "Manage all active and expired school subscriptions",
-      href: "/payments/subscription-plans",
+      title: "Students Payment Details",
+      desc: "Detailed view of students payment history",
+      href: "/payments/student-payments",
       icon: BadgeDollarSign,
     },
     {
-      title: "All Payments",
-      desc: "View every transaction made in the platform",
-      href: "/payments/payments",
-      icon: CreditCard,
-    },
-    {
-      title: "Paid Students",
+      title: "Subscriptions",
       desc: "Manage students with active payments and subscriptions",
       href: "/payments/subscriptions",
       icon: Wallet,
+    },
+    {
+      title: "School Terms",
+      desc: "Manage school terms",
+      href: "/payments/terms",
+      icon: CreditCard,
     },
   ];
 

@@ -2,31 +2,30 @@
 
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import GenTable from "@/components/tables";
-import Link from "next/link";
+import GenTable from "@/components/PaymentsTable";
 
-interface Plan {
+interface Payment {
   id: number;
-  school_name: string;
-  description: string | null;
-  duration_days: number;
-  price: number;
-  is_active: boolean;
-  is_active_label: string;
+  student_name: string | null;
+  school_name: string | null;
+  phone_number: string;
+  amount_paid: number;
+  paid_to_school: number;
+  payment_date: string;
 }
 
-export function PlansSearch({ data }: { data: Plan[] }) {
+export function PaymentSearch({ data }: { data: Payment[] }) {
   const [query, setQuery] = useState("");
 
   const filteredData = useMemo(() => {
     const lower = query.toLowerCase();
     return data.filter(
       (p) =>
-        p.school_name.toLowerCase().includes(lower) ||
-        p.description?.toLowerCase().includes(lower) ||
-        p.duration_days.toString().includes(lower) ||
-        p.price.toString().includes(lower) ||
-        p.is_active_label.toLowerCase().includes(lower)
+        p.student_name?.toLowerCase().includes(lower) ||
+        p.school_name?.toLowerCase().includes(lower) ||
+        p.phone_number?.toLowerCase().includes(lower) ||
+        p.amount_paid.toString().includes(lower) ||
+        p.paid_to_school.toString().includes(lower)
     );
   }, [query, data]);
 
@@ -51,38 +50,35 @@ export function PlansSearch({ data }: { data: Plan[] }) {
 
           <Input
             type="text"
-            placeholder="Search by school, description, price or status..."
+            placeholder="Search by student, school, phone, or amount..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="border-none shadow-none focus-visible:ring-0 w-full"
           />
         </div>
-        <section>
-          <section className="flex  items-center mt-4 gap-2">
-            <Link
-              href="subscription-plans/subcribe/"
-              className="flex bg-gray-800 hover:bg-gray-700 text-white text-base font-medium px-4 py-2.5 outline-none rounded w-max cursor-pointer "
-            >
-              Create School Subcription
-            </Link>
-          </section>
-        </section>
       </div>
 
       <GenTable
-        title="Subscription Plans"
+        title=""
         cols={[
+          "id",
+          "student_name",
           "school_name",
-          "description",
-          "duration_days",
-          "price",
-          "is_active_label",
+          "phone_number",
+          "amount_paid",
+          "paid_to_school",
           "payment_date",
         ]}
         data={filteredData}
-        baseLink="subscription-plans/"
+        baseLink="/payments/student-payments/"
         uniqueKey="id"
       />
+
+      {filteredData.length === 0 && (
+        <p className="text-center text-sm text-gray-500 mt-2">
+          No payments match your search.
+        </p>
+      )}
     </div>
   );
 }

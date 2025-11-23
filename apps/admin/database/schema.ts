@@ -329,7 +329,7 @@ export interface B2cMpesaTransactionTable {
 
 export interface PaymentTermTable {
   id: Generated<number>;
-  school_id: number | null;
+  schoolId: number | null;
   name: string;
   start_date: Date;
   end_date: Date;
@@ -355,9 +355,9 @@ export interface PendingPaymentTable {
 
 export interface SchoolDisbursementTable {
   id: Generated<number>;
-  student_id: number;
-  term_id: number | null;
-  payment_id: number;
+  studentId: number;
+  termId: number | null;
+  paymentId: number;
   bank_paybill: string | null;
   account_number: string | null;
   amount_disbursed: number;
@@ -369,8 +369,8 @@ export interface SchoolDisbursementTable {
 
 export interface StudentPaymentTable {
   id: Generated<number>;
-  student_id: number;
-  term_id: number | null;
+  studentId: number;
+  termId: number | null;
   transaction_id: string;
   phone_number: string;
   amount_paid: number;
@@ -411,8 +411,8 @@ export interface SubscriptionTable {
 
 export interface TermCommissionTable {
   id: Generated<number>;
-  student_id: number;
-  term_id: number;
+  studentId: number;
+  termId: number;
   commission_amount: number;
   is_paid: boolean;
   paid_at: Date | null;

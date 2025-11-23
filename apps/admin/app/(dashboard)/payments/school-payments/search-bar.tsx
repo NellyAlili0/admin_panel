@@ -9,8 +9,9 @@ interface B2cTransaction {
   transaction_id: string | null;
   transaction_amount: number;
   receiver_party_public_name: string | null;
-  transaction_completed_date: string;
   created_date: string;
+  student: string;
+  school: string;
 }
 
 export function B2cMpesaSearch({ data }: { data: B2cTransaction[] }) {
@@ -23,7 +24,9 @@ export function B2cMpesaSearch({ data }: { data: B2cTransaction[] }) {
       (t) =>
         t.transaction_id?.toLowerCase().includes(lower) ||
         t.receiver_party_public_name?.toLowerCase().includes(lower) ||
-        t.transaction_amount.toString().includes(lower)
+        t.transaction_amount.toString().includes(lower) ||
+        t.student.toLowerCase().includes(lower) ||
+        t.school.toLowerCase().includes(lower)
     );
   }, [query, data]);
 
@@ -33,7 +36,7 @@ export function B2cMpesaSearch({ data }: { data: B2cTransaction[] }) {
       <div className="flex items-center justify-between">
         <Input
           type="text"
-          placeholder="Search by transaction ID, receiver name, or amount..."
+          placeholder="Search by transaction ID, student, school, receiver name, or amount..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full max-w-md"
@@ -42,13 +45,13 @@ export function B2cMpesaSearch({ data }: { data: B2cTransaction[] }) {
 
       {/* Table */}
       <GenTable
-        title="B2C M-Pesa Transactions"
+        title="Zidallie to Schools Transactions"
         cols={[
           "id",
           "transaction_id",
           "transaction_amount",
-          "receiver_party_public_name",
-          "transaction_completed_date",
+          "student",
+          "school",
           "created_date",
         ]}
         data={filteredData}

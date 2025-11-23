@@ -27,16 +27,24 @@ const formatTimestamp = (timestamp: any) => {
 
 export default async function Page() {
   const transactionsRaw = await database
-    .selectFrom("b2cmpesa_transactions")
+    .selectFrom("b2cmpesa_transactions as b2c")
+    .leftJoin(
+      "school_disbursements as sd",
+      "b2c.conversation_id",
+      "sd.transaction_id"
+    )
+    .leftJoin("student", "sd.studentId", "student.id")
+    .leftJoin("school", "student.schoolId", "school.id")
     .select([
-      "id",
-      "transaction_id",
-      "transaction_amount",
-      "receiver_party_public_name",
-      "transaction_completed_at",
-      "created_at",
+      "b2c.id",
+      "b2c.transaction_id",
+      "b2c.transaction_amount",
+      "b2c.receiver_party_public_name",
+      "b2c.created_at",
+      "student.name as student_name",
+      "school.name as school_name",
     ])
-    .orderBy("created_at", "desc")
+    .orderBy("b2c.created_at", "desc")
     .execute();
 
   const totalAmount = await database
@@ -49,8 +57,9 @@ export default async function Page() {
   const transactions = transactionsRaw.map((t) => ({
     ...t,
     transaction_amount: Number(t.transaction_amount ?? 0),
-    transaction_completed_date: formatTimestamp(t.transaction_completed_at),
     created_date: formatTimestamp(t.created_at),
+    student: t.student_name ?? "N/A",
+    school: t.school_name ?? "N/A",
   }));
 
   const totalTransactions = transactions.length;
@@ -61,7 +70,7 @@ export default async function Page() {
         items={[
           {
             href: "/payments/b2c-mpesa",
-            label: "B2C M-Pesa Transactions",
+            label: "Zidallie to Schools Transactions",
           },
         ]}
       />
@@ -70,7 +79,7 @@ export default async function Page() {
         <div className="rounded-2xl border bg-white p-6 shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground my-1">
-              Total B2C Transactions
+              Total Zidallie to Schools Transactions
             </p>
             <p className="text-3xl font-bold tracking-tight my-1">
               KES {totalPaid.toLocaleString()}

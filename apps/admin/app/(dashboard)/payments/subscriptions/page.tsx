@@ -11,7 +11,7 @@ export default async function Page() {
     .leftJoin("school", "school.id", "student.schoolId")
     .select([
       "subscriptions.id",
-      "subscriptions.amount",
+      "subscriptions.total_paid",
       "subscriptions.status",
       "student.name as student_name",
 
@@ -30,7 +30,8 @@ export default async function Page() {
         ? s.parent_name
         : s.parent_email,
     status_label: s.status === "active" ? "PAID" : "UNPAID",
-    amount: s.amount ?? 0,
+    total_paid: s.total_paid ?? 0,
+    school_name: s.school_name ?? "N/A",
   }));
 
   const totalSubscriptions = subscriptions.length;
@@ -40,8 +41,8 @@ export default async function Page() {
       <Breadcrumbs
         items={[
           {
-            href: "payments/school-payments",
-            label: "School Payments",
+            href: "payments/subscriptions",
+            label: "All Subscriptions",
           },
         ]}
       />
