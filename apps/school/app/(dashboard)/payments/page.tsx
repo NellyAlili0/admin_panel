@@ -12,18 +12,18 @@ export default function PaymentsPage() {
       href: "/payments/students",
       icon: BadgeDollarSign,
     },
-    {
-      title: "School Payments",
-      desc: "payments made to school by zidallie",
-      href: "/payments/schools",
-      icon: School,
-    },
+    // {
+    //   title: "School Payments",
+    //   desc: "payments made to school by zidallie",
+    //   href: "/payments/schools",
+    //   icon: School,
+    // },
   ];
 
   return (
     <div className="p-8 w-full">
       {/* Header Section */}
-      <div className="text-center mb-14">
+      <div className=" mb-14">
         <section className="mb-10">
           <Breadcrumbs
             items={[
@@ -40,15 +40,14 @@ export default function PaymentsPage() {
           Manage everything related to revenue, billing and schools
           transactions.
         </p>
-        <div className="w-24 h-1 bg-[#efb100] mt-5 mx-auto rounded-full"></div>
+        <div className="w-24 h-1 bg-[#efb100] mt-5  rounded-full"></div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 place-items-center items-center w-full">
         {cards.map((c) => (
           <Link
             key={c.href}
             href={c.href}
-            className="group border rounded-2xl p-6 transition hover:shadow-lg hover:bg-accent/20 bg-card"
+            className="group border rounded-2xl p-6 transition hover:shadow-lg hover:bg-accent/20 bg-card w-full"
           >
             <div className="flex items-center gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm group-hover:scale-110 transition">

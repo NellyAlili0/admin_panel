@@ -209,7 +209,7 @@ export default async function PaymentDetailPage({
         </div>
 
         {/* Payment Breakdown */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+        {/* <div className="grid grid-cols-2 gap-4 pt-4 border-t">
           <div className="p-4 rounded-lg bg-green-50 border border-green-200">
             <p className="text-sm text-green-700 font-medium">Paid to School</p>
             <p className="text-2xl font-bold text-green-900 mt-1">
@@ -223,7 +223,7 @@ export default async function PaymentDetailPage({
               KES {commission.toLocaleString()}
             </p>
           </div>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-2 gap-6 pt-4 border-t">
           <div>
@@ -244,7 +244,7 @@ export default async function PaymentDetailPage({
       </div>
 
       {/* DISBURSEMENT DETAILS CARD */}
-      {payment.bank_paybill && (
+      {/* {payment.bank_paybill && (
         <div className="rounded-2xl border bg-white shadow-sm p-6 space-y-6">
           <h2 className="text-xl font-semibold border-b pb-4">
             Disbursement Details
@@ -274,7 +274,7 @@ export default async function PaymentDetailPage({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* STUDENT DETAILS CARD */}
       <div className="rounded-2xl border bg-white shadow-sm p-6 space-y-6">

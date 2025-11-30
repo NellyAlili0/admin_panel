@@ -89,6 +89,7 @@ export default async function Page() {
     paid_to_school: Number(p.paid_to_school ?? 0),
     school_name: p.school_name ?? "N/A",
     payment_date: formatTransCompletedTime(p.raw_result),
+    transaction: p.phone_number ?? "N/A",
   }));
 
   const totalPayments = payments.length;
@@ -108,7 +109,7 @@ export default async function Page() {
         <div className="rounded-2xl border bg-white p-6 shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground my-1">
-              Total Amount Disbursed
+              Total Amount Received
             </p>
             <p className="text-3xl font-bold tracking-tight my-1">
               KES {totalDisbursed.toLocaleString()}

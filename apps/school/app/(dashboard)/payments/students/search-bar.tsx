@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import GenTable from "@/components/PaymentsTable";
+import { NoSSR } from "@/components/NoSSR";
 
 interface Payment {
   id: number;
@@ -18,14 +19,14 @@ export function PaymentSearch({ data }: { data: Payment[] }) {
   const [query, setQuery] = useState("");
 
   const filteredData = useMemo(() => {
-    const lower = query.toLowerCase();
+    const q = query.toLowerCase();
     return data.filter(
       (p) =>
-        p.student_name?.toLowerCase().includes(lower) ||
-        p.school_name?.toLowerCase().includes(lower) ||
-        p.phone_number?.toLowerCase().includes(lower) ||
-        p.amount_paid.toString().includes(lower) ||
-        p.paid_to_school.toString().includes(lower)
+        p.student_name?.toLowerCase().includes(q) ||
+        p.school_name?.toLowerCase().includes(q) ||
+        p.phone_number?.toLowerCase().includes(q) ||
+        p.amount_paid.toString().includes(q) ||
+        p.paid_to_school.toString().includes(q)
     );
   }, [query, data]);
 
@@ -58,21 +59,22 @@ export function PaymentSearch({ data }: { data: Payment[] }) {
         </div>
       </div>
 
-      <GenTable
-        title=""
-        cols={[
-          "id",
-          "student_name",
-          "school_name",
-          "phone_number",
-          "amount_paid",
-          "paid_to_school",
-          "payment_date",
-        ]}
-        data={filteredData}
-        baseLink="/payments/students/"
-        uniqueKey="id"
-      />
+      <NoSSR>
+        <GenTable
+          title=""
+          cols={[
+            "id",
+            "student_name",
+            "transaction",
+            "amount_paid",
+            "paid_to_school",
+            "payment_date",
+          ]}
+          data={filteredData}
+          baseLink="/payments/students/"
+          uniqueKey="id"
+        />
+      </NoSSR>
 
       {filteredData.length === 0 && (
         <p className="text-center text-sm text-gray-500 mt-2">
