@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  HardDriveDownload,
+  CreditCard,
   FileBarChart,
   // BusFrontIcon,
   Home,
@@ -61,6 +61,12 @@ export function Navbar() {
       icon: User2Icon,
       active:
         pathname === "/rides-report" || pathname.startsWith("/rides-report/"),
+    },
+    {
+      href: "/payments",
+      label: "Payments",
+      icon: CreditCard,
+      active: pathname === "/payments" || pathname.startsWith("/payments/"),
     },
     {
       href: "/smartcard-reports",

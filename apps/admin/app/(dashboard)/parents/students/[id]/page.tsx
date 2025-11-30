@@ -265,6 +265,7 @@ export default async function Page({
                 </Badge>
               </Link>
             )}
+            <button>sumbit</button>
           </div>
         </div>
 
@@ -278,8 +279,8 @@ export default async function Page({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col md:flex-row gap-6 flex-wrap">
+                <div className="flex flex-col items-center gap-3 flex-wrap">
                   <Avatar className="h-24 w-24">
                     <AvatarImage
                       src={student.profile_picture ?? undefined}
@@ -297,7 +298,7 @@ export default async function Page({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 flex-wrap">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <User className="h-4 w-4" />
@@ -307,11 +308,11 @@ export default async function Page({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm flex-wrap">
                       <MapPin className="h-4 w-4" />
                       <span>Address</span>
                     </div>
-                    <p className="font-medium">
+                    <p className="font-medium text-wrap">
                       {student.address ?? "Not provided"}
                     </p>
                   </div>

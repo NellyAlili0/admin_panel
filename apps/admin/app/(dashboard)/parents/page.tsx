@@ -2,7 +2,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { database } from "@/database/config";
 import GenTable from "@/components/tables";
 import { CreateParent } from "./forms";
-import SearchBar from "./search-bar"; // 👈 new component
+import SearchBar from "./search-bar";
 
 export default async function Page() {
   // Fetch all parents from the `user` table
@@ -43,7 +43,6 @@ export default async function Page() {
         <CreateParent />
       </div>
 
-      {/* 🔍 Search bar + table */}
       <SearchBar data={formattedParents} />
     </div>
   );
