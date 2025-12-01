@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import GenTable from "@/components/PaymentsTable";
+import { NoSSR } from "@/components/NoSSR";
 
 interface Payment {
   id: number;
@@ -57,22 +58,23 @@ export function PaymentSearch({ data }: { data: Payment[] }) {
           />
         </div>
       </div>
-
-      <GenTable
-        title=""
-        cols={[
-          "id",
-          "student_name",
-          "school_name",
-          "phone_number",
-          "amount_paid",
-          "paid_to_school",
-          "payment_date",
-        ]}
-        data={filteredData}
-        baseLink="/payments/student-payments/"
-        uniqueKey="id"
-      />
+      <NoSSR>
+        <GenTable
+          title=""
+          cols={[
+            "id",
+            "student_name",
+            "school_name",
+            "phone_number",
+            "amount_paid",
+            "paid_to_school",
+            "payment_date",
+          ]}
+          data={filteredData}
+          baseLink="/payments/student-payments/"
+          uniqueKey="id"
+        />
+      </NoSSR>
 
       {filteredData.length === 0 && (
         <p className="text-center text-sm text-gray-500 mt-2">

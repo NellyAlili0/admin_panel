@@ -3,6 +3,7 @@ import { database } from "@/database/config";
 import { PaymentSearch } from "./search-bar";
 
 const formatTransCompletedTime = (rawResult: any) => {
+  console.log(rawResult);
   if (!rawResult) return "N/A";
 
   try {
@@ -62,6 +63,7 @@ export default async function Page() {
       "school_disbursements.amount_disbursed as paid_to_school",
 
       "b2cmpesa_transactions.raw_result",
+      "student_payments.created_at",
     ])
     .orderBy("student_payments.created_at", "desc")
     .execute();
@@ -80,7 +82,9 @@ export default async function Page() {
     amount_paid: Number(p.amount_paid ?? 0),
     paid_to_school: Number(p.paid_to_school ?? 0),
     school_name: p.school_name ?? "N/A",
-    payment_date: formatTransCompletedTime(p.raw_result),
+    payment_date: p.raw_result
+      ? formatTransCompletedTime(p.raw_result)
+      : formatTransCompletedTime(p.created_at),
   }));
 
   const totalPayments = payments.length;
