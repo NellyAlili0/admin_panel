@@ -34,41 +34,27 @@ export default function GenTable({
   const router = useRouter();
   const columns: any = [];
 
-  // Always exclude `id` from displayed columns
+  // Always exclude `id` + uniqueKey
   const visibleCols = cols.filter(
     (col) =>
       col.toLowerCase() !== "id" &&
       col.toLowerCase() !== uniqueKey.toLowerCase()
   );
 
-  // Replace `created_at` with `date` for UI consistency
+  // Replace created_at → date
   const normalizedCols = visibleCols.map((col) =>
     col === "created_at" ? "date" : col
   );
 
-  // Dynamically build visible columns
+  // Build columns
   for (const element of normalizedCols) {
     const temp: any = {
       name:
         element.charAt(0).toUpperCase() + element.slice(1).replaceAll("_", " "),
       selector: (row: any) => row[element],
+      cell: (row: any) => <span>{row[element]}</span>, // safe (string only)
+      sortable: true,
     };
-
-    if (
-      element === "created_at" ||
-      element === "date" ||
-      element === "start_time" ||
-      element === "end_time"
-    ) {
-      temp["cell"] = (row: any) => {
-        try {
-          return <span>{new Date(row[element]).toLocaleString()}</span>;
-        } catch {
-          return <span>{row[element]}</span>;
-        }
-      };
-      temp["sortable"] = true;
-    }
 
     columns.push(temp);
   }
@@ -98,7 +84,6 @@ export default function GenTable({
       pointerOnHover
       dense
       onRowClicked={(row: any) => {
-        // If uniqueKey exists and is found in row, navigate
         if (uniqueKey && row[uniqueKey]) {
           router.push(`${baseLink}${row[uniqueKey]}`);
         }

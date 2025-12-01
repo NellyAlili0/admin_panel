@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import GenTable from "../../../../components/PaymentsTable";
+import { NoSSR } from "@/components/NoSSR";
 
 interface B2cTransaction {
   id: number;
@@ -44,20 +45,22 @@ export function B2cMpesaSearch({ data }: { data: B2cTransaction[] }) {
       </div>
 
       {/* Table */}
-      <GenTable
-        title="Zidallie to Schools Transactions"
-        cols={[
-          "id",
-          "transaction_id",
-          "transaction_amount",
-          "student",
-          "school",
-          "created_date",
-        ]}
-        data={filteredData}
-        baseLink="school-payments/"
-        uniqueKey="id"
-      />
+      <NoSSR>
+        <GenTable
+          title="Zidallie to Schools Transactions"
+          cols={[
+            "id",
+            "transaction_id",
+            "transaction_amount",
+            "student",
+            "school",
+            "created_date",
+          ]}
+          data={filteredData}
+          baseLink="school-payments/"
+          uniqueKey="id"
+        />
+      </NoSSR>
 
       {filteredData.length === 0 && (
         <p className="text-center text-sm text-gray-500 mt-2">
