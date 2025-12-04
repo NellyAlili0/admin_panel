@@ -5,6 +5,7 @@ import { database } from "@/database/config";
 import { Auth } from "@/Authentication/index";
 import { revalidatePath } from "next/cache";
 import { Notify } from "@repo/handlers/notify";
+import { z } from "zod";
 
 const createParentSchema = zfd.formData({
   name: zfd.text(),
@@ -115,15 +116,27 @@ const addStudentSchema = zfd.formData({
   name: zfd.text(),
   gender: zfd.text(),
   address: zfd.text(),
-  comments: zfd.text(),
+  daily_fee: zfd.text(z.string().optional()),
+  service_type: zfd.text(),
+  transport_term_fee: zfd.text(z.string().optional()),
+  comments: zfd.text(z.string().optional()),
 });
-
 export async function addStudent(prevState: any, formData: FormData) {
   const data = addStudentSchema.safeParse(formData);
   if (!data.success) {
+    console.log("Validation errors:", data.error.flatten());
     return { message: "Invalid data" };
   }
-  const { parent_id, name, gender, address, comments } = data.data;
+  const {
+    parent_id,
+    name,
+    gender,
+    address,
+    comments,
+    daily_fee,
+    service_type,
+    transport_term_fee,
+  } = data.data;
 
   // Fetch parent email
   const parent = await database
@@ -143,8 +156,7 @@ export async function addStudent(prevState: any, formData: FormData) {
       message: `A new student ${name} has been added to your account`,
       email: parent.email,
     });
-
-    await database
+    const student = await database
       .insertInto("student")
       .values({
         name,
@@ -156,6 +168,27 @@ export async function addStudent(prevState: any, formData: FormData) {
         created_at: new Date(),
         profile_picture: null, // Optional field
         schoolId: null, // Optional field
+        daily_fee: daily_fee ? Number(daily_fee) : null,
+        service_type: service_type as "school" | "carpool" | "private" | null,
+        transport_term_fee: transport_term_fee
+          ? Number(transport_term_fee)
+          : null,
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    console.log("Inserted student:", student);
+
+    await database
+      .insertInto("subscriptions")
+      .values({
+        start_date: new Date(),
+        expiry_date: new Date(),
+        student_id: student.id,
+        status: "active",
+        total_paid: 0,
+        balance: 0,
+        is_commission_paid: false,
       })
       .executeTakeFirst();
 

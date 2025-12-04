@@ -59,7 +59,7 @@ export function SubscriptionSearch({ data }: { data: Subscription[] }) {
 
       <GenTable
         title="All Subscriptions"
-        cols={["student_name", "parent_name", "total_paid", "school_name"]}
+        cols={["student_name", "school_name", "daily_fee", "expiry_date"]}
         data={filteredData}
         baseLink="subscriptions/"
         uniqueKey="id"

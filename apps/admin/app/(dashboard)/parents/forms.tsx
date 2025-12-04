@@ -184,12 +184,41 @@ export function AddStudentForm({ parentId }: { parentId: string }) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="address">Address</Label>
+            <Input name="address" id="address" placeholder="Address" />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="service_type">Service Type</Label>
+            <Select name="service_type" required>
+              <SelectTrigger id="service_type">
+                <SelectValue placeholder="Select Service Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="school">School</SelectItem>
+                <SelectItem value="carpool">Carpool</SelectItem>
+                <SelectItem value="private">Private</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="daily_fee">Daily Fee</Label>
             <Input
-              name="address"
-              id="address"
-              placeholder="Address (optional)"
+              name="daily_fee"
+              id="daily_fee"
+              placeholder="daily fee (optional)"
             />
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="transport_term_fee">Transport Term Fee</Label>
+            <Input
+              name="transport_term_fee"
+              id="transport_term_fee"
+              placeholder="Transport Term Fee (optional)"
+            />
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="comments">Comments</Label>
             <Input

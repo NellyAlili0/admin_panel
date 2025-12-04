@@ -25,11 +25,17 @@ export default function PaymentsPage() {
       icon: Wallet,
     },
     {
-      title: "School Terms",
-      desc: "Manage school terms",
-      href: "/payments/terms",
+      title: "Paybill Balances",
+      desc: "View paybill account balances",
+      href: "/payments/payment-management",
       icon: CreditCard,
     },
+    // {
+    //   title: "School Terms",
+    //   desc: "Manage school terms",
+    //   href: "/payments/terms",
+    //   icon: CreditCard,
+    // },
   ];
 
   return (

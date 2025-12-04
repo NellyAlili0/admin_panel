@@ -25,6 +25,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import GenTable from "@/components/tables";
 import { use } from "react";
+import { CreateSubscription, EditStudent } from "./forms";
 
 // Define interfaces based on database schema
 interface Student {
@@ -38,59 +39,6 @@ interface Student {
   parentId: number | null;
   school: string | null;
   schoolId: number | null;
-}
-
-interface Parent {
-  id: number;
-  name: string | null;
-  email: string | null;
-  phone_number: string | null;
-  kind: "Parent" | "Driver" | "Admin" | null;
-  meta: any | null;
-  is_kyc_verified: boolean;
-  created_at: Date;
-  updated_at: Date;
-  statusName: string | null;
-}
-
-interface DailyRide {
-  id: number;
-  status: "Active" | "Inactive" | "Started" | "Finished";
-  driver: string | null;
-  start_time: Date | null;
-  end_time: Date | null;
-  kind: "Pickup" | "Dropoff";
-}
-
-interface AssignedRide {
-  id: number;
-  schedule: {
-    cost: number | null;
-    paid: number | null;
-    pickup: {
-      start_time: string;
-      location: string;
-      latitude: number;
-      longitude: number;
-    };
-    dropoff: {
-      start_time: string;
-      location: string;
-      latitude: number;
-      longitude: number;
-    };
-    comments?: string;
-    dates?: string[];
-    kind?: "Private" | "Carpool" | "Bus";
-  } | null;
-  driver: string | null;
-  admin_comments: string | null;
-  meta: any | null;
-  created_at: Date;
-  updated_at: Date;
-  status: "Requested" | "Cancelled" | "Ongoing" | "Pending" | "Completed";
-  vehicle_name: string | null;
-  registration_number: string;
 }
 
 interface School {
@@ -121,6 +69,9 @@ export default async function Page({
       "student.parentId",
       "school.name as school",
       "student.schoolId",
+      "student.transport_term_fee",
+      "student.daily_fee",
+      "student.service_type",
     ])
     .where("student.id", "=", studentId)
     .executeTakeFirst();
@@ -265,7 +216,17 @@ export default async function Page({
                 </Badge>
               </Link>
             )}
-            <button>sumbit</button>
+            <section className="flex items-center justify-center gap-3">
+              <EditStudent
+                student={student}
+                parentId={parent.id}
+                schools={schools}
+              />
+              <CreateSubscription
+                studentId={student.id}
+                studentName={student.name}
+              />
+            </section>
           </div>
         </div>
 
@@ -333,11 +294,46 @@ export default async function Page({
                       />
                     )}
                   </div>
+
+                  {student.service_type && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <Building className="h-4 w-4" />
+                        <span>Service Type</span>
+                      </div>
+                      <Badge variant="secondary" className="capitalize">
+                        {student.service_type}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {student.daily_fee && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <span className="text-lg">💰</span>
+                        <span>Daily Fee</span>
+                      </div>
+                      <p className="font-medium">
+                        KSh {student.daily_fee.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {student.transport_term_fee && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <span className="text-lg">🚌</span>
+                        <span>Transport Term Fee</span>
+                      </div>
+                      <p className="font-medium">
+                        KSh {student.transport_term_fee.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Guardian Information</CardTitle>
@@ -543,7 +539,7 @@ export default async function Page({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[400px]">
+              <div className="flex items-center justify-center ">
                 <p className="text-muted-foreground">No assigned ride found</p>
               </div>
             )}

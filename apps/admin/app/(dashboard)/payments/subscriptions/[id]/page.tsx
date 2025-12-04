@@ -1,6 +1,7 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { database } from "@/database/config";
 import { format } from "date-fns";
+import { EditSubscription } from "./forms";
 
 export default async function SubscriptionDetailPage({
   params,
@@ -46,6 +47,8 @@ export default async function SubscriptionDetailPage({
       "student.id as student_id",
       "student.name as student_name",
       "student.account_number as student_account",
+      "student.daily_fee",
+      "student.transport_term_fee",
 
       "parent.name as parent_name",
       "parent.email as parent_email",
@@ -125,6 +128,14 @@ export default async function SubscriptionDetailPage({
         <h1 className="text-2xl font-bold tracking-tight">
           Subscription Details
         </h1>
+        <EditSubscription
+          subscription={{
+            id: sub.id,
+            total_paid: sub.total_paid,
+            expiry_date: expiryDate,
+            student_name: sub.student_name,
+          }}
+        />
       </div>
 
       {/* STATUS OVERVIEW CARD */}
@@ -220,14 +231,25 @@ export default async function SubscriptionDetailPage({
 
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-sm text-muted-foreground">Subscription ID</p>
+            <p className="text-sm text-muted-foreground">Subscription Id</p>
             <p className="font-medium">{sub.id}</p>
           </div>
 
-          <div>
-            <p className="text-sm text-muted-foreground">Plan Name</p>
-            <p className="font-medium">{sub.plan_name ?? "N/A"}</p>
-          </div>
+          {sub.daily_fee && (
+            <div>
+              <p className="text-sm text-muted-foreground">Daily Fee</p>
+              <p className="font-medium">{sub.daily_fee ?? "N/A"}</p>
+            </div>
+          )}
+
+          {sub.transport_term_fee && (
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Transport Term Fee
+              </p>
+              <p className="font-medium">{sub.transport_term_fee ?? "N/A"}</p>
+            </div>
+          )}
 
           {sub.plan_duration && (
             <div>
@@ -257,11 +279,12 @@ export default async function SubscriptionDetailPage({
             <p className="text-sm text-muted-foreground">Created At</p>
             <p className="font-medium">{createdDate}</p>
           </div>
-
-          <div>
-            <p className="text-sm text-muted-foreground">Last Payment Date</p>
-            <p className="font-medium">{lastPaymentDate}</p>
-          </div>
+          {lastPaymentDate && (
+            <div>
+              <p className="text-sm text-muted-foreground">Last Payment Date</p>
+              <p className="font-medium">{lastPaymentDate}</p>
+            </div>
+          )}
 
           {sub.term_name && (
             <>
@@ -294,11 +317,6 @@ export default async function SubscriptionDetailPage({
           <div>
             <p className="text-sm text-muted-foreground">Student Name</p>
             <p className="font-medium">{sub.student_name}</p>
-          </div>
-
-          <div>
-            <p className="text-sm text-muted-foreground">Student Account</p>
-            <p className="font-medium">{sub.student_account ?? "N/A"}</p>
           </div>
 
           <div>

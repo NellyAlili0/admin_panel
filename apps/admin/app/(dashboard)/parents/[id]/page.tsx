@@ -66,8 +66,6 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     .where("user.kind", "=", "Parent")
     .executeTakeFirst();
 
-  console.log("Query result:", parentInfo);
-
   if (!parentInfo) {
     return <div>Parent not found</div>;
   }

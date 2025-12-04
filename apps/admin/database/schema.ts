@@ -419,6 +419,14 @@ export interface TermCommissionTable {
   created_at: Generated<Date>;
 }
 
+export interface AccountBalanceCallbackTable {
+  id: Generated<number>;
+  account_type: string; // ActionType
+  completed_time: Date | null;
+  raw_result: JSONColumnType<Record<string, any>> | null;
+  created_at: Generated<Date>;
+}
+
 // Database interface
 export interface Database {
   user: UserTable;
@@ -444,6 +452,7 @@ export interface Database {
   subscription_plans: SubscriptionPlanTable;
   subscriptions: SubscriptionTable;
   term_commissions: TermCommissionTable;
+  account_balance_callbacks: AccountBalanceCallbackTable;
 }
 
 // Helper types for existing tables

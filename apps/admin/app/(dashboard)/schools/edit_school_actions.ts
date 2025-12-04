@@ -2,28 +2,54 @@
 
 import { database } from "@/database/config";
 import { revalidatePath } from "next/cache";
+import { zfd } from "zod-form-data";
+import { z } from "zod";
 
 interface ActionResponse {
   message?: string;
   id?: number;
 }
 
+const updateSchoolSchema = zfd.formData({
+  school_id: zfd.numeric(),
+  admin_name: zfd.text(z.string().optional()),
+  admin_phone: zfd.text(z.string().optional()),
+  terra_email: zfd.text(z.string().optional()),
+  terra_password: zfd.text(z.string().optional()),
+  location: zfd.text(z.string().optional()),
+  bank_paybill_number: zfd.text(z.string().optional()),
+  bank_account_number: zfd.text(z.string().optional()),
+  commission_amount: zfd.text(z.string().optional()),
+  has_commission: zfd.checkbox(),
+});
+
 export async function updateCredentials(
   prevState: ActionResponse,
   formData: FormData
 ): Promise<ActionResponse> {
-  const school_id = formData.get("school_id") as string | null;
-  const admin_name = formData.get("admin_name") as string | null;
-  const admin_phone = formData.get("admin_phone") as string | null;
-  const terra_email = formData.get("terra_email") as string | null;
-  const terra_password = formData.get("terra_password") as string | null;
+  const data = updateSchoolSchema.safeParse(formData);
 
-  if (!school_id) {
-    return { message: "School Id is required" };
+  if (!data.success) {
+    console.error("Validation errors:", data.error.flatten());
+    return { message: "Invalid data provided" };
   }
 
-  const updateData: Record<string, string> = {};
+  const {
+    school_id,
+    admin_name,
+    admin_phone,
+    terra_email,
+    terra_password,
+    location,
+    bank_paybill_number,
+    bank_account_number,
+    commission_amount,
+    has_commission,
+  } = data.data;
 
+  const updateData: Record<string, any> = {};
+
+  // Update direct fields
   if (terra_email && terra_email.trim() !== "") {
     updateData.terra_email = terra_email;
   }
@@ -32,11 +58,34 @@ export async function updateCredentials(
     updateData.terra_password = terra_password;
   }
 
+  if (location && location.trim() !== "") {
+    updateData.location = location;
+  }
+
+  if (bank_paybill_number && bank_paybill_number.trim() !== "") {
+    updateData.bank_paybill_number = bank_paybill_number;
+  }
+
+  if (bank_account_number && bank_account_number.trim() !== "") {
+    updateData.bank_account_number = bank_account_number;
+  }
+
+  if (commission_amount && commission_amount.trim() !== "") {
+    const commissionNum = parseFloat(commission_amount);
+    if (!isNaN(commissionNum)) {
+      updateData.commission_amount = commissionNum;
+    }
+  }
+
+  // Always update has_commission as it's a boolean
+  updateData.has_commission = has_commission;
+
+  // Handle meta updates
   if (admin_name || admin_phone) {
     const existing = await database
       .selectFrom("school")
       .select("meta")
-      .where("id", "=", Number(school_id))
+      .where("id", "=", school_id)
       .executeTakeFirst();
 
     let meta: Record<string, any> = {};
@@ -66,16 +115,19 @@ export async function updateCredentials(
       await database
         .updateTable("school")
         .set(updateData)
-        .where("id", "=", Number(school_id))
-        .executeTakeFirst();
+        .where("id", "=", school_id)
+        .execute();
     }
 
     revalidatePath("/schools");
-    return { id: Number(school_id) };
+    revalidatePath(`/schools/${school_id}`);
+
+    return { id: school_id };
   } catch (error) {
+    console.error("Error updating school:", error);
     return {
       message:
-        "Error creating school: " +
+        "Error updating school: " +
         (error instanceof Error ? error.message : "Unknown error"),
     };
   }

@@ -13,7 +13,11 @@ const formatTransCompletedTime = (rawResult: any) => {
 
     if (parsedResult?.ResultParameters?.ResultParameter) {
       const params = parsedResult.ResultParameters.ResultParameter;
-      const transTimeParam = params.find(
+
+      // Ensure params is an array (handle single object or array)
+      const paramsArray = Array.isArray(params) ? params : [params];
+
+      const transTimeParam = paramsArray.find(
         (p: any) => p.Key === "TransCompletedTime"
       );
 

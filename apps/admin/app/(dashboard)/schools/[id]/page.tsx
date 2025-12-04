@@ -7,7 +7,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Phone, MapPin, UserIcon, Plus, Globe } from "lucide-react";
+import {
+  Phone,
+  MapPin,
+  UserIcon,
+  Plus,
+  Globe,
+  Building2,
+  CreditCard,
+  Mail,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -42,7 +51,7 @@ interface Student {
 }
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
-  const { id } = await props.params; // ✅ await params
+  const { id } = await props.params;
 
   const schoolId = Number(id);
 
@@ -55,6 +64,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       "school.location",
       "school.meta",
       "school.url",
+      "school.has_commission",
+      "school.bank_account_number",
+      "school.bank_paybill_number",
+      "school.commission_amount",
+      "school.terra_email",
+      "school.terra_password",
     ])
     .where("school.id", "=", schoolId)
     .executeTakeFirst();
@@ -108,14 +123,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             {schoolInfo.name} ({students.length} students)
           </p>
         </div>
-        {/* <Button variant="default" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Import Students
-        </Button> */}
         <section className="flex items-center gap-2 flex-wrap">
           <CreateSchoolCredentials data={data} />
-          <UploadExcel schoolId={schoolId} />
-          <UpdateSchool school_id={schoolId} />
+          <UpdateSchool school_id={schoolId} school={schoolInfo} />
         </section>
       </div>
       <Card className="mb-8">
@@ -208,6 +218,62 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                 </div>
               </section>
             </div>
+
+            {schoolInfo.terra_email && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Terra Email
+                  </p>
+                  <p className="font-semibold break-all">
+                    {schoolInfo.terra_email}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {schoolInfo.bank_paybill_number && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Bank Paybill Number
+                  </p>
+                  <p className="font-semibold">
+                    {schoolInfo.bank_paybill_number}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {schoolInfo.bank_account_number && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Bank Account Number
+                  </p>
+                  <p className="font-semibold">
+                    {schoolInfo.bank_account_number}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {schoolInfo.commission_amount && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                <span className="text-lg">💰</span>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Commission Amount
+                  </p>
+                  <p className="font-semibold">
+                    KSh {schoolInfo.commission_amount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -218,7 +284,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <CardContent>
           <GenTable
             title="All Students"
-            cols={["id", "name", "gender", "parent", "phone", "email"]}
+            cols={["id", "name", "gender", "phone", "email"]}
             data={students.map((student) => ({
               ...student,
               parent: student.parent ?? "Unknown",
