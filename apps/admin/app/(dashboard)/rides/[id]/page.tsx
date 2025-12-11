@@ -1,6 +1,7 @@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { database, sql } from "@/database/config";
 import { RideDetailsPage } from "./dets";
+import { ReassignDriverDialog } from "./form";
 
 const getCurrentDateInNairobi = () => {
   const today = new Date();
@@ -76,6 +77,26 @@ export default async function Page({
     .selectAll()
     .where("id", "=", ride.parentId)
     .executeTakeFirst();
+
+  // 🔄 NEW: Get available drivers for reassignment
+  const availableDrivers = await database
+    .selectFrom("user")
+    .leftJoin("vehicle", "vehicle.userId", "user.id")
+    .select([
+      "user.id",
+      "user.name",
+      "user.email",
+      "user.phone_number",
+      "vehicle.id as vehicleId",
+      "vehicle.vehicle_name",
+      "vehicle.registration_number",
+      "vehicle.available_seats",
+      "vehicle.status as vehicle_status",
+    ])
+    .where("user.kind", "=", "Driver")
+    .where("vehicle.status", "=", "Active")
+    .where("vehicle.available_seats", ">", 0)
+    .execute();
 
   const nairobiNow = new Date().toLocaleString("en-US", {
     timeZone: "Africa/Nairobi",
@@ -171,9 +192,17 @@ export default async function Page({
           },
         ]}
       />
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between my-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Ride Details</h1>
+        </div>
+        <div>
+          <ReassignDriverDialog
+            currentDriverId={ride.driverId}
+            currentDriverName={driver?.name || "Unknown"}
+            rideId={ride.id}
+            availableDrivers={availableDrivers}
+          />
         </div>
       </div>
       <RideDetailsPage
@@ -184,6 +213,9 @@ export default async function Page({
         guardian={guardian}
         tripHistory={formattedTripHistory}
         // route={route}
+        // 🔄 NEW: Pass available drivers and ride info
+        availableDrivers={availableDrivers}
+        rideId={ride_id}
       />
     </div>
   );

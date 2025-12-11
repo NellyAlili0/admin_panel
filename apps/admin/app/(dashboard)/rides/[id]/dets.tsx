@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import GenTable from "@/components/tables";
 import MapPreview from "../create/mapPreview";
+import { ReassignDriverDialog } from "./form";
 
 export function RideDetailsPage({
   details,
@@ -34,6 +35,8 @@ export function RideDetailsPage({
   guardian,
   tripHistory,
   route,
+  availableDrivers,
+  rideId,
 }: any) {
   // Function to render status badge
   const renderStatusBadge = (status) => {
@@ -154,6 +157,7 @@ export function RideDetailsPage({
                   </div>
                 </div>
               </div>
+
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />

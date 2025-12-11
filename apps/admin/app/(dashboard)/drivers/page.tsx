@@ -44,7 +44,9 @@ export default async function Page() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
         </div>
-        <AddDriverForm />
+        <section>
+          <AddDriverForm />
+        </section>
       </div>
 
       {/* 🔍 Search bar client component */}

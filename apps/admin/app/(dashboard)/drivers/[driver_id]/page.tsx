@@ -43,6 +43,7 @@ import {
 } from "./forms";
 import { SendNotificationForm } from "../../parents/forms";
 import KYCForm from "./KYCForm";
+import { BulkReassignDialog } from "./reassign-driver-form";
 
 const getCurrentDateInNairobi = () => {
   const today = new Date();
@@ -123,11 +124,30 @@ export default async function Page({ params }: { params: any }) {
     .executeTakeFirst();
 
   // assigned rides
-  let assignedRides = await database
+  // let assignedRides = await database
+  //   .selectFrom("ride")
+  //   .leftJoin("student", "student.id", "ride.studentId") // Changed from ride.student_id to ride.studentId
+  //   .select(["ride.id", "student.name", "ride.status", "ride.schedule"])
+  //   .where("driverId", "=", driverInfo.id) // Changed from driver_id to driverId
+  //   .execute();
+
+  const assignedRides = await database
     .selectFrom("ride")
-    .leftJoin("student", "student.id", "ride.studentId") // Changed from ride.student_id to ride.studentId
-    .select(["ride.id", "student.name", "ride.status", "ride.schedule"])
-    .where("driverId", "=", driverInfo.id) // Changed from driver_id to driverId
+    .leftJoin("student", "student.id", "ride.studentId")
+    .leftJoin("user", "user.id", "ride.parentId")
+    .leftJoin("school", "school.id", "ride.schoolId")
+    .select([
+      "ride.id",
+      "ride.status",
+      "ride.schedule",
+      "ride.created_at",
+      "student.name as student_name",
+      "user.name as parent_name",
+      "user.email as parent_email",
+      "school.name as school_name",
+    ])
+    .where("ride.driverId", "=", driverInfo.id)
+    .where("ride.status", "in", ["Ongoing", "Requested", "Pending"])
     .execute();
 
   // trip history
@@ -182,6 +202,24 @@ export default async function Page({ params }: { params: any }) {
     )
     .execute();
 
+  const allDrivers = await database
+    .selectFrom("user")
+    .select([
+      "id",
+      "name",
+      "email",
+      "phone_number as phone",
+      "wallet_balance as balance",
+      "is_kyc_verified as verified",
+    ])
+    .where("kind", "=", "Driver")
+    .execute();
+
+  const driversFormatted = allDrivers.map((d) => ({
+    ...d,
+    verified: d.verified ? "Yes" : "No",
+  }));
+
   // Helper function to safely convert database timestamps
 
   // Transform the data to include properly formatted Nairobi times
@@ -229,12 +267,12 @@ export default async function Page({ params }: { params: any }) {
           },
         ]}
       />
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 my-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight ">
             Driver Information{" "}
           </h1>
-          <p className="text-muted-foreground"> {driverInfo.name} </p>
+          <p className="text-muted-foreground mt-1"> {driverInfo.name} </p>
         </div>
         <div className="flex gap-2">
           {(vehicleInfo == null || vehicleInfo == undefined) && (
@@ -246,6 +284,12 @@ export default async function Page({ params }: { params: any }) {
           <SendNotificationForm parentId={driverInfo.id!.toString()} />
           <EditDriverForm driver={driverInfo} />
           <ChangePasswordForm driver={driverInfo} />
+          <BulkReassignDialog
+            drivers={driversFormatted}
+            currentDriverId={driverInfo.id}
+            currentDriverName={driverInfo.name}
+            activeRidesCount={assignedRides.length}
+          />
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
