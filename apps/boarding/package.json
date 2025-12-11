@@ -13,7 +13,7 @@
     "@repo/handlers": "workspace:*",
     "kysely": "^0.27.5",
     "lucide-react": "^0.501.0",
-    "next": "15.3.4",
+    "next": "15.3.6",
     "pg": "^8.16.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

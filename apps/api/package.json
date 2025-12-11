@@ -12,7 +12,7 @@
     "@react-google-maps/api": "^2.20.6",
     "@repo/database": "workspace:*",
     "@repo/handlers": "workspace:*",
-    "next": "15.3.1",
+    "next": "15.3.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.3"
