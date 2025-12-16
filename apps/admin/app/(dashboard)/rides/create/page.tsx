@@ -45,7 +45,7 @@ export default async function Page() {
       "vehicle.registration_number",
       "vehicle.seat_count",
       "vehicle.available_seats",
-      "vehicle.vehicle_type", // ✅ Include this
+      "vehicle.vehicle_type",
     ])
     .where("user.kind", "=", "Driver")
     .where("vehicle.is_inspected", "=", true)
@@ -53,14 +53,14 @@ export default async function Page() {
     .execute();
 
   const allDrivers: Driver[] = allDriversRaw.map((d) => ({
-    id: d.driver_id, // ✅ Rename to match interface
+    id: d.driver_id,
     name: d.name,
     email: d.email,
     phone_number: d.phone_number,
     vehicle_id: d.vehicle_id!,
     vehicle_name: d.vehicle_name,
     registration_number: d.registration_number!,
-    vehicle_type: d.vehicle_type!, // ✅ Required field
+    vehicle_type: d.vehicle_type!,
     seat_count: d.seat_count!,
     available_seats: d.available_seats!,
   }));
@@ -69,7 +69,21 @@ export default async function Page() {
     .selectFrom("student")
     .leftJoin("user", "student.parentId", "user.id")
     .leftJoin("school", "student.schoolId", "school.id")
-    .leftJoin("ride", "student.id", "ride.studentId")
+    .leftJoin(
+      (eb) =>
+        eb
+          .selectFrom("ride")
+          .select([
+            "ride.studentId",
+            "ride.id as ride_id",
+            "ride.schedule as ride_schedule",
+          ])
+          .distinctOn("ride.studentId")
+          .orderBy("ride.studentId")
+          .orderBy("ride.created_at", "desc")
+          .as("latest_ride"),
+      (join) => join.onRef("student.id", "=", "latest_ride.studentId")
+    )
     .select([
       "student.id as student_id",
       "student.name as student_name",
@@ -81,23 +95,57 @@ export default async function Page() {
       "user.name as parent_name",
       "user.email as parent_email",
       "user.phone_number as parent_phone",
+      "latest_ride.ride_id as ride_id",
+      "latest_ride.ride_schedule as ride_schedule",
     ])
     .where("user.kind", "=", "Parent")
-    .where("ride.id", "is", null)
+    .orderBy("student.name", "asc")
     .execute();
 
-  const allStudents: Student[] = allStudentsRaw.map((s) => ({
-    id: s.student_id,
-    name: s.student_name,
-    gender: s.gender!,
-    address: s.address,
-    school_id: s.school_id,
-    school_name: s.school_name ?? null,
-    parent_id: s.parent_id,
-    parent_name: s.parent_name,
-    parent_email: s.parent_email,
-    parent_phone: s.parent_phone,
-  }));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
+  const allStudents: Student[] = allStudentsRaw
+    .filter((s) => {
+      // Include students with no ride
+      if (!s.ride_id || !s.ride_schedule) {
+        return true;
+      }
+
+      // Parse the schedule JSON
+      let schedule: any;
+      try {
+        schedule =
+          typeof s.ride_schedule === "string"
+            ? JSON.parse(s.ride_schedule)
+            : s.ride_schedule;
+      } catch {
+        return true; // Include if we can't parse schedule
+      }
+
+      // Check if the ride has expired (last date is before today)
+      const dates = schedule?.dates;
+      if (dates && Array.isArray(dates) && dates.length > 0) {
+        const lastDate = new Date(dates[dates.length - 1]);
+        lastDate.setHours(0, 0, 0, 0);
+        return lastDate < today; // Include only if expired
+      }
+
+      // If no dates array, include the student (invalid ride data)
+      return true;
+    })
+    .map((s) => ({
+      id: s.student_id,
+      name: s.student_name,
+      gender: s.gender!,
+      address: s.address,
+      school_id: s.school_id,
+      school_name: s.school_name ?? null,
+      parent_id: s.parent_id,
+      parent_name: s.parent_name,
+      parent_email: s.parent_email,
+      parent_phone: s.parent_phone,
+    }));
 
   return (
     <div className="flex flex-col gap-2">
