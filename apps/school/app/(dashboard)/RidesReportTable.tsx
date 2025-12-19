@@ -170,13 +170,14 @@ export default function GenTable({
     },
     table: {
       style: {
-        minWidth: "100%",
+        minWidth: "100%", // Ensures table tries to fill space, but overflow wrapper handles small screens
       },
     },
   };
 
   return (
-    <div className="w-full overflow-x-auto">
+    // UPDATED: Standardized Wrapper
+    <div className="w-full overflow-x-auto bg-background rounded-md border">
       <DataTable
         title={title}
         columns={columns}

@@ -23,11 +23,14 @@ export default async function Layout({
   }
 
   return (
-    <section className="h-screen grid grid-cols-12 overflow-x-hidden">
-      <div className="col-span-2">
-        <Navbar />
-      </div>
-      <div className="col-span-10 overflow-y-auto flex flex-col gap-2 p-4 md:p-6 pt-4 ml-5">
+    // Changed from grid to flex for better responsive control
+    <section className="h-screen flex overflow-hidden bg-background">
+      {/* Navbar handles its own visibility/width logic */}
+      <Navbar />
+
+      {/* Content Area */}
+      {/* Added pt-14 for mobile to account for the menu button space */}
+      <div className="flex-1 overflow-y-auto flex flex-col gap-2 p-4 pt-16 md:pt-6 md:p-6">
         {children}
       </div>
     </section>

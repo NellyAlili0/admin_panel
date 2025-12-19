@@ -82,31 +82,40 @@ export default function GenTable({
         overflowWrap: "anywhere",
       },
     },
+    // ADDED: Enforce minimum width to trigger scrolling on mobile
+    table: {
+      style: {
+        minWidth: "600px",
+      },
+    },
   };
 
   return (
-    <DataTable
-      title={title}
-      columns={columns}
-      data={data}
-      pagination={pagination}
-      paginationServer={paginationServer}
-      paginationTotalRows={paginationTotalRows}
-      paginationPerPage={paginationPerPage}
-      onChangePage={onChangePage}
-      highlightOnHover
-      pointerOnHover
-      dense
-      onRowClicked={(row: any) => {
-        // If uniqueKey exists and is found in row, navigate
-        if (uniqueKey && row[uniqueKey]) {
-          router.push(`${baseLink}${row[uniqueKey]}`);
-        }
-      }}
-      customStyles={customStyles}
-      subHeader
-      persistTableHead
-      progressPending={progressPending}
-    />
+    // ADDED: Responsive Wrapper
+    <div className="w-full overflow-x-auto bg-background rounded-md border">
+      <DataTable
+        title={title}
+        columns={columns}
+        data={data}
+        pagination={pagination}
+        paginationServer={paginationServer}
+        paginationTotalRows={paginationTotalRows}
+        paginationPerPage={paginationPerPage}
+        onChangePage={onChangePage}
+        highlightOnHover
+        pointerOnHover
+        dense
+        onRowClicked={(row: any) => {
+          // If uniqueKey exists and is found in row, navigate
+          if (uniqueKey && row[uniqueKey]) {
+            router.push(`${baseLink}${row[uniqueKey]}`);
+          }
+        }}
+        customStyles={customStyles}
+        subHeader
+        persistTableHead
+        progressPending={progressPending}
+      />
+    </div>
   );
 }
