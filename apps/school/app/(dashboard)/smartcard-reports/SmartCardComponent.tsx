@@ -224,13 +224,13 @@ export default function SmartCardComponent({
 
   useEffect(() => {
     fetchData(currentPage);
-  }, []);
+  }, [currentPage, fetchData]);
 
   useEffect(() => {
     if (initialLoadComplete) {
       fetchData(currentPage);
     }
-  }, [currentPage]);
+  }, [currentPage, fetchData, initialLoadComplete]);
 
   useEffect(() => {
     const zoneNames = Object.keys(records);
@@ -240,7 +240,7 @@ export default function SmartCardComponent({
     ) {
       setActiveTab(zoneNames[0]);
     }
-  }, [records]);
+  }, [activeTab, records]);
 
   useEffect(() => {
     const handleOnline = () => {
