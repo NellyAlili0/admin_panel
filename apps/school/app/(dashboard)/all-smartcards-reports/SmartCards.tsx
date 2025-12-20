@@ -92,7 +92,6 @@ export default function SmartCards({
   const [loading, setLoading] = useState(true);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [totalRecords, setTotalRecords] = useState(0);
 
   // Real-time update states
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -173,7 +172,6 @@ export default function SmartCards({
 
           if (response.data && Array.isArray(response.data.data)) {
             setRecords(response.data.data);
-            setTotalRecords(response.data.total || 0);
             setError(null);
             setRetryCount(0);
           } else {
@@ -245,14 +243,12 @@ export default function SmartCards({
   const studentsInSchool = studentOverview.filter((s) => {
     const zoneName = s.zone.toLowerCase();
     const status = s.status.toLowerCase();
-    // Assuming 'school' in zone name and status is not 'out' implies they are in school
     return zoneName.includes("school") && !status.includes("out");
   });
 
   const studentsOutOfSchool = studentOverview.filter((s) => {
     const zoneName = s.zone.toLowerCase();
     const status = s.status.toLowerCase();
-    // Everyone else is not in school (either wrong zone or checked out)
     return !(zoneName.includes("school") && !status.includes("out"));
   });
 
@@ -457,7 +453,8 @@ export default function SmartCards({
 
       {/* Conditional Rendering based on Emergency Mode */}
       {isEmergencyMode ? (
-        <div className="grid grid-cols-1 gap-4">
+        // EMERGENCY VIEW: Vertical layout for all screens
+        <div className="flex flex-col gap-6">
           {/* Table 1: In School */}
           <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-2">
@@ -505,13 +502,13 @@ export default function SmartCards({
           </Card>
         </div>
       ) : (
-        // NORMAL VIEW: Search + Single Table
+        // Normal view: Search + Single Table
         <>
           <Card className="mb-4">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Search className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Search Student</h2>
+                <div className="text-lg font-semibold">Search Student</div>
               </div>
 
               <div className="flex gap-4 items-end">
