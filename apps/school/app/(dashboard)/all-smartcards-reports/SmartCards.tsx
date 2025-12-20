@@ -4,8 +4,16 @@ import NoData from "@/components/NoData";
 import { useEffect, useState, useRef, useCallback } from "react";
 import GenTable from "@/components/SmartCardTable";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw, Wifi, WifiOff, Search, X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Search,
+  X,
+  AlertTriangle,
+  ArrowLeft,
+} from "lucide-react";
 import Loading from "@/components/ui/Loading";
 
 type RawRecord = {
@@ -94,6 +102,9 @@ export default function SmartCards({
 
   // Simplified search - only user name
   const [searchUser, setSearchUser] = useState("");
+
+  // Emergency Mode State
+  const [isEmergencyMode, setIsEmergencyMode] = useState(false);
 
   // Refs for cleanup
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -219,7 +230,7 @@ export default function SmartCards({
   // Get student overview (deduplicated, latest check-in, sorted)
   const studentOverview = getStudentOverview(records);
 
-  // Filter by user name only
+  // Filter logic for normal view
   const filteredStudents = studentOverview.filter((student) => {
     if (
       searchUser &&
@@ -228,6 +239,21 @@ export default function SmartCards({
       return false;
     }
     return true;
+  });
+
+  // Filter logic for Emergency View
+  const studentsInSchool = studentOverview.filter((s) => {
+    const zoneName = s.zone.toLowerCase();
+    const status = s.status.toLowerCase();
+    // Assuming 'school' in zone name and status is not 'out' implies they are in school
+    return zoneName.includes("school") && !status.includes("out");
+  });
+
+  const studentsOutOfSchool = studentOverview.filter((s) => {
+    const zoneName = s.zone.toLowerCase();
+    const status = s.status.toLowerCase();
+    // Everyone else is not in school (either wrong zone or checked out)
+    return !(zoneName.includes("school") && !status.includes("out"));
   });
 
   // Auto-refresh every 2 minutes
@@ -346,15 +372,33 @@ export default function SmartCards({
             },
           ]}
         />
-        <button className="lg:w-1/4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded shadow-lg transition-all active:scale-95 text-lg cursor-pointer">
-          Emergency
+        {/* Emergency Button Toggles Mode */}
+        <button
+          onClick={() => setIsEmergencyMode(!isEmergencyMode)}
+          className={`lg:w-1/4 font-bold py-2 px-6 rounded shadow-lg transition-all active:scale-95 text-lg cursor-pointer flex items-center justify-center gap-2 ${
+            isEmergencyMode
+              ? "bg-gray-500 hover:bg-gray-600 text-white"
+              : "bg-red-500 hover:bg-red-600 text-white"
+          }`}
+        >
+          {isEmergencyMode ? (
+            <>
+              <ArrowLeft className="h-5 w-5" /> Exit Emergency
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="h-5 w-5" /> Emergency
+            </>
+          )}
         </button>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight my-4">
-            Student Location Overview
+            {isEmergencyMode
+              ? "Emergency Roll Call"
+              : "Student Location Overview"}
           </h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground my-3">
             <span className="font-medium">
@@ -411,58 +455,112 @@ export default function SmartCards({
         </div>
       )}
 
-      <Card className="mb-4">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Search className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">Search Student</h2>
-          </div>
+      {/* Conditional Rendering based on Emergency Mode */}
+      {isEmergencyMode ? (
+        <div className="grid grid-cols-1 gap-4">
+          {/* Table 1: In School */}
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-green-700 flex justify-between items-center">
+                <span>Present in School</span>
+                <span className="text-sm bg-green-100 px-3 py-1 rounded-full">
+                  {studentsInSchool.length}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <GenTable
+                  title="Students Checked In"
+                  cols={["student", "zone", "time_in"]}
+                  data={studentsInSchool}
+                  baseLink=""
+                  uniqueKey=""
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">
-                Student Name
-              </label>
-              <input
-                type="text"
-                placeholder="Search by student name..."
-                value={searchUser}
-                onChange={(e) => setSearchUser(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          {/* Table 2: Not In School */}
+          <Card className="border-l-4 border-l-red-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-red-700 flex justify-between items-center">
+                <span>Absent / Not in Zone</span>
+                <span className="text-sm bg-red-100 px-3 py-1 rounded-full">
+                  {studentsOutOfSchool.length}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <GenTable
+                  title="Students Not Checked In"
+                  cols={["student", "zone", "time_in"]}
+                  data={studentsOutOfSchool}
+                  baseLink=""
+                  uniqueKey=""
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        // NORMAL VIEW: Search + Single Table
+        <>
+          <Card className="mb-4">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Search Student</h2>
+              </div>
 
-            {searchUser && (
-              <button
-                onClick={() => setSearchUser("")}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
-              >
-                <X className="h-4 w-4" />
-                Clear
-              </button>
-            )}
-          </div>
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium mb-1">
+                    Student Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by student name..."
+                    value={searchUser}
+                    onChange={(e) => setSearchUser(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
 
-          <div className="mt-4 text-sm text-muted-foreground">
-            Showing {filteredStudents.length} of {studentOverview.length}{" "}
-            students
-          </div>
-        </CardContent>
-      </Card>
+                {searchUser && (
+                  <button
+                    onClick={() => setSearchUser("")}
+                    className="px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Clear
+                  </button>
+                )}
+              </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="rounded-md border">
-            <GenTable
-              title={`Current Student Locations (${filteredStudents.length} students)`}
-              cols={["student", "zone", "time_in", "time_out", "status"]}
-              data={filteredStudents}
-              baseLink=""
-              uniqueKey=""
-            />
-          </div>
-        </CardContent>
-      </Card>
+              <div className="mt-4 text-sm text-muted-foreground">
+                Showing {filteredStudents.length} of {studentOverview.length}{" "}
+                students
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="rounded-md border">
+                <GenTable
+                  title={`Current Student Locations (${filteredStudents.length} students)`}
+                  cols={["student", "zone", "time_in", "time_out", "status"]}
+                  data={filteredStudents}
+                  baseLink=""
+                  uniqueKey=""
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
