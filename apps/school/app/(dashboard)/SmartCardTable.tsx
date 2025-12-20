@@ -34,24 +34,23 @@ export default function GenTable({
   const router = useRouter();
   const columns: any = [];
 
-  // Always exclude `id` from displayed columns
   const visibleCols = cols.filter(
     (col) =>
       col.toLowerCase() !== "id" &&
       col.toLowerCase() !== uniqueKey.toLowerCase()
   );
 
-  // Replace `created_at` with `date` for UI consistency
   const normalizedCols = visibleCols.map((col) =>
     col === "created_at" ? "date" : col
   );
 
-  // Dynamically build visible columns
   for (const element of normalizedCols) {
     const temp: any = {
       name:
         element.charAt(0).toUpperCase() + element.slice(1).replaceAll("_", " "),
       selector: (row: any) => row[element],
+      minWidth: "150px",
+      wrap: true,
     };
 
     if (
@@ -82,7 +81,6 @@ export default function GenTable({
         overflowWrap: "anywhere",
       },
     },
-    // ADDED: Enforce minimum width to trigger scrolling on mobile
     table: {
       style: {
         minWidth: "600px",
@@ -91,7 +89,6 @@ export default function GenTable({
   };
 
   return (
-    // ADDED: Responsive Wrapper
     <div className="w-full overflow-x-auto bg-background rounded-md border">
       <DataTable
         title={title}
@@ -106,7 +103,6 @@ export default function GenTable({
         pointerOnHover
         dense
         onRowClicked={(row: any) => {
-          // If uniqueKey exists and is found in row, navigate
           if (uniqueKey && row[uniqueKey]) {
             router.push(`${baseLink}${row[uniqueKey]}`);
           }

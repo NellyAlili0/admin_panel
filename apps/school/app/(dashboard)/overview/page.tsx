@@ -14,7 +14,6 @@ async function Overview() {
   // All statistics derived from students of this school through their rides
   const [vehicleCount, driverCount, parentCount, rideCount] = await Promise.all(
     [
-      // Vehicles: Get unique vehicles from rides of students in this school
       database
         .selectFrom("student")
         .innerJoin("ride", "ride.studentId", "student.id")
@@ -25,7 +24,6 @@ async function Overview() {
         .where("ride.vehicleId", "is not", null)
         .executeTakeFirst(),
 
-      // Drivers: Get unique drivers from rides of students in this school
       database
         .selectFrom("student")
         .innerJoin("ride", "ride.studentId", "student.id")
@@ -37,7 +35,6 @@ async function Overview() {
         .where("driver.kind", "=", "Driver")
         .executeTakeFirst(),
 
-      // Parents: Get unique parents from students in this school
       database
         .selectFrom("student")
         .innerJoin("user as parent", "student.parentId", "parent.id")
@@ -46,7 +43,6 @@ async function Overview() {
         .where("parent.kind", "=", "Parent")
         .executeTakeFirst(),
 
-      // Total rides: All rides for students in this school
       database
         .selectFrom("student")
         .innerJoin("ride", "ride.studentId", "student.id")
@@ -64,7 +60,6 @@ async function Overview() {
     total_rides: rideCount?.count ?? 0,
   };
 
-  // Latest 5 students in this school
   const latestStudents = await database
     .selectFrom("student")
     .leftJoin("user as parent", "student.parentId", "parent.id")
@@ -151,19 +146,22 @@ async function Overview() {
           </CardContent>
         </Card>
       </div>
+
       <div className="grid gap-4 md:grid-cols-7 mt-4">
         <Card className="md:col-span-12">
           <CardHeader>
             <CardTitle>Recently Added Students</CardTitle>
           </CardHeader>
           <CardContent>
-            <GenTable
-              title="Recently Added Students"
-              cols={["name", "gender", "phone_number"]}
-              data={latestStudents}
-              baseLink="/records/students/"
-              uniqueKey="id"
-            />
+            <div className="w-full overflow-x-auto">
+              <GenTable
+                title="Recently Added Students"
+                cols={["name", "gender", "phone_number"]}
+                data={latestStudents}
+                baseLink="/records/students/"
+                uniqueKey="id"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

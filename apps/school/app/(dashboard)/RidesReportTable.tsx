@@ -34,14 +34,12 @@ export default function GenTable({
   const router = useRouter();
   const columns: any[] = [];
 
-  // Hide ID fields
   const visibleCols = cols.filter(
     (col) =>
       col.toLowerCase() !== "id" &&
       col.toLowerCase() !== uniqueKey.toLowerCase()
   );
 
-  // Rename created_at → date
   const normalizedCols = visibleCols.map((col) =>
     col === "created_at" ? "date" : col
   );
@@ -52,7 +50,7 @@ export default function GenTable({
         element.charAt(0).toUpperCase() + element.slice(1).replaceAll("_", " "),
       selector: (row: any) => row[element],
       wrap: true,
-      style: {}, // IMPORTANT: width styles go inside style object
+      style: {},
     };
 
     // Width rules
@@ -82,7 +80,6 @@ export default function GenTable({
       temp.style.minWidth = "120px";
     }
 
-    // Date columns formatting
     if (
       element === "date" ||
       element === "start_time" ||
@@ -98,7 +95,6 @@ export default function GenTable({
       temp.sortable = true;
     }
 
-    // Status badge
     if (element === "status") {
       temp.cell = (row: any) => {
         const status = row[element];
@@ -119,7 +115,6 @@ export default function GenTable({
       };
     }
 
-    // Kind badge
     if (element === "kind") {
       temp.cell = (row: any) => {
         const kind = row[element];
@@ -170,13 +165,12 @@ export default function GenTable({
     },
     table: {
       style: {
-        minWidth: "100%", // Ensures table tries to fill space, but overflow wrapper handles small screens
+        minWidth: "1000px",
       },
     },
   };
 
   return (
-    // UPDATED: Standardized Wrapper
     <div className="w-full overflow-x-auto bg-background rounded-md border">
       <DataTable
         title={title}
