@@ -16,7 +16,7 @@ function Zone({ email, password }: Props) {
   const fetchZones = async () => {
     try {
       setLoading(true);
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
 
       const res = await fetch(`${baseUrl}/api/smartcards/zone`, {
         method: "POST",

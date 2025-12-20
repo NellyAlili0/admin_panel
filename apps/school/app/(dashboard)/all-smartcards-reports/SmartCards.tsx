@@ -221,7 +221,6 @@ export default function SmartCards({
 
   // Filter by user name only
   const filteredStudents = studentOverview.filter((student) => {
-    // CHANGED: Updated filter to use 'student.student' instead of 'student.user'
     if (
       searchUser &&
       !student.student.toLowerCase().includes(searchUser.toLowerCase())
@@ -338,14 +337,20 @@ export default function SmartCards({
 
   return (
     <div className="flex flex-col gap-2">
-      <Breadcrumbs
-        items={[
-          {
-            href: "/smartcard-reports",
-            label: "Smart Card Reports",
-          },
-        ]}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+        <Breadcrumbs
+          items={[
+            {
+              href: "/smartcard-reports",
+              label: "Smart Card Reports",
+            },
+          ]}
+        />
+        <button className="lg:w-1/4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded shadow-lg transition-all active:scale-95 text-lg cursor-pointer">
+          Emergency
+        </button>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight my-4">

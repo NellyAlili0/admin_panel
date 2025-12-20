@@ -21,7 +21,7 @@ function Parents({ email, password, tag }: Props) {
     async (page: number = 1) => {
       setLoading(true);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
         const res = await fetch(
           `${baseUrl}/api/smartcards/accounts/parentsByTags`,
           {
