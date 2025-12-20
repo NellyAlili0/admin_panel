@@ -27,7 +27,7 @@ type CleanRecord = {
   id: string;
   code: string;
   zone: string;
-  user: string;
+  student: string;
   phone: string;
   time_in: string;
   time_out: string;
@@ -39,7 +39,7 @@ export function transformRecords(raw: RawRecord[]): CleanRecord[] {
     id: item.id,
     code: item.code,
     zone: item.zone?.name || "",
-    user: item.user?.name || "",
+    student: item.user?.name || "",
     phone: item.user?.phone || "",
     time_in: item.checkin_at,
     time_out: item.checkout_at,
@@ -119,7 +119,6 @@ export default function SmartCardComponent({
   // Fetch smart card data
   const fetchData = useCallback(
     async (page: number, isAutoRefresh = false) => {
-      // Cancel any ongoing requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -151,14 +150,12 @@ export default function SmartCardComponent({
           setError(errJson.error || "Failed to fetch data");
           setIsOnline(false);
 
-          // On initial load failure, still mark as complete so NoData shows
           if (!initialLoadComplete) {
             setInitialLoadComplete(true);
           }
         } else {
           const response = await res.json();
 
-          // Check if data exists
           if (response.data && Array.isArray(response.data.data)) {
             const grouped = groupByZone(response.data.data);
             setRecords(grouped);
@@ -202,12 +199,10 @@ export default function SmartCardComponent({
     [activeTab, email, password, tag, initialLoadComplete]
   );
 
-  // Manual refresh handler
   const handleManualRefresh = useCallback(() => {
     fetchData(currentPage, false);
   }, [currentPage, fetchData]);
 
-  // Auto-refresh
   useEffect(() => {
     if (autoRefresh && isOnline && initialLoadComplete) {
       intervalRef.current = setInterval(
@@ -227,19 +222,16 @@ export default function SmartCardComponent({
     }
   }, [autoRefresh, isOnline, currentPage, fetchData, initialLoadComplete]);
 
-  // Initial fetch - only run once on mount
   useEffect(() => {
     fetchData(currentPage);
-  }, []); // Empty deps - only run on mount
+  }, []);
 
-  // Refetch when page changes (but not on initial mount)
   useEffect(() => {
     if (initialLoadComplete) {
       fetchData(currentPage);
     }
   }, [currentPage]);
 
-  // Sync activeTab with available zones
   useEffect(() => {
     const zoneNames = Object.keys(records);
     if (
@@ -250,7 +242,6 @@ export default function SmartCardComponent({
     }
   }, [records]);
 
-  // Online/offline detection
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -269,7 +260,6 @@ export default function SmartCardComponent({
     };
   }, [currentPage, autoRefresh, fetchData, initialLoadComplete]);
 
-  // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
 
@@ -284,15 +274,13 @@ export default function SmartCardComponent({
     };
   }, []);
 
-  // Show loading only during initial load
   if (loading && !initialLoadComplete) {
     return <Loading />;
   }
 
-  // Show NoData only after initial load completes and no data exists
   if (initialLoadComplete && Object.keys(records).length === 0) {
     return (
-      <div className="flex flex-col gap-2  ">
+      <div className="flex flex-col gap-2">
         <Breadcrumbs
           items={[
             {
@@ -321,7 +309,7 @@ export default function SmartCardComponent({
   const zoneNames = Object.keys(records);
 
   return (
-    <div className="flex flex-col gap-2  ">
+    <div className="flex flex-col gap-2">
       <Breadcrumbs
         items={[
           {
@@ -335,12 +323,14 @@ export default function SmartCardComponent({
           <h1 className="text-3xl font-bold tracking-tight my-4">
             Smart Card Records
           </h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground my-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-muted-foreground my-3">
             <span>
               Page {currentPage} of {totalPages}
             </span>
             {lastUpdated && (
-              <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+              <span className="hidden sm:inline">
+                • Last updated: {lastUpdated.toLocaleTimeString()}
+              </span>
             )}
             <div className="flex items-center gap-1">
               {isOnline ? (
@@ -355,47 +345,49 @@ export default function SmartCardComponent({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <label className="flex items-center gap-2 text-sm mr-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="rounded"
             />
-            Auto-refresh (2 min)
+            <span className="whitespace-nowrap">Auto-refresh (2 min)</span>
           </label>
 
-          <button
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-          </button>
+          <div className="flex items-center gap-2 ml-auto md:ml-0">
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50"
+              title="Refresh data"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </button>
 
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            Previous
-          </button>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Previous
+            </button>
 
-          <span className="px-3 py-1 text-sm">
-            {currentPage} / {totalPages}
-          </span>
+            <span className="px-2 py-1 text-sm font-medium">
+              {currentPage} / {totalPages}
+            </span>
 
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            Next
-          </button>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -406,7 +398,7 @@ export default function SmartCardComponent({
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="flex mb-4 items-center gap-2 flex-wrap">
+            <TabsList className="flex mb-4 items-center gap-2 flex-wrap h-auto p-1">
               {zoneNames.map((zone) => (
                 <TabsTrigger
                   key={zone}
@@ -421,17 +413,25 @@ export default function SmartCardComponent({
 
             {zoneNames.map((zone) => (
               <TabsContent key={zone} value={zone} className="space-y-4">
-                <div className="rounded-md border">
-                  <GenTable
-                    title={`${zone} Records`}
-                    cols={["zone", "user", "time_in", "time_out", "status"]}
-                    data={transformRecords(records[zone])}
-                    baseLink=""
-                    uniqueKey=""
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
+                <div className="rounded-md border overflow-x-auto">
+                  <div className="min-w-[800px]">
+                    <GenTable
+                      title={`${zone} Records`}
+                      cols={[
+                        "zone",
+                        "student",
+                        "time_in",
+                        "time_out",
+                        "status",
+                      ]}
+                      data={transformRecords(records[zone])}
+                      baseLink=""
+                      uniqueKey=""
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                    />
+                  </div>
                 </div>
               </TabsContent>
             ))}
