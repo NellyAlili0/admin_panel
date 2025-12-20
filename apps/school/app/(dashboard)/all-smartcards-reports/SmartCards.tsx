@@ -23,7 +23,7 @@ type RawRecord = {
 
 type StudentOverview = {
   id: string;
-  user: string;
+  student: string;
   phone: string;
   zone: string;
   time_in: string;
@@ -57,7 +57,7 @@ export function getStudentOverview(raw: RawRecord[]): StudentOverview[] {
   // Convert to array and transform
   const overview = Array.from(userMap.values()).map((item) => ({
     id: item.user.id,
-    user: item.user.name || "",
+    student: item.user.name || "",
     phone: item.user.phone || "",
     zone: item.zone?.name || "",
     time_in: item.checkin_at,
@@ -65,8 +65,8 @@ export function getStudentOverview(raw: RawRecord[]): StudentOverview[] {
     status: item.status,
   }));
 
-  // Sort alphabetically by user name
-  return overview.sort((a, b) => a.user.localeCompare(b.user));
+  // Sort alphabetically by student name
+  return overview.sort((a, b) => a.student.localeCompare(b.student));
 }
 
 interface SmartCardDashboardProps {
@@ -221,9 +221,10 @@ export default function SmartCards({
 
   // Filter by user name only
   const filteredStudents = studentOverview.filter((student) => {
+    // CHANGED: Updated filter to use 'student.student' instead of 'student.user'
     if (
       searchUser &&
-      !student.user.toLowerCase().includes(searchUser.toLowerCase())
+      !student.student.toLowerCase().includes(searchUser.toLowerCase())
     ) {
       return false;
     }
@@ -253,7 +254,7 @@ export default function SmartCards({
   // Initial fetch
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [fetchAllData]);
 
   // Online/offline detection
   useEffect(() => {
@@ -405,7 +406,6 @@ export default function SmartCards({
         </div>
       )}
 
-      {/* Simplified Search Section - User Name Only */}
       <Card className="mb-4">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
@@ -450,7 +450,7 @@ export default function SmartCards({
           <div className="rounded-md border">
             <GenTable
               title={`Current Student Locations (${filteredStudents.length} students)`}
-              cols={["user", "zone", "time_in", "time_out", "status"]}
+              cols={["student", "zone", "time_in", "time_out", "status"]}
               data={filteredStudents}
               baseLink=""
               uniqueKey=""
