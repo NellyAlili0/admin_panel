@@ -71,11 +71,11 @@ function Zone({ email, password }: Props) {
 
       {/* Forms and tables */}
       <div className="flex flex-col gap-2">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Zones</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+          <h1 className="text-3xl font-bold tracking-tight">Zones</h1>
+          <div className="w-full sm:w-auto [&_button]:w-full sm:[&_button]:w-auto">
+            <AddZoneForm onZoneAdded={fetchZones} />
           </div>
-          {<AddZoneForm onZoneAdded={fetchZones} />}
         </div>
         {loading ? (
           <section className="w-full h-full flex items-center justify-center mt-24">
