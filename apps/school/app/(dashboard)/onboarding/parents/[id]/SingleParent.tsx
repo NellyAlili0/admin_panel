@@ -111,7 +111,7 @@ export default function SingleParent({ email, password, parent_id }: Props) {
             Parent Info
           </h1>
         </div>
-        {/* <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center">
           {parentInfo.wallets && parentInfo.wallets.length > 0 && (
             <>
               <AddStudentForm
@@ -121,7 +121,7 @@ export default function SingleParent({ email, password, parent_id }: Props) {
               />
             </>
           )}
-        </div> */}
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card className="lg:col-span-2">

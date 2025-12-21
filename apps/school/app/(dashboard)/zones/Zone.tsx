@@ -16,7 +16,7 @@ function Zone({ email, password }: Props) {
   const fetchZones = async () => {
     try {
       setLoading(true);
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
       const res = await fetch(`${baseUrl}/api/smartcards/zone`, {
         method: "POST",
@@ -75,7 +75,7 @@ function Zone({ email, password }: Props) {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Zones</h1>
           </div>
-          {/* <AddZoneForm onZoneAdded={fetchZones} /> */}
+          {<AddZoneForm onZoneAdded={fetchZones} />}
         </div>
         {loading ? (
           <section className="w-full h-full flex items-center justify-center mt-24">
