@@ -8,10 +8,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { addZone } from "./actions";
+import { addZone, whitelistTag, addZoneTag, getSchoolTags } from "./actions";
 import { initialState } from "@/lib/utils";
 import { toast } from "sonner";
+import { PlusCircle, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
+// --- EXISTING ADD ZONE FORM ---
 interface AddZoneFormProps {
   onZoneAdded?: () => void;
 }
@@ -22,15 +31,13 @@ export const AddZoneForm = ({ onZoneAdded }: AddZoneFormProps) => {
   const [lastProcessedState, setLastProcessedState] = useState<any>(null);
 
   useEffect(() => {
-    // Don't process the same state twice or initial state
     if (state === lastProcessedState || state === initialState) return;
-
     if (state?.message) {
       if (state?.success) {
         toast.success(state.message);
-        setOpen(false); // Close the dialog on success
+        setOpen(false);
         setLastProcessedState(state);
-        onZoneAdded?.(); // Refresh the zones list
+        onZoneAdded?.();
       } else {
         toast.error(state.message);
         setLastProcessedState(state);
@@ -38,11 +45,8 @@ export const AddZoneForm = ({ onZoneAdded }: AddZoneFormProps) => {
     }
   }, [state, lastProcessedState, onZoneAdded]);
 
-  // Reset processed state when dialog closes
   useEffect(() => {
-    if (!open) {
-      setLastProcessedState(null);
-    }
+    if (!open) setLastProcessedState(null);
   }, [open]);
 
   return (
@@ -58,89 +62,229 @@ export const AddZoneForm = ({ onZoneAdded }: AddZoneFormProps) => {
             Create Zone
           </DialogTitle>
         </DialogHeader>
-
         <form action={action} className="flex flex-col gap-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Name */}
             <div className="md:col-span-2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name
               </label>
               <input
                 required
                 type="text"
-                id="name"
                 name="name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out focus:ring-2 focus:ring-[#efb100] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="westlands"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300"
+                placeholder="e.g. Westlands"
                 disabled={isPending}
               />
             </div>
-            {/* Note */}
             <div className="md:col-span-2">
-              <label
-                htmlFor="note"
-                className="block text-sm font-medium text-gray-700 mb-1"
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Zone Type
+              </label>
+              <select
+                required
+                name="type"
+                defaultValue="standard"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300"
+                disabled={isPending}
               >
+                <option value="standard">Standard Zone</option>
+                <option value="school">School Zone (Default)</option>
+                <option value="other">Other (Requires Input)</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <input
                 type="text"
-                id="note"
                 name="note"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 transition duration-150 ease-in-out focus:ring-2 focus:ring-[#efb100] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="Zone for westlands area"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300"
+                placeholder="Description"
                 disabled={isPending}
               />
             </div>
           </div>
-
-          {/* Error message display */}
-          {state?.message && !state?.success && (
-            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{state.message}</p>
-            </div>
-          )}
-
-          {/* Submit Button */}
           <div className="mt-8">
             <button
               type="submit"
               disabled={isPending}
-              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#efb100] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-medium py-3 px-4 rounded-lg"
             >
-              {isPending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Creating Zone...
-                </span>
-              ) : (
-                "Create Zone"
-              )}
+              {isPending ? "Creating..." : "Create Zone"}
             </button>
           </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// --- UPDATED WHITELIST FORM (With Dropdown) ---
+interface WhitelistFormProps {
+  zoneId: string;
+  entityType: "account" | "dependant";
+  onSuccess?: () => void;
+}
+
+export const WhitelistForm = ({
+  zoneId,
+  entityType,
+  onSuccess,
+}: WhitelistFormProps) => {
+  const [state, action, isPending] = useActionState(whitelistTag, initialState);
+  const [open, setOpen] = useState(false);
+  const [tags, setTags] = useState<any[]>([]);
+  const [loadingTags, setLoadingTags] = useState(false);
+
+  // Fetch tags when dialog opens
+  useEffect(() => {
+    if (open) {
+      setLoadingTags(true);
+      getSchoolTags(entityType)
+        .then((data) => setTags(data))
+        .catch(() => toast.error("Failed to load tags"))
+        .finally(() => setLoadingTags(false));
+    }
+  }, [open, entityType]);
+
+  useEffect(() => {
+    if (state?.success) {
+      toast.success(state.message);
+      setOpen(false);
+      onSuccess?.();
+    } else if (state?.message) {
+      toast.error(state.message);
+    }
+  }, [state, onSuccess]);
+
+  const title =
+    entityType === "account"
+      ? "Whitelist Parent Groups"
+      : "Whitelist Student Groups";
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
+          <ShieldCheck className="h-3 w-3" /> Whitelist
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
+        </DialogHeader>
+        <form action={action} className="flex flex-col gap-4 mt-4">
+          <input type="hidden" name="zone_id" value={zoneId} />
+          <input type="hidden" name="entity" value={entityType} />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Tag to Whitelist
+            </label>
+            {loadingTags ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 border p-2 rounded">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading tags...
+              </div>
+            ) : (
+              <Select name="tag_uuid" required>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a tag..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tags.length > 0 ? (
+                    tags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-gray-500 text-center">
+                      No tags found
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Adding this tag will allow all {entityType}s with this tag to
+              access the zone.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isPending || loadingTags}
+            className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-bold py-2 px-4 rounded-md mt-4 disabled:opacity-50"
+          >
+            {isPending ? "Saving..." : "Whitelist Tag"}
+          </button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// --- ZONE TAG FORM (Matches Screenshot 5) ---
+interface ZoneTagFormProps {
+  zoneId: string;
+  onSuccess?: () => void;
+}
+
+export const ZoneTagForm = ({ zoneId, onSuccess }: ZoneTagFormProps) => {
+  const [state, action, isPending] = useActionState(addZoneTag, initialState);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (state?.success) {
+      toast.success(state.message);
+      setOpen(false);
+      onSuccess?.();
+    } else if (state?.message) {
+      toast.error(state.message);
+    }
+  }, [state, onSuccess]);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button className="text-green-600 hover:text-green-800 font-medium text-sm flex items-center gap-1">
+          <PlusCircle className="h-3 w-3" /> Add Tag
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">
+            Add Tag to Zone
+          </DialogTitle>
+        </DialogHeader>
+        <form action={action} className="flex flex-col gap-4 mt-4">
+          <input type="hidden" name="zone_id" value={zoneId} />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tags <span className="text-red-500">*</span>
+            </label>
+            <input
+              required
+              type="text"
+              name="tag_uuid"
+              placeholder="Type to search..."
+              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-red-400 mt-1">
+              At least one tag is required
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full bg-[#efb100] hover:bg-[#efaf00a8] text-white font-bold py-2 px-4 rounded-md mt-4"
+          >
+            {isPending ? "Saving..." : "Save"}
+          </button>
         </form>
       </DialogContent>
     </Dialog>

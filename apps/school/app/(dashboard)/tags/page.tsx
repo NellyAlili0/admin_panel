@@ -1,23 +1,18 @@
-import { database } from "@/database/config";
 import NoData from "@/components/NoData";
 import { cookies } from "next/headers";
-import Parents from "./Parents";
+import { database } from "@/database/config";
+import TagsClient from "./TagsClient";
 
 export default async function Page() {
   const cookieStore = await cookies();
   const id = cookieStore.get("school_id")?.value;
   const school_id = Number(id);
 
-  if (!school_id) {
-    console.log("No school_id found in cookies");
-    return <NoData />;
-  }
+  if (!school_id) return <NoData />;
 
   const schoolInfo = await database
     .selectFrom("school")
     .select([
-      "school.id",
-      "school.name",
       "school.terra_email",
       "school.terra_password",
       "school.terra_tag_id",
@@ -32,15 +27,14 @@ export default async function Page() {
       schoolInfo.terra_tag_id
     )
   ) {
-    console.log("Missing Terra credentials: email, password, or tag ID");
     return <NoData />;
   }
 
   return (
-    <Parents
+    <TagsClient
       email={schoolInfo.terra_email}
       password={schoolInfo.terra_password}
-      tag={schoolInfo.terra_tag_id} // ✅ Ensure this is passed
+      schoolTagId={schoolInfo.terra_tag_id}
     />
   );
 }

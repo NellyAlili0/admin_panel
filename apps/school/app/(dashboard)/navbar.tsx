@@ -20,11 +20,12 @@ import {
   IdCard,
   Menu,
   X,
+  Tag,
+  ShieldCheck, // Added ShieldCheck Icon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { logout } from "../login/actions";
-// import { logout } from "@/app/login/actions"
 
 export function Navbar() {
   const pathname = usePathname();
@@ -118,6 +119,20 @@ export function Navbar() {
           icon: Map,
           active: pathname === "/zones" || pathname.startsWith("/zones/"),
         },
+        {
+          href: "/tags",
+          label: "Tags",
+          icon: Tag,
+          active: pathname === "/tags" || pathname.startsWith("/tags/"),
+        },
+        // ADDED: Access Control Menu Item
+        {
+          href: "/whitelist",
+          label: "Access Control",
+          icon: ShieldCheck,
+          active:
+            pathname === "/whitelist" || pathname.startsWith("/whitelist/"),
+        },
       ],
     },
     {
@@ -166,7 +181,6 @@ export function Navbar() {
             </div>
             <ul className="flex flex-col gap-2 w-full items-start">
               {menuStructure.map((item) => {
-                // Single link school
                 if (item.type === "link") {
                   return (
                     <li key={item.label} className="w-full">
@@ -187,7 +201,6 @@ export function Navbar() {
                   );
                 }
 
-                // Collapsible (Transport, Smartcards)
                 const isOpen = openSections.includes(item.label);
                 const isGroupActive = item.items?.some((sub) => sub.active);
 

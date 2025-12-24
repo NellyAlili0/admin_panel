@@ -9,13 +9,8 @@ import {
 } from "@/components/ui/card";
 import { database } from "@/database/config";
 import { Mail, MapPin, Phone, School, User } from "lucide-react";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-
-interface School {
-  id: number;
-  name: string;
-}
+import StudentZoneManager from "../../students/[id]/StudentZoneManager";
+import { getValidToken } from "@/app/api/smartcards/utils/auth";
 
 export default async function Page({
   params,
@@ -25,7 +20,7 @@ export default async function Page({
   const { id } = await params;
   const studentId = Number(id);
 
-  // Fetch student info with school name
+  // 1. Fetch Student from DB
   const student = await database
     .selectFrom("student")
     .leftJoin("school", "school.id", "student.schoolId")
@@ -38,6 +33,7 @@ export default async function Page({
       "student.created_at",
       "student.profile_picture",
       "student.parentId",
+      "student.meta",
       "school.name as school",
       "student.schoolId",
     ])
@@ -48,7 +44,7 @@ export default async function Page({
     return <div>Student not found</div>;
   }
 
-  // Fetch parent info with status name
+  // 2. Fetch Parent from DB
   const parent = await database
     .selectFrom("user")
     .leftJoin("status", "status.id", "user.statusId")
@@ -67,30 +63,84 @@ export default async function Page({
     .where("user.id", "=", student.parentId ?? 0)
     .executeTakeFirst();
 
-  if (!parent) {
-    return <div>Parent not found</div>;
-  }
+  // 3. Fetch Zones & Student Tag from Terra API
+  let detailedZones: any[] = [];
+  // Try to find the Tag ID in meta. Adjust property name if your DB differs.
+  const studentTerraTag =
+    (student.meta as any)?.terra_tag_id || (student.meta as any)?.tag_id || "";
 
-  // Fetch all schools
-  const schools = await database
-    .selectFrom("school")
-    .select(["id", "name"])
-    .execute();
+  if (student.schoolId) {
+    const schoolCreds = await database
+      .selectFrom("school")
+      .select(["terra_email", "terra_password", "terra_tag_id"])
+      .where("id", "=", student.schoolId)
+      .executeTakeFirst();
+
+    if (schoolCreds?.terra_email && schoolCreds?.terra_password) {
+      try {
+        const { token } = await getValidToken(
+          schoolCreds.terra_email,
+          schoolCreds.terra_password
+        );
+
+        // A. Fetch List of Zones filtered by School Tag
+        // Note: The list response does NOT contain whitelist info, so we just get IDs here.
+        let basicZones: any[] = [];
+        if (schoolCreds.terra_tag_id) {
+          const zonesRes = await fetch(
+            `https://api.terrasofthq.com/api/zone?tags[]=${schoolCreds.terra_tag_id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (zonesRes.ok) {
+            const data = await zonesRes.json();
+            // Handle pagination or flat array structure
+            basicZones = Array.isArray(data.data?.data)
+              ? data.data.data
+              : Array.isArray(data.data)
+                ? data.data
+                : [];
+          }
+        }
+
+        // B. Fetch Details for each Zone (to get whitelist_tags)
+        // We limit this to avoid performance issues, but for a school with <20 zones it's fine.
+        if (basicZones.length > 0) {
+          const detailPromises = basicZones.map(async (z: any) => {
+            try {
+              const singleRes = await fetch(
+                `https://api.terrasofthq.com/api/zone/${z.id}/single`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (singleRes.ok) {
+                const singleData = await singleRes.json();
+                return singleData.data; // This object has 'whitelist_tags'
+              }
+            } catch (error) {
+              console.error(`Failed to fetch details for zone ${z.id}`, error);
+            }
+            return z; // Fallback to basic zone if detail fetch fails
+          });
+
+          detailedZones = (await Promise.all(detailPromises)).filter(Boolean);
+        }
+      } catch (error) {
+        console.error("Failed to fetch zones for student page", error);
+      }
+    }
+  }
 
   return (
     <div>
       <Breadcrumbs
         items={[
           {
-            href: "/parents",
-            label: "Parents",
+            href: "/records",
+            label: "Parents and Students",
           },
           {
-            href: `/parents/${parent.email?.replace("@", "%40") ?? "#"}`,
-            label: parent.name ?? "Unknown",
-          },
-          {
-            href: `/students/${studentId}`,
+            href: `/records/students/${studentId}`,
             label: student.name,
           },
         ]}
@@ -111,7 +161,6 @@ export default async function Page({
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Avatar + Name */}
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
                     <AvatarImage
@@ -132,10 +181,20 @@ export default async function Page({
                         {student.school}
                       </p>
                     )}
+                    <div className="mt-1">
+                      {studentTerraTag ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Tag ID: {studentTerraTag}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          No Tag Assigned
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Info List */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -152,15 +211,6 @@ export default async function Page({
                       {student.address ?? "Not provided"}
                     </span>
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <School className="h-4 w-4" />
-                    </div>
-                    <span className="font-medium">
-                      {student.school ?? "Unknown"}
-                    </span>
-                  </div>
                 </div>
               </div>
             </CardContent>
@@ -170,19 +220,14 @@ export default async function Page({
           <Card className="shadow-md rounded-2xl border border-gray-200">
             <CardHeader className="border-b pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800">
-                👨‍👩‍👦 Guardian Information
+                Guardian Information
               </CardTitle>
-              <CardDescription className="text-gray-500">
-                Parent/Guardian contact details
-              </CardDescription>
             </CardHeader>
-
             <CardContent className="p-6 space-y-6">
-              {/* Guardian Profile */}
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback>
-                    {parent.name
+                    {parent?.name
                       ?.split(" ")
                       .map((n) => n[0])
                       .join("") ?? "U"}
@@ -190,34 +235,46 @@ export default async function Page({
                 </Avatar>
                 <div>
                   <p className="text-lg font-semibold">
-                    {parent.name ?? "Unknown"}
+                    {parent?.name ?? "Unknown"}
                   </p>
                 </div>
               </div>
-
-              {/* Contact info */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                    <Phone className="h-4 w-4" />
-                  </div>
+                  <Phone className="h-4 w-4 text-green-600" />
                   <span className="text-gray-800">
-                    {parent.phone_number ?? "Not provided"}
+                    {parent?.phone_number ?? "N/A"}
                   </span>
                 </div>
-
                 <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    <Mail className="h-4 w-4" />
-                  </div>
+                  <Mail className="h-4 w-4 text-blue-600" />
                   <span className="text-gray-800">
-                    {parent.email ?? "Not provided"}
+                    {parent?.email ?? "N/A"}
                   </span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* ZONE ACCESS MANAGER SECTION */}
+        {studentTerraTag ? (
+          <StudentZoneManager
+            zones={detailedZones}
+            studentTagId={studentTerraTag}
+          />
+        ) : (
+          <Card className="p-8 border-dashed border-2 bg-gray-50 text-center">
+            <h3 className="text-lg font-semibold text-gray-700">
+              Zone Access Unavailable
+            </h3>
+            <p className="text-gray-500 mt-2">
+              This student does not have a Smartcard Tag ID associated with
+              their account. Please ensure the student is synced with the Terra
+              system or update their metadata.
+            </p>
+          </Card>
+        )}
       </div>
     </div>
   );

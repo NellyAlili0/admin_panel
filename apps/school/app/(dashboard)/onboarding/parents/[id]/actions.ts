@@ -100,6 +100,7 @@ export async function addStudent(prevState: any, formData: FormData) {
         "school.terra_email",
         "school.terra_password",
         "school.terra_tag_id",
+        "school.terra_student_tag", // ✅ Fetch the student tag
       ])
       .where("school.id", "=", school_id)
       .executeTakeFirst();
@@ -108,16 +109,17 @@ export async function addStudent(prevState: any, formData: FormData) {
       !(
         schoolInfo?.terra_email &&
         schoolInfo.terra_password &&
-        schoolInfo.terra_tag_id
+        schoolInfo.terra_tag_id &&
+        schoolInfo.terra_student_tag // ✅ Ensure student tag exists
       )
     ) {
       return {
-        message: "Missing school credentials. Please contact support.",
+        message: "Missing school credentials or tags. Please contact support.",
         success: false,
       };
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     const res = await fetch(`${baseUrl}/api/smartcards/dependants/create`, {
       method: "POST",
@@ -133,7 +135,7 @@ export async function addStudent(prevState: any, formData: FormData) {
           status: "Active",
           dob,
           gender,
-          tags: ["985f584c-0c10-482f-ac6e-46ce3c376930"],
+          tags: [schoolInfo.terra_student_tag], // ✅ Updated: Uses dynamic student tag
         },
       }),
     });

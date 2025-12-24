@@ -35,7 +35,12 @@ export default async function page() {
     console.log("Missing Terra credentials: email, password, or tag ID");
     return <NoData />;
   }
+
   return (
-    <Zone email={schoolInfo.terra_email} password={schoolInfo.terra_password} />
+    <Zone
+      email={schoolInfo.terra_email}
+      password={schoolInfo.terra_password}
+      schoolTagId={schoolInfo.terra_tag_id}
+    />
   );
 }

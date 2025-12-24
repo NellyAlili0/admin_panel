@@ -4,6 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import GenTable from "../SmartCardTable";
 import { AddParentForm } from "./forms";
+import { deleteParent } from "./actions";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 interface Props {
   email: string;
@@ -30,8 +33,8 @@ function Parents({ email, password, tag }: Props) {
             body: JSON.stringify({
               email,
               password,
-              tags: ["1b8d5703-b389-4d55-bc53-466ed165f294"],
-              page, // Pass the page number to API
+              tags: [tag], // Uses dynamic school tag
+              page,
             }),
             cache: "no-store",
           }
@@ -46,7 +49,6 @@ function Parents({ email, password, tag }: Props) {
         const data = await res.json();
         setParents(data.data || []);
 
-        // Extract pagination info from meta object
         if (data.meta) {
           setTotalRows(data.meta.total);
           setPerPage(data.meta.per_page);
@@ -62,18 +64,52 @@ function Parents({ email, password, tag }: Props) {
   );
 
   useEffect(() => {
-    getParentsByTags(1);
-  }, [getParentsByTags]);
+    if (tag) {
+      getParentsByTags(1);
+    }
+    // ✅ FIX: Removed 'getParentsByTags' from dependency array to prevent infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tag]);
 
-  // When a parent is added, refresh the current page
-  const handleParentAdded = async () => {
-    await getParentsByTags(1); // Refresh to page 1
+  // Handle Delete
+  const handleDelete = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this parent? All their students will also be removed."
+      )
+    )
+      return;
+
+    const res = await deleteParent(id);
+    if (res.success) {
+      toast.success(res.message);
+      getParentsByTags(1); // Refresh list
+    } else {
+      toast.error(res.message);
+    }
   };
 
-  // Handle page change from the table
   const handlePageChange = (page: number) => {
     getParentsByTags(page);
   };
+
+  // Map data to include delete button
+  const tableData = parents.map((p) => ({
+    ...p,
+    actions: (
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleDelete(p.id);
+        }}
+        className="p-2 text-red-600 hover:bg-red-50 rounded z-10 relative"
+        title="Delete Parent"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    ),
+  }));
 
   return (
     <section className="min-h-screen bg-gradient-to-b from-gray-50 to-white px-6 py-5">
@@ -84,9 +120,8 @@ function Parents({ email, password, tag }: Props) {
       <div className="flex flex-col gap-2">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
           <h1 className="text-3xl font-bold tracking-tight">Parents</h1>
-
-          <div className="w-full sm:w-auto [&_button]:w-full sm:[&_button]:w-auto">
-            <AddParentForm onParentAdded={handleParentAdded} />
+          <div className="w-full sm:w-auto">
+            <AddParentForm onParentAdded={() => getParentsByTags(1)} />
           </div>
         </div>
 
@@ -104,8 +139,9 @@ function Parents({ email, password, tag }: Props) {
               "national_id",
               "phone",
               "status",
+              "actions",
             ]}
-            data={parents}
+            data={tableData}
             baseLink="onboarding/parents/"
             uniqueKey="id"
             pagination
